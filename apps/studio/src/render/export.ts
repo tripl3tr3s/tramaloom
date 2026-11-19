@@ -1,12 +1,12 @@
 import type { ArtDocument } from "@gridloom/core";
 import { drawScene, generate, pixelSize, toSVG } from "@gridloom/core";
 
-const slug = (s: string): string =>
+export const slug = (s: string): string =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "gridloom";
 
 const fileBase = (doc: ArtDocument, hash: string): string => `${slug(doc.name)}_${hash.slice(0, 10)}`;
 
-function download(blob: Blob, filename: string): void {
+export function download(blob: Blob, filename: string): void {
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
   a.download = filename;

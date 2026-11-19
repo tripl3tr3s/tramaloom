@@ -104,6 +104,41 @@ export async function deletePreset(id: string): Promise<void> {
   await run("readwrite", (s) => s.delete(id));
 }
 
+/**
+ * Ask the browser to keep this site's storage instead of evicting it under
+ * pressure. Best effort: some browsers decide on their own, and Safari may
+ * still clear sites you have not visited for a while.
+ */
+export async function requestPersistence(): Promise<boolean> {
+  try {
+    if (!navigator.storage?.persist) return false;
+    return (await navigator.storage.persisted()) || (await navigator.storage.persist());
+  } catch {
+    return false;
+  }
+}
+
+const LIBRARY_FILE = "gridloom-library";
+
+/** A file holding every user preset, for backups and moving between browsers or domains. */
+export function libraryFile(presets: readonly UserPreset[]): Blob {
+  return new Blob([JSON.stringify({ format: LIBRARY_FILE, version: 1, presets }, null, 2)], { type: "application/json" });
+}
+
+const LibraryFileSchema = z.object({
+  format: z.literal(LIBRARY_FILE),
+  version: z.literal(1),
+  presets: z.array(z.unknown()).max(MAX_USER_PRESETS),
+});
+
+/** Valid presets from an imported library file; invalid entries are skipped. Null if it is not a library file. */
+export function parseLibraryFile(input: unknown): { readonly presets: readonly UserPreset[]; readonly skipped: number } | null {
+  const r = LibraryFileSchema.safeParse(input);
+  if (!r.success) return null;
+  const presets = r.data.presets.map(parseUserPreset).filter((p): p is UserPreset => p !== null);
+  return { presets, skipped: r.data.presets.length - presets.length };
+}
+
 /** Random id for a new preset. */
 export function presetId(): string {
   const bytes = crypto.getRandomValues(new Uint8Array(9));

@@ -23,3 +23,5 @@ export * from "./render/canvas2d.ts";
 export * from "./presets.ts";
 export { ENGINE_VERSION } from "./version.ts";
 export * from "./mutate.ts";
+export * from "./traits.ts";
+export * from "./check.ts";

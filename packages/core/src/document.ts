@@ -4,6 +4,7 @@ import { resolveParam } from "./params/params.ts";
 import type { Registry } from "./modules/registry.ts";
 import { defaultRegistry, getModule } from "./modules/registry.ts";
 import type { Scene } from "./scene.ts";
+import type { TraitDef } from "./traits.ts";
 import { emptyScene } from "./scene.ts";
 
 export interface Layer {
@@ -19,6 +20,8 @@ export interface ArtDocument {
   readonly version: 1;
   readonly name: string;
   readonly layers: readonly Layer[];
+  /** Collector-facing features, computed from the hash before rendering. */
+  readonly traits?: readonly TraitDef[];
 }
 
 export interface ResolvedLayer {

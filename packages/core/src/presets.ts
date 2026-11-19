@@ -1,5 +1,6 @@
 import type { ArtDocument, Layer } from "./document.ts";
 import type { ParamSetting } from "./params/params.ts";
+import type { TraitDef } from "./traits.ts";
 
 /** Starter document. Original composition; not modelled on any artist's piece. */
 export const starterDocument: ArtDocument = {
@@ -35,6 +36,16 @@ export const starterDocument: ArtDocument = {
     },
     { id: "fill", module: "cellFill", enabled: true, params: { fillChance: { value: 0.8 } } },
   ],
+  traits: [
+    { name: "Palette", layerId: "palette", param: "palette" },
+    { name: "Zones", layerId: "palette", param: "zoneMode" },
+    {
+      name: "Density",
+      layerId: "grid",
+      param: "cols",
+      bins: [{ label: "Coarse", upTo: 10 }, { label: "Medium", upTo: 14 }, { label: "Fine" }],
+    },
+  ],
 };
 
 export interface Preset {
@@ -55,7 +66,12 @@ const pick = (value: string | number, weights: Readonly<Record<string, number>>)
   value,
   vary: { kind: "weights", weights },
 });
-const doc = (name: string, layers: readonly Layer[]): ArtDocument => ({ version: 1, name, layers });
+const doc = (name: string, layers: readonly Layer[], traits: readonly TraitDef[] = []): ArtDocument => ({
+  version: 1,
+  name,
+  layers,
+  ...(traits.length ? { traits } : {}),
+});
 
 /**
  * Built-in presets. All original compositions that show off the modules; none
@@ -83,6 +99,10 @@ export const builtinPresets: readonly Preset[] = [
         wireWidth: fixed(0.14),
       }),
       L("post", "post", { grain: fixed(0.3) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Network", layerId: "traces", param: "wires", bins: [{ label: "Sparse", upTo: 4 }, { label: "Busy", upTo: 6 }, { label: "Dense" }] },
+      { name: "Terminals", layerId: "traces", param: "endTerminal" },
     ]),
   },
   {
@@ -95,6 +115,10 @@ export const builtinPresets: readonly Preset[] = [
       L("fill", "cellFill", { fillChance: fixed(1) }),
       L("arcs", "tiles", { lines: range(3, 2, 4), lineWidth: fixed(0.07), rotation: pick("random", { random: 2, noise: 1 }) }),
       L("post", "post", { grain: fixed(0.2) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Strands", layerId: "arcs", param: "lines" },
+      { name: "Flow", layerId: "arcs", param: "rotation" },
     ]),
   },
   {
@@ -108,6 +132,10 @@ export const builtinPresets: readonly Preset[] = [
       L("tri", "tiles", { motif: pick("triangle", { triangle: 3, quarter: 2, mixed: 1 }), rotation: pick("random", { random: 2, checker: 1 }), colorRule: fixed("zone") }),
       L("mirror", "symmetry", { mode: pick("quad", { quad: 3, "rotate-4": 2 }) }),
       L("post", "post", { border: fixed(true), borderOffset: fixed(0.025), grain: fixed(0.15) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Motif", layerId: "tri", param: "motif" },
+      { name: "Symmetry", layerId: "mirror", param: "mode" },
     ]),
   },
   {

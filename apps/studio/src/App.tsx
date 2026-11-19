@@ -11,13 +11,14 @@ import { DebugPanel } from "./ui/DebugPanel.tsx";
 import { LayerStack } from "./ui/LayerStack.tsx";
 import { Library } from "./ui/Library.tsx";
 import { MutationGrid } from "./ui/MutationGrid.tsx";
+import { EditionPanel } from "./ui/edition/EditionPanel.tsx";
 import { ParamPanel } from "./ui/ParamPanel.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
   const [debug, setDebug] = useState(false);
-  const [overlay, setOverlay] = useState<"none" | "mutate" | "library">("none");
+  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition">("none");
   const [toast, setToast] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -78,6 +79,7 @@ export function App() {
   useShortcuts(overlay !== "none" ? {} : {
     m: () => setOverlay("mutate"),
     l: () => setOverlay("library"),
+    e: () => setOverlay("edition"),
     r: () => dispatch({ type: "setHash", hash: randomHash() }),
     ArrowLeft: () => dispatch({ type: "seedPrev" }),
     ArrowRight: () => dispatch({ type: "seedNext" }),
@@ -133,6 +135,7 @@ export function App() {
         onToggleDebug={() => setDebug((d) => !d)}
         onMutate={() => setOverlay((o) => (o === "mutate" ? "none" : "mutate"))}
         onLibrary={() => setOverlay((o) => (o === "library" ? "none" : "library"))}
+        onEdition={() => setOverlay((o) => (o === "edition" ? "none" : "edition"))}
       />
       </div>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
@@ -156,6 +159,9 @@ export function App() {
               onAdopt={adopt}
               onClose={() => setOverlay("none")}
             />
+          )}
+          {overlay === "edition" && (
+            <EditionPanel doc={state.doc} hash={state.hash} dispatch={dispatch} onClose={() => setOverlay("none")} notify={notify} />
           )}
           {overlay === "library" && (
             <Library

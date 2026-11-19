@@ -5,7 +5,8 @@ import { isTypingTarget, useDialog } from "../hooks/useDialog.ts";
 import type { ThumbJob } from "../render/protocol.ts";
 import { useThumbnails } from "../render/useThumbnails.ts";
 import type { UserPreset } from "../state/library.ts";
-import { deletePreset, listPresets, presetId, savePreset } from "../state/library.ts";
+import { deletePreset, libraryFile, listPresets, parseLibraryFile, presetId, requestPersistence, savePreset } from "../state/library.ts";
+import { download } from "../render/export.ts";
 
 interface Props {
   readonly doc: ArtDocument;
@@ -61,6 +62,7 @@ export function Library({ doc, hash, onLoad, onClose, notify }: Props) {
     const label = name.trim().slice(0, 100) || doc.name;
     try {
       await savePreset({ id: presetId(), name: label, doc: { ...doc, name: label }, hash, createdAt: Date.now() });
+      void requestPersistence();
       notify(`Saved "${label}" to your library`);
       refresh();
     } catch (e) {
@@ -69,6 +71,35 @@ export function Library({ doc, hash, onLoad, onClose, notify }: Props) {
       setSaving(false);
     }
   };
+  const importFile = async (file: File) => {
+    if (file.size > 20 * 1024 * 1024) return notify("That file is too large to be a Gridloom library");
+    try {
+      const parsed = parseLibraryFile(JSON.parse(await file.text()));
+      if (!parsed) return notify("Not a Gridloom library file");
+      let saved = 0;
+      let stopped: string | null = null;
+      for (const p of parsed.presets) {
+        try {
+          await savePreset(p); // same id overwrites, so importing twice does not duplicate
+          saved++;
+        } catch (e) {
+          stopped = e instanceof Error ? e.message : "Could not save";
+          break;
+        }
+      }
+      void requestPersistence();
+      const parts = [
+        `Imported ${saved} preset${saved === 1 ? "" : "s"}`,
+        parsed.skipped ? `skipped ${parsed.skipped} invalid` : "",
+        stopped ? `stopped: ${stopped}` : "",
+      ].filter(Boolean);
+      notify(parts.join(", "));
+      refresh();
+    } catch {
+      notify("Could not read that file");
+    }
+  };
+
   const remove = async (e: Entry) => {
     if (!e.userId) return;
     // Two clicks: the first arms the button, the second deletes.
@@ -155,6 +186,29 @@ export function Library({ doc, hash, onLoad, onClose, notify }: Props) {
         >
           Save current
         </button>
+        <button
+          type="button"
+          className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700 disabled:opacity-40"
+          disabled={user.length === 0}
+          onClick={() => download(libraryFile(user), "gridloom-library.json")}
+          title="Download all your presets as one file"
+        >
+          Export all
+        </button>
+        <label className="cursor-pointer rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" title="Add presets from a library file">
+          Import
+          <input
+            type="file"
+            accept=".json,application/json"
+            className="hidden"
+            disabled={!available}
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              if (f) void importFile(f);
+              e.target.value = "";
+            }}
+          />
+        </label>
         <span className="text-zinc-500" aria-live="polite">
           {error ?? ""}
         </span>
@@ -170,11 +224,15 @@ export function Library({ doc, hash, onLoad, onClose, notify }: Props) {
         </div>
       </section>
       <section>
-        <h2 className="mb-2 text-[11px] uppercase tracking-wide text-zinc-500">Yours</h2>
+        <h2 className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">Yours</h2>
+        <p className="mb-2 text-[11px] text-amber-200/80">
+          Saved in this browser on this site only. Clearing site data, private windows, or Safari&apos;s cleanup of unvisited sites can remove
+          them. Use Export all for a backup or to move them to another browser.
+        </p>
         {!available ? (
           <p className="text-xs text-zinc-500">This browser does not allow local storage here, so presets cannot be saved. Close the library and use Save in the toolbar to download a file instead.</p>
         ) : user.length === 0 ? (
-          <p className="text-xs text-zinc-500">Nothing saved yet. Presets stay in this browser; to keep a copy elsewhere, close the library and use Save in the toolbar.</p>
+          <p className="text-xs text-zinc-500">Nothing saved yet.</p>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
             {entries.slice(builtins).map((e, i) => tile(e, i + builtins))}

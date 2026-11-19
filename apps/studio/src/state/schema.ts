@@ -29,14 +29,38 @@ const LayerSchema = z.object({
   params: z.record(z.string().max(64), ParamSettingSchema),
 });
 
+export const MAX_TRAITS = 16;
+export const MAX_BINS = 12;
+
+const TraitSchema = z.object({
+  name: z.string().trim().min(1).max(40),
+  layerId: z.string().regex(/^[A-Za-z0-9_-]{1,40}$/),
+  param: z.string().regex(/^[A-Za-z0-9_]{1,64}$/),
+  bins: z
+    .array(z.object({ label: z.string().trim().min(1).max(40), upTo: z.number().finite().optional() }))
+    .max(MAX_BINS)
+    .superRefine((bins, ctx) => {
+      // Ascending bounds, then exactly one catch-all, last: labels and expected shares then always agree.
+      bins.forEach((b, i) => {
+        const last = i === bins.length - 1;
+        if (last !== (b.upTo === undefined)) ctx.addIssue({ code: "custom", message: "only the last bin is the catch-all" });
+        const prev = bins[i - 1]?.upTo;
+        if (b.upTo !== undefined && prev !== undefined && b.upTo <= prev) ctx.addIssue({ code: "custom", message: "bin bounds must ascend" });
+      });
+    })
+    .optional(),
+});
+
 export const ArtDocumentSchema = z
   .object({
     version: z.literal(1),
     name: z.string().max(100),
     layers: z.array(LayerSchema).min(1).max(MAX_LAYERS),
+    traits: z.array(TraitSchema).max(MAX_TRAITS).optional(),
   })
   .refine((d) => d.layers[0]?.module === "canvas", "first layer must be canvas")
-  .refine((d) => new Set(d.layers.map((l) => l.id)).size === d.layers.length, "layer ids must be unique");
+  .refine((d) => new Set(d.layers.map((l) => l.id)).size === d.layers.length, "layer ids must be unique")
+  .refine((d) => new Set((d.traits ?? []).map((t) => t.name)).size === (d.traits ?? []).length, "trait names must be unique");
 
 /** Validate untrusted input (URL fragment, imported file). Returns null when invalid. */
 export function parseDocument(input: unknown): ArtDocument | null {

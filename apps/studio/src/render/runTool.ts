@@ -1,0 +1,43 @@
+import type { CensusResult } from "@gridloom/core";
+import type { ToolRequest, ToolResponse } from "./protocol.ts";
+
+export interface ToolRun<T> {
+  readonly promise: Promise<T>;
+  /** Stops the work immediately; the promise rejects with "cancelled". */
+  readonly cancel: () => void;
+}
+
+type ResultOf<R extends ToolRequest> = R extends { kind: "census" } ? CensusResult : Blob;
+
+/** One worker per run, so cancelling is just terminating it. */
+export function runTool<R extends ToolRequest>(req: R, onProgress?: (done: number, total: number) => void): ToolRun<ResultOf<R>> {
+  const w = new Worker(new URL("./toolsWorker.ts", import.meta.url), { type: "module" });
+  let settle: ((err: Error) => void) | null = null;
+  const promise = new Promise<ResultOf<R>>((resolve, reject) => {
+    settle = reject;
+    w.onmessage = (e: MessageEvent<ToolResponse>) => {
+      const m = e.data;
+      if (m.kind === "progress") return onProgress?.(m.done, m.total);
+      w.terminate();
+      if (m.kind === "error") reject(new Error(m.error));
+      else resolve((m.kind === "census" ? m.result : m.zip) as ResultOf<R>);
+    };
+    w.onmessageerror = () => {
+      w.terminate();
+      reject(new Error("The worker sent an unreadable result (out of memory?)"));
+    };
+    w.onerror = (e) => {
+      e.preventDefault();
+      w.terminate();
+      reject(new Error(e.message || "Worker failed"));
+    };
+  });
+  w.postMessage(req);
+  return {
+    promise,
+    cancel: () => {
+      w.terminate();
+      settle?.(new Error("cancelled"));
+    },
+  };
+}

@@ -9,14 +9,28 @@ export function pick<T>(r: Rng, xs: readonly T[]): T {
   return xs[Math.floor(r() * xs.length)] as T;
 }
 
-/** Bias toward 0. */
-export const skewLow = (r: Rng): number => r() ** 2;
-/** Bias toward 1. */
-export const skewHigh = (r: Rng): number => 1 - (1 - r()) ** 2;
+// Only + - * here: `**`, log, cos and friends are implementation-approximated in
+// ECMAScript and may differ in the last bit between engines.
 
-/** Standard normal. Consumes two draws. */
+/** Bias toward 0. */
+export const skewLow = (r: Rng): number => {
+  const u = r();
+  return u * u;
+};
+/** Bias toward 1. */
+export const skewHigh = (r: Rng): number => {
+  const v = 1 - r();
+  return 1 - v * v;
+};
+
+/**
+ * Approximately standard normal (Irwin-Hall: six uniforms, centred and scaled to
+ * unit variance). Exact arithmetic, so every engine agrees; tails stop at about
+ * 4.2 sigma, which no artwork notices. Consumes six draws.
+ */
 export function gaussian(r: Rng): number {
-  return Math.sqrt(-2 * Math.log(1 - r())) * Math.cos(2 * Math.PI * r());
+  const s = r() + r() + r() + r() + r() + r();
+  return (s - 3) * Math.SQRT2;
 }
 
 /** Weighted choice over ordered entries. Order is part of the artwork. */

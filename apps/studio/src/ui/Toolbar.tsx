@@ -22,6 +22,7 @@ interface Props {
   readonly onToggleDebug: () => void;
   readonly onMutate: () => void;
   readonly onLibrary: () => void;
+  readonly onEdition: () => void;
 }
 
 const btn =
@@ -80,6 +81,9 @@ export function Toolbar(p: Props) {
       </button>
       <button type="button" className={btn} onClick={p.onLibrary} title="Preset library (L)">
         Library
+      </button>
+      <button type="button" className={btn} onClick={p.onEdition} title="Traits, census, contact sheet, batch export (E)">
+        Edition
       </button>
       <div className="flex-1" />
       <button type="button" className={btn} onClick={() => p.onExportPNG(2000)} title="PNG 2000px (S)">

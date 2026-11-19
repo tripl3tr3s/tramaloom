@@ -1,4 +1,4 @@
-import type { ArtDocument, ResolvedLayer } from "@gridloom/core";
+import type { ArtDocument, CensusResult, ResolvedLayer } from "@gridloom/core";
 
 export interface RenderRequest {
   readonly id: number;
@@ -40,3 +40,13 @@ export interface ThumbResponse {
   readonly id: number;
   readonly images: readonly (Blob | null)[];
 }
+
+export type ToolRequest =
+  | { readonly kind: "census"; readonly doc: ArtDocument; readonly root: string; readonly count: number }
+  | { readonly kind: "batch"; readonly doc: ArtDocument; readonly root: string; readonly count: number; readonly size: number; readonly base: string };
+
+export type ToolResponse =
+  | { readonly kind: "progress"; readonly done: number; readonly total: number }
+  | { readonly kind: "census"; readonly result: CensusResult }
+  | { readonly kind: "batch"; readonly zip: Blob }
+  | { readonly kind: "error"; readonly error: string };

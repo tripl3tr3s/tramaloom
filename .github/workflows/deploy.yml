@@ -25,7 +25,7 @@ jobs:
           node-version: lts/*
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - run: pnpm -r typecheck
+      - run: pnpm typecheck
       - run: pnpm -r test
       - run: pnpm --filter @gridloom/studio build
       - if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
@@ -33,9 +33,23 @@ jobs:
         with:
           path: apps/studio/dist
 
+  # Same doc + hash must give the same display list and traits in every engine.
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+      - uses: pnpm/action-setup@73e46992e05b19abd31f2f3c20e0e7370d762115 # v6.1.1
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm exec playwright install --with-deps chromium firefox webkit
+      - run: pnpm e2e
+
   deploy:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
-    needs: build
+    needs: [build, e2e]
     runs-on: ubuntu-latest
     permissions:
       pages: write

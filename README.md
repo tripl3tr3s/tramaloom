@@ -8,6 +8,9 @@ MIT licensed. Static web app, no backend.
 
 - Phase 1 (core engine), done: PRNG and sub-streams, the param system (fixed or variable), the display list, the canvas, palette, grid and cell fill modules, and the SVG and Canvas2D renderers.
 - Phase 2 (studio MVP), done: a layer stack, controls generated from each module's params (vary and lock per param), rendering in a Web Worker, document and hash in the URL, PNG/SVG/JSON export, JSON import, undo/redo, keyboard shortcuts, and an offline PWA.
+- Phase 3 (modules), done: Insets, Tiles (Truchet), Circuits, Symmetry and Post, plus engine versioning for share links.
+- Phase 4 (Apophysis features), done: mutation grid, preset library, six original built-in presets.
+- Phase 5 (long-form), done: traits with bins, rarity editing, census against the settings' targets, contact sheet, batch export, and a cross-browser determinism check.
 
 ## Shortcuts
 
@@ -20,6 +23,31 @@ MIT licensed. Static web app, no backend.
 | `G` | debug panel (hash, timing, resolved values) |
 | `F` | fullscreen viewport |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | undo / redo |
+| `M` | mutation grid (1-9 adopt, `R` shuffle, `Esc` close) |
+| `L` | preset library |
+| `E` | edition: traits and rarity, census, contact sheet, batch export |
+
+## Where your work lives
+
+There is no server. A piece is saved in three ways, and only two of them last:
+
+- **Share link** (Link button or the address bar): the document and seed are in the URL. Lasting.
+- **Save** (JSON file): a file you keep. Lasting. Open it with Open.
+- **Library "Yours"**: stored in this browser, for this one site address only. Presets saved on `localhost` do not appear on the deployed site, and moving the site to another domain leaves them behind. Clearing site data, private windows, or Safari's cleanup of sites you have not visited recently can delete them. Use **Export all** in the library for a backup, and **Import** to bring them into another browser or domain.
+
+If you plan to invite other people, choose the final domain first, so their libraries do not get stranded on an old address.
+
+## Long-form workflow
+
+1. Build the piece and decide the traits (Edition, `E`): 4 to 8 axes, values as words.
+2. **Settle the rarity table first.** Each seed picks a value by where its random number falls along the weights, so changing one weight moves the boundaries and many seeds switch value, not only rare ones. A seed you liked can change palette after a rarity tweak. (Share links and saved files carry their own weights, so they keep looking the same.)
+3. Run a census at the edition size and fix anything flagged: values that never appear, one value at 80% or more, values expected less than once.
+4. Look at many outputs on the contact sheet, then pick favourite seeds.
+5. Freeze the document before any mint or public sharing, and export with Batch (PNGs, manifest with seeds and traits, and the document).
+
+## Share links and engine versions
+
+A link stores the settings and the seed, not the drawing code. Links carry `e=<engine>`; if a module's output ever changes on purpose, `ENGINE_VERSION` in `packages/core/src/version.ts` is bumped and older links show a notice. `packages/core/test/golden.test.ts` fails whenever an existing module draws differently, so this cannot happen by accident.
 
 ## Deploy
 
@@ -52,6 +80,7 @@ pnpm install
 pnpm -r test
 pnpm -r typecheck
 pnpm build && pnpm preview                   # production build served locally
+pnpm e2e                                     # cross-browser determinism check (Playwright)
 node packages/core/scripts/render.ts 9 out   # SVG previews of the starter document
 ```
 

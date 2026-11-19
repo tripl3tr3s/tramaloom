@@ -1,4 +1,4 @@
-import type { ArtDocument, Layer, ParamSetting } from "@gridloom/core";
+import type { ArtDocument, Layer, ParamSetting, TraitDef } from "@gridloom/core";
 import { stepHash } from "@gridloom/core";
 import { MAX_LAYERS } from "./limits.ts";
 
@@ -38,6 +38,7 @@ export type Action =
   | { readonly type: "select"; readonly layerId: string }
   | { readonly type: "rename"; readonly name: string }
   | { readonly type: "loadDoc"; readonly doc: ArtDocument }
+  | { readonly type: "setTraits"; readonly traits: readonly TraitDef[] }
   /** Take a mutation or preset: one undo step for the doc, plus a seed step if the hash changed. */
   | { readonly type: "adopt"; readonly doc: ArtDocument; readonly hash: string }
   | { readonly type: "hydrate"; readonly doc: ArtDocument | null; readonly hash: string | null }
@@ -141,6 +142,11 @@ export function reducer(s: StudioState, a: Action): StudioState {
       return { ...s, doc: { ...s.doc, name: a.name.slice(0, 100) } };
     case "loadDoc":
       return { ...commit(s, a.doc), selectedId: a.doc.layers[1]?.id ?? a.doc.layers[0]?.id ?? null };
+    case "setTraits": {
+      // Traits never change the picture, but they are part of the piece: undoable.
+      const { traits: _old, ...rest } = s.doc;
+      return commit(s, a.traits.length ? { ...rest, traits: a.traits } : rest);
+    }
     case "adopt": {
       const sameDoc = a.doc === s.doc || JSON.stringify(a.doc) === JSON.stringify(s.doc);
       const sameHash = a.hash === s.hash;

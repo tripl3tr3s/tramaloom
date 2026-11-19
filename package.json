@@ -6,8 +6,14 @@
   "packageManager": "pnpm@12.21.0",
   "scripts": {
     "test": "pnpm -r test",
-    "typecheck": "pnpm -r typecheck",
+    "typecheck": "pnpm -r typecheck && tsc -p tsconfig.e2e.json",
     "build": "pnpm --filter @gridloom/studio build",
-    "preview": "pnpm --filter @gridloom/studio preview"
+    "preview": "pnpm --filter @gridloom/studio preview",
+    "e2e": "pnpm build && playwright test"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.65.1",
+    "@types/node": "^26.6.6",
+    "typescript": "^7.0.2"
   }
 }

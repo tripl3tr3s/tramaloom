@@ -1,4 +1,4 @@
-import { starterDocument } from "@gridloom/core";
+import { ENGINE_VERSION, starterDocument } from "@gridloom/core";
 import { describe, expect, it } from "vitest";
 import { parseDocument } from "../src/state/schema.ts";
 import { decodeState, encodeState } from "../src/state/url.ts";
@@ -12,11 +12,24 @@ describe("url codec", () => {
     const out = await decodeState(`#${frag}`);
     expect(out.hash).toBe(H);
     expect(out.doc).toEqual(starterDocument);
+    expect(out.engine).toBe(ENGINE_VERSION);
+  });
+
+  it("reads the engine version, defaulting to 1 and rejecting junk", async () => {
+    expect((await decodeState(`#h=${H}&e=7`)).engine).toBe(7);
+    expect((await decodeState(`#h=${H}&e=-3`)).engine).toBe(1);
+    expect((await decodeState(`#h=${H}&e=1.5`)).engine).toBe(1);
+    expect((await decodeState(`#h=${H}&e=1e2`)).engine).toBe(1);
+  });
+
+  it("can keep an older engine number when re-encoding an untouched link", async () => {
+    const frag = await encodeState(starterDocument, H, 3);
+    expect((await decodeState(`#${frag}`)).engine).toBe(3);
   });
 
   it("returns nulls for garbage instead of throwing", async () => {
-    expect(await decodeState("#d=%%%&h=zzz")).toEqual({ doc: null, hash: null });
-    expect(await decodeState("")).toEqual({ doc: null, hash: null });
+    expect(await decodeState("#d=%%%&h=zzz")).toEqual({ doc: null, hash: null, engine: 1 });
+    expect(await decodeState("")).toEqual({ doc: null, hash: null, engine: 1 });
   });
 });
 

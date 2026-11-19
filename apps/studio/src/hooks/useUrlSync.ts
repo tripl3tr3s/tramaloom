@@ -1,4 +1,5 @@
 import type { ArtDocument } from "@gridloom/core";
+import { ENGINE_VERSION } from "@gridloom/core";
 import { useEffect, useRef, useState } from "react";
 import { decodeState, encodeState } from "../state/url.ts";
 
@@ -9,18 +10,21 @@ import { decodeState, encodeState } from "../state/url.ts";
 export function useUrlSync(
   doc: ArtDocument,
   hash: string,
-  onLoad: (doc: ArtDocument | null, hash: string | null) => void,
+  onLoad: (doc: ArtDocument | null, hash: string | null, engine: number) => void,
 ): boolean {
   const [ready, setReady] = useState(false);
   const onLoadRef = useRef(onLoad);
   const seq = useRef(0);
+  // What the link held, so an untouched old link keeps saying which engine made it.
+  const loaded = useRef<{ doc: ArtDocument | null; hash: string | null; engine: number } | null>(null);
   onLoadRef.current = onLoad;
 
   useEffect(() => {
     let cancelled = false;
     decodeState(window.location.hash).then((s) => {
       if (cancelled) return;
-      onLoadRef.current(s.doc, s.hash);
+      loaded.current = s;
+      onLoadRef.current(s.doc, s.hash, s.engine);
       setReady(true);
     });
     return () => {
@@ -32,7 +36,9 @@ export function useUrlSync(
     if (!ready) return;
     const t = setTimeout(() => {
       const mine = ++seq.current;
-      encodeState(doc, hash)
+      const l = loaded.current;
+      const untouched = l !== null && l.doc === doc && l.hash === hash;
+      encodeState(doc, hash, untouched ? l.engine : ENGINE_VERSION)
         .then((frag) => {
           // A newer encode may have started meanwhile; never let an older one overwrite it.
           if (mine === seq.current) history.replaceState(null, "", `#${frag}`);

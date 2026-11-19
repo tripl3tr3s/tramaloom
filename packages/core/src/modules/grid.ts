@@ -105,6 +105,10 @@ export const gridModule = defineModule({
         h: Math.max(0, c.h - v.gap),
       }));
 
-    return { ...scene, cells };
+    const kept = new Set(cells.map((c) => c.row * v.cols + c.col));
+    const present = Array.from({ length: rows * v.cols }, (_, i) => kept.has(i));
+    const lattice = { x: ox, y: oy, cw, ch, cols: v.cols, rows, present };
+
+    return { ...scene, cells, lattice };
   },
 });

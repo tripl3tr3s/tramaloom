@@ -1,5 +1,6 @@
 import { canvasModule } from "./canvas.ts";
 import { cellFillModule } from "./cellFill.ts";
+import { circuitsModule } from "./circuits.ts";
 import { gridModule } from "./grid.ts";
 import { paletteModule } from "./palette.ts";
 import type { ModuleDef } from "./types.ts";
@@ -18,4 +19,5 @@ export const defaultRegistry: Registry = {
   grid: asDef(gridModule),
   palette: asDef(paletteModule),
   cellFill: asDef(cellFillModule),
+  circuits: asDef(circuitsModule),
 };

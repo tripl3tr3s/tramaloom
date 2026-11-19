@@ -1,5 +1,5 @@
 import type { ArtDocument } from "@gridloom/core";
-import { normaliseHash } from "@gridloom/core";
+import { ENGINE_VERSION, normaliseHash } from "@gridloom/core";
 import { parseDocument } from "./schema.ts";
 
 const MAX_COMPRESSED = 64 * 1024;
@@ -47,28 +47,33 @@ async function inflateCapped(bytes: Uint8Array, cap: number): Promise<Uint8Array
   return out;
 }
 
-export async function encodeState(doc: ArtDocument, hash: string): Promise<string> {
+/** `engine` defaults to the current one; pass a loaded link's engine to keep it until the piece is edited. */
+export async function encodeState(doc: ArtDocument, hash: string, engine: number = ENGINE_VERSION): Promise<string> {
   const packed = await pipe(new TextEncoder().encode(JSON.stringify(doc)), new CompressionStream("deflate-raw"));
-  return `d=${toBase64Url(packed)}&h=${hash}`;
+  return `d=${toBase64Url(packed)}&h=${hash}&e=${engine}`;
 }
 
 export interface DecodedState {
   readonly doc: ArtDocument | null;
   readonly hash: string | null;
+  /** Engine that made the link; links made before versioning count as 1. */
+  readonly engine: number;
 }
 
 /** Decode a location fragment. Invalid parts come back as null, never throw. */
 export async function decodeState(fragment: string): Promise<DecodedState> {
   const params = new URLSearchParams(fragment.replace(/^#/, ""));
   const hash = safeHash(params.get("h"));
+  const e = params.get("e") ?? "1";
+  const engine = /^[1-9]\d{0,5}$/.test(e) ? Number(e) : 1;
   const d = params.get("d");
-  if (!d || d.length > MAX_COMPRESSED * 2) return { doc: null, hash };
+  if (!d || d.length > MAX_COMPRESSED * 2) return { doc: null, hash, engine };
   try {
     const raw = await inflateCapped(fromBase64Url(d), MAX_JSON);
-    if (!raw) return { doc: null, hash };
-    return { doc: parseDocument(JSON.parse(new TextDecoder().decode(raw))), hash };
+    if (!raw) return { doc: null, hash, engine };
+    return { doc: parseDocument(JSON.parse(new TextDecoder().decode(raw))), hash, engine };
   } catch {
-    return { doc: null, hash };
+    return { doc: null, hash, engine };
   }
 }
 

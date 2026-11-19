@@ -45,6 +45,20 @@ export interface Cell extends Box {
   readonly depth: number;
 }
 
+/**
+ * The base grid before subdivision and masking, so modules like Circuits can
+ * route on it. `present[row * cols + col]` is true when that base cell survived the mask.
+ */
+export interface Lattice {
+  readonly x: number;
+  readonly y: number;
+  readonly cw: number;
+  readonly ch: number;
+  readonly cols: number;
+  readonly rows: number;
+  readonly present: readonly boolean[];
+}
+
 export interface PaletteState {
   readonly name: string;
   readonly colors: readonly string[];
@@ -62,6 +76,7 @@ export interface Scene {
   readonly background: string;
   readonly cornerRadius: number;
   readonly cells: readonly Cell[];
+  readonly lattice: Lattice | null;
   readonly palette: PaletteState | null;
   readonly items: readonly Item[];
 }
@@ -74,6 +89,7 @@ export function emptyScene(): Scene {
     background: "#ffffff",
     cornerRadius: 0,
     cells: [],
+    lattice: null,
     palette: null,
     items: [],
   };

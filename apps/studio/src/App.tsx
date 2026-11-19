@@ -1,5 +1,5 @@
 import type { ParamSetting } from "@gridloom/core";
-import { starterDocument } from "@gridloom/core";
+import { ENGINE_VERSION, starterDocument } from "@gridloom/core";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";
@@ -21,13 +21,18 @@ export function App() {
   const [box, setBox] = useState({ width: 0, height: 0 });
 
   const toastTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const notify = useCallback((msg: string) => {
+  const notify = useCallback((msg: string, ms = 1600) => {
     if (toastTimer.current) clearTimeout(toastTimer.current);
     setToast(msg);
-    toastTimer.current = setTimeout(() => setToast(null), 1600);
+    toastTimer.current = setTimeout(() => setToast(null), ms);
   }, []);
 
-  const ready = useUrlSync(state.doc, state.hash, (doc, hash) => dispatch({ type: "hydrate", doc, hash }));
+  const ready = useUrlSync(state.doc, state.hash, (doc, hash, engine) => {
+    dispatch({ type: "hydrate", doc, hash });
+    if (doc && engine !== ENGINE_VERSION) {
+      notify(`This link was made with engine v${engine}; this is v${ENGINE_VERSION}, so it may look different`, 6000);
+    }
+  });
 
   useEffect(() => {
     const el = viewportRef.current;

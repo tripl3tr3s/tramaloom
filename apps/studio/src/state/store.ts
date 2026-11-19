@@ -4,14 +4,24 @@ import { MAX_LAYERS } from "./limits.ts";
 
 const HISTORY_LIMIT = 100;
 
+/**
+ * One undo step. `hash` is set only for steps that also changed the seed
+ * (adopting a preset or a reseeded mutation), so undo brings back the same picture.
+ * Ordinary edits leave it null: undoing a slider never rewinds a later reroll.
+ */
+export interface Snapshot {
+  readonly doc: ArtDocument;
+  readonly hash: string | null;
+}
+
 export interface StudioState {
   readonly doc: ArtDocument;
   readonly hash: string;
   /** Visited seeds, so left/right arrows walk back and forth reproducibly. */
   readonly seeds: readonly string[];
   readonly seedIndex: number;
-  readonly past: readonly ArtDocument[];
-  readonly future: readonly ArtDocument[];
+  readonly past: readonly Snapshot[];
+  readonly future: readonly Snapshot[];
   readonly selectedId: string | null;
   /** Snapshot taken when a drag starts; pushed to history only if the drag changes something. */
   readonly pendingCheckpoint: ArtDocument | null;
@@ -28,6 +38,8 @@ export type Action =
   | { readonly type: "select"; readonly layerId: string }
   | { readonly type: "rename"; readonly name: string }
   | { readonly type: "loadDoc"; readonly doc: ArtDocument }
+  /** Take a mutation or preset: one undo step for the doc, plus a seed step if the hash changed. */
+  | { readonly type: "adopt"; readonly doc: ArtDocument; readonly hash: string }
   | { readonly type: "hydrate"; readonly doc: ArtDocument | null; readonly hash: string | null }
   | { readonly type: "setHash"; readonly hash: string }
   | { readonly type: "seedPrev" }
@@ -48,10 +60,10 @@ export function initialState(doc: ArtDocument, hash: string): StudioState {
   };
 }
 
-const commit = (s: StudioState, doc: ArtDocument): StudioState => ({
+const commit = (s: StudioState, doc: ArtDocument, withHash = false): StudioState => ({
   ...s,
   doc,
-  past: [...s.past, s.doc].slice(-HISTORY_LIMIT),
+  past: [...s.past, { doc: s.doc, hash: withHash ? s.hash : null }].slice(-HISTORY_LIMIT),
   future: [],
   pendingCheckpoint: null,
 });
@@ -86,7 +98,7 @@ export function reducer(s: StudioState, a: Action): StudioState {
       if (a.record) return commit(s, doc);
       const snap = s.pendingCheckpoint;
       return snap
-        ? { ...s, doc, past: [...s.past, snap].slice(-HISTORY_LIMIT), future: [], pendingCheckpoint: null }
+        ? { ...s, doc, past: [...s.past, { doc: snap, hash: null }].slice(-HISTORY_LIMIT), future: [], pendingCheckpoint: null }
         : { ...s, doc };
     }
     case "checkpoint":
@@ -129,6 +141,15 @@ export function reducer(s: StudioState, a: Action): StudioState {
       return { ...s, doc: { ...s.doc, name: a.name.slice(0, 100) } };
     case "loadDoc":
       return { ...commit(s, a.doc), selectedId: a.doc.layers[1]?.id ?? a.doc.layers[0]?.id ?? null };
+    case "adopt": {
+      const sameDoc = a.doc === s.doc || JSON.stringify(a.doc) === JSON.stringify(s.doc);
+      const sameHash = a.hash === s.hash;
+      if (sameDoc && sameHash) return s;
+      // A seed-only change lives on the seed trail (arrows), like a reroll.
+      if (sameDoc) return pushSeed(s, a.hash);
+      const committed = withValidSelection(commit(s, a.doc, !sameHash));
+      return sameHash ? committed : pushSeed(committed, a.hash);
+    }
     case "hydrate": {
       // Initial load from a link: replaces state without creating history.
       const base = initialState(a.doc ?? s.doc, a.hash ?? s.hash);
@@ -150,15 +171,27 @@ export function reducer(s: StudioState, a: Action): StudioState {
     }
     case "undo": {
       const prev = s.past[s.past.length - 1];
-      return prev
-        ? withValidSelection({ ...s, doc: prev, past: s.past.slice(0, -1), future: [s.doc, ...s.future], pendingCheckpoint: null })
-        : s;
+      if (!prev) return s;
+      const moved = withValidSelection({
+        ...s,
+        doc: prev.doc,
+        past: s.past.slice(0, -1),
+        future: [{ doc: s.doc, hash: prev.hash === null ? null : s.hash }, ...s.future],
+        pendingCheckpoint: null,
+      });
+      return prev.hash === null || prev.hash === s.hash ? moved : pushSeed(moved, prev.hash);
     }
     case "redo": {
       const next = s.future[0];
-      return next
-        ? withValidSelection({ ...s, doc: next, past: [...s.past, s.doc], future: s.future.slice(1), pendingCheckpoint: null })
-        : s;
+      if (!next) return s;
+      const moved = withValidSelection({
+        ...s,
+        doc: next.doc,
+        past: [...s.past, { doc: s.doc, hash: next.hash === null ? null : s.hash }],
+        future: s.future.slice(1),
+        pendingCheckpoint: null,
+      });
+      return next.hash === null || next.hash === s.hash ? moved : pushSeed(moved, next.hash);
     }
   }
 }

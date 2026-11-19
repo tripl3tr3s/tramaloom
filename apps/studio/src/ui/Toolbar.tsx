@@ -20,6 +20,8 @@ interface Props {
   readonly onImport: (file: File) => void;
   readonly onCopyLink: () => void;
   readonly onToggleDebug: () => void;
+  readonly onMutate: () => void;
+  readonly onLibrary: () => void;
 }
 
 const btn =
@@ -71,6 +73,13 @@ export function Toolbar(p: Props) {
       </button>
       <button type="button" className={btn} onClick={p.onRedo} disabled={!p.canRedo} title="Redo (Ctrl+Shift+Z)">
         Redo
+      </button>
+      {sep}
+      <button type="button" className={btn} onClick={p.onMutate} title="Mutation grid (M)">
+        Mutate
+      </button>
+      <button type="button" className={btn} onClick={p.onLibrary} title="Preset library (L)">
+        Library
       </button>
       <div className="flex-1" />
       <button type="button" className={btn} onClick={() => p.onExportPNG(2000)} title="PNG 2000px (S)">

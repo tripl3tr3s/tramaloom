@@ -1,0 +1,181 @@
+import type { ArtDocument } from "@gridloom/core";
+import { mutateDocument, stepHash, stream } from "@gridloom/core";
+import { useEffect, useMemo, useState } from "react";
+import { isTypingTarget, useDialog } from "../hooks/useDialog.ts";
+import type { ThumbJob } from "../render/protocol.ts";
+import { useThumbnails } from "../render/useThumbnails.ts";
+import { randomHash } from "../state/store.ts";
+
+interface Props {
+  readonly doc: ArtDocument;
+  readonly hash: string;
+  readonly selectedId: string | null;
+  readonly onAdopt: (doc: ArtDocument, hash: string) => void;
+  readonly onClose: () => void;
+}
+
+const CENTER = 4;
+const THUMB = 360;
+
+/** Names of the settings that differ, as "layer.param", for the tile tooltip. */
+function changes(a: ArtDocument, b: ArtDocument): string[] {
+  return b.layers.flatMap((l) => {
+    const before = a.layers.find((x) => x.id === l.id);
+    return Object.keys(l.params)
+      .filter((k) => JSON.stringify(l.params[k]) !== JSON.stringify(before?.params[k]))
+      .map((k) => `${l.id}.${k}`);
+  });
+}
+
+/**
+ * Apophysis-style mutation grid: the current piece in the middle, eight
+ * variations around it. Picking one makes it the new centre, so you can walk
+ * through the space of a piece by clicking.
+ */
+export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props) {
+  const [amount, setAmount] = useState(0.35);
+  // The slider updates instantly; the expensive grid follows once it settles.
+  const [settled, setSettled] = useState(amount);
+  useEffect(() => {
+    const t = setTimeout(() => setSettled(amount), 120);
+    return () => clearTimeout(t);
+  }, [amount]);
+  const [scope, setScope] = useState<"all" | "layer">("all");
+  const [reseed, setReseed] = useState(false);
+  const [seed, setSeed] = useState(randomHash);
+
+  const tiles = useMemo((): readonly ThumbJob[] => {
+    const layerScope = scope === "layer" && selectedId ? [selectedId] : undefined;
+    const variants = Array.from({ length: 8 }, (_, i): ThumbJob => ({
+      doc: mutateDocument(doc, (label) => stream(seed, `m${i}/${label}`), {
+        amount: settled,
+        ...(layerScope ? { layers: layerScope } : {}),
+      }),
+      hash: reseed ? stepHash(seed, i + 1) : hash,
+    }));
+    return [...variants.slice(0, CENTER), { doc, hash }, ...variants.slice(CENTER)];
+  }, [doc, hash, seed, settled, scope, selectedId, reseed]);
+  const { urls, fresh, busy, error } = useThumbnails(tiles, THUMB);
+
+  const pick = (i: number) => {
+    const t = tiles[i];
+    // Only adopt what is on screen: while a new batch renders the old images are stale.
+    if (!t || !fresh || amount !== settled) return;
+    if (i === CENTER) return onClose();
+    onAdopt(t.doc, t.hash);
+    setSeed(randomHash());
+  };
+
+  const dialogRef = useDialog<HTMLDivElement>((e) => {
+    if (e.key === "Escape") {
+      e.preventDefault();
+      return onClose();
+    }
+    if (isTypingTarget(e.target) || e.ctrlKey || e.metaKey || e.altKey) return;
+    const k = e.key.toLowerCase();
+    // Space and Enter keep their normal meaning on buttons and controls.
+    const onControl = e.target instanceof HTMLElement && e.target.matches("button, input, select");
+    if (k === "m") onClose();
+    else if (k === "r" || (k === " " && !onControl)) setSeed(randomHash());
+    else if (/^[1-9]$/.test(k)) pick(Number(k) - 1);
+    else return;
+    e.preventDefault();
+  });
+  const blur = (e: { currentTarget: HTMLElement }) => e.currentTarget.blur();
+
+  return (
+    <div
+      ref={dialogRef}
+      tabIndex={-1}
+      className="absolute inset-0 z-30 flex flex-col items-center gap-3 overflow-auto bg-zinc-950 p-4 outline-none"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Mutation grid"
+    >
+      <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-300">
+        <span className="font-semibold text-white">Mutate</span>
+        <label className="flex items-center gap-2">
+          Amount
+          <input
+            type="range"
+            min={0.05}
+            max={1}
+            step={0.05}
+            value={amount}
+            onChange={(e) => setAmount(Number(e.target.value))}
+            onPointerUp={blur}
+            aria-label="Mutation amount"
+          />
+          <span className="w-8 tabular-nums">{amount.toFixed(2)}</span>
+        </label>
+        <select
+          className="rounded bg-zinc-800 px-1 py-0.5"
+          value={scope}
+          onChange={(e) => {
+            setScope(e.target.value === "layer" ? "layer" : "all");
+            e.currentTarget.blur();
+          }}
+          aria-label="Layers to mutate"
+        >
+          <option value="all">All layers</option>
+          <option value="layer" disabled={!selectedId}>
+            Selected layer only
+          </option>
+        </select>
+        <label className="flex items-center gap-1" title="Give each variation its own seed as well">
+          <input
+            type="checkbox"
+            checked={reseed}
+            onChange={(e) => {
+              setReseed(e.target.checked);
+              e.currentTarget.blur();
+            }}
+          />
+          New seeds
+        </label>
+        <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" onClick={() => setSeed(randomHash())}>
+          Shuffle (R)
+        </button>
+        <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" onClick={onClose}>
+          Done (Esc)
+        </button>
+        <span className="min-w-16 text-zinc-500" aria-live="polite">
+          {error ?? (busy ? "rendering" : "")}
+        </span>
+      </div>
+      <div className="grid w-full max-w-[min(56rem,calc((100dvh-10rem)*0.75))] grid-cols-3 gap-3">
+        {tiles.map((t, i) => {
+          const diff = i === CENTER ? [] : changes(doc, t.doc);
+          const title =
+            i === CENTER
+              ? "Current piece (5 or Esc to keep)"
+              : diff.length
+                ? `${i + 1}: ${diff.slice(0, 6).join(", ")}${diff.length > 6 ? ` +${diff.length - 6}` : ""}`
+                : `${i + 1}: same settings${t.hash !== hash ? ", new seed" : ""}`;
+          return (
+            <button
+              type="button"
+              key={i}
+              onClick={() => pick(i)}
+              title={title}
+              aria-disabled={!fresh}
+              className={`group relative flex aspect-[3/4] items-center justify-center overflow-hidden rounded-lg bg-zinc-900 ring-1 transition hover:ring-2 hover:ring-sky-500 ${
+                i === CENTER ? "ring-2 ring-zinc-400" : "ring-zinc-800"
+              } ${fresh ? "" : "opacity-40"}`}
+            >
+              {urls[i] ? (
+                <img src={urls[i] ?? undefined} alt={title} className="max-h-full max-w-full object-contain" />
+              ) : (
+                <span className="text-xs text-zinc-600">...</span>
+              )}
+              <span className="absolute left-1.5 top-1 rounded bg-black/60 px-1 font-mono text-[10px] text-zinc-300">{i + 1}</span>
+            </button>
+          );
+        })}
+      </div>
+      <p className="text-[11px] text-zinc-500">
+        Click or press 1-9 to adopt a variation; it becomes the new centre. Locked settings never change.
+      </p>
+    </div>
+  );
+}

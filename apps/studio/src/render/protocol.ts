@@ -22,3 +22,21 @@ export type RenderResponse =
       readonly items: number;
     }
   | { readonly id: number; readonly ok: false; readonly error: string };
+
+export interface ThumbJob {
+  readonly doc: ArtDocument;
+  readonly hash: string;
+}
+
+export interface ThumbRequest {
+  readonly id: number;
+  readonly jobs: readonly ThumbJob[];
+  /** Long side in device pixels. */
+  readonly size: number;
+}
+
+/** One PNG per job, or null where that job failed to render. */
+export interface ThumbResponse {
+  readonly id: number;
+  readonly images: readonly (Blob | null)[];
+}

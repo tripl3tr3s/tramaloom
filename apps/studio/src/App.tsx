@@ -1,4 +1,4 @@
-import type { ParamSetting } from "@gridloom/core";
+import type { ArtDocument, ParamSetting } from "@gridloom/core";
 import { ENGINE_VERSION, starterDocument } from "@gridloom/core";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useShortcuts } from "./hooks/useShortcuts.ts";
@@ -9,12 +9,15 @@ import { parseDocument } from "./state/schema.ts";
 import { initialState, randomHash, reducer } from "./state/store.ts";
 import { DebugPanel } from "./ui/DebugPanel.tsx";
 import { LayerStack } from "./ui/LayerStack.tsx";
+import { Library } from "./ui/Library.tsx";
+import { MutationGrid } from "./ui/MutationGrid.tsx";
 import { ParamPanel } from "./ui/ParamPanel.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
   const [debug, setDebug] = useState(false);
+  const [overlay, setOverlay] = useState<"none" | "mutate" | "library">("none");
   const [toast, setToast] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -71,7 +74,10 @@ export function App() {
     }
   };
 
-  useShortcuts({
+  // Overlays handle their own keys; the studio's shortcuts pause while one is open.
+  useShortcuts(overlay !== "none" ? {} : {
+    m: () => setOverlay("mutate"),
+    l: () => setOverlay("library"),
     r: () => dispatch({ type: "setHash", hash: randomHash() }),
     ArrowLeft: () => dispatch({ type: "seedPrev" }),
     ArrowRight: () => dispatch({ type: "seedNext" }),
@@ -88,12 +94,18 @@ export function App() {
     "mod+y": () => dispatch({ type: "redo" }),
   });
 
+  const adopt = (doc: ArtDocument, hash: string) => dispatch({ type: "adopt", doc, hash });
+
+  // While a dialog is open, everything behind it is inert: no stray clicks or tab stops.
+  const behind = overlay !== "none";
+
   const selected = state.doc.layers.find((l) => l.id === state.selectedId);
   const onParam = (layerId: string, name: string, setting: ParamSetting, record: boolean) =>
     dispatch({ type: "setParam", layerId, name, setting, record });
 
   return (
     <div className="flex h-dvh flex-col bg-zinc-950 text-zinc-200">
+      <div className="contents" inert={behind}>
       <Toolbar
         name={state.doc.name}
         hash={state.hash}
@@ -119,9 +131,12 @@ export function App() {
         onImport={importFile}
         onCopyLink={() => copy(window.location.href, "Link copied")}
         onToggleDebug={() => setDebug((d) => !d)}
+        onMutate={() => setOverlay((o) => (o === "mutate" ? "none" : "mutate"))}
+        onLibrary={() => setOverlay((o) => (o === "library" ? "none" : "library"))}
       />
+      </div>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <aside className="order-2 max-h-48 overflow-y-auto border-zinc-800 bg-zinc-900/60 md:order-1 md:max-h-none md:w-60 md:border-r">
+        <aside inert={behind} className="order-2 max-h-48 overflow-y-auto border-zinc-800 bg-zinc-900/60 md:order-1 md:max-h-none md:w-60 md:border-r">
           <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} />
         </aside>
         <main
@@ -133,11 +148,33 @@ export function App() {
           {info.error && !debug && (
             <div className="absolute bottom-3 left-3 rounded bg-red-950/90 px-2 py-1 text-xs text-red-300">{info.error}</div>
           )}
+          {overlay === "mutate" && (
+            <MutationGrid
+              doc={state.doc}
+              hash={state.hash}
+              selectedId={state.selectedId}
+              onAdopt={adopt}
+              onClose={() => setOverlay("none")}
+            />
+          )}
+          {overlay === "library" && (
+            <Library
+              doc={state.doc}
+              hash={state.hash}
+              onLoad={(doc, hash) => {
+                adopt(doc, hash);
+                setOverlay("none");
+                notify(`Loaded ${doc.name}`);
+              }}
+              onClose={() => setOverlay("none")}
+              notify={notify}
+            />
+          )}
           {toast && (
-            <div className="absolute top-3 rounded-full bg-zinc-800/95 px-3 py-1 text-xs text-zinc-200 shadow">{toast}</div>
+            <div className="absolute top-3 z-40 rounded-full bg-zinc-800/95 px-3 py-1 text-xs text-zinc-200 shadow">{toast}</div>
           )}
         </main>
-        <aside className="order-3 max-h-[40vh] overflow-y-auto border-zinc-800 bg-zinc-900/60 md:max-h-none md:w-72 md:border-l">
+        <aside inert={behind} className="order-3 max-h-[40vh] overflow-y-auto border-zinc-800 bg-zinc-900/60 md:max-h-none md:w-72 md:border-l">
           <ParamPanel
             layer={selected}
             resolved={info.resolved.find((r) => r.id === state.selectedId)}

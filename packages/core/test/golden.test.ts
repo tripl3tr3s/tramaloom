@@ -54,6 +54,28 @@ const DOCS: Record<string, ArtDocument> = {
     params: { motif: { value: "mixed" }, rotation: { value: "noise" }, colorRule: { value: "zone" } },
   }),
   tilesChecker: withLayer({ id: "t", module: "tiles", enabled: true, params: { motif: { value: "triangle" }, rotation: { value: "checker" } } }),
+  symmetryQuad: {
+    ...starterDocument,
+    layers: [
+      ...starterDocument.layers,
+      { id: "t", module: "tiles", enabled: true, params: { motif: { value: "mixed" } } },
+      { id: "s", module: "symmetry", enabled: true, params: { mode: { value: "quad" } } },
+    ],
+  },
+  symmetryRotate4: {
+    ...starterDocument,
+    layers: [
+      ...starterDocument.layers,
+      { id: "c", module: "circuits", enabled: true, params: {} },
+      { id: "s", module: "symmetry", enabled: true, params: { mode: { value: "rotate-4" }, source: { value: "second" } } },
+    ],
+  },
+  post: withLayer({
+    id: "p",
+    module: "post",
+    enabled: true,
+    params: { jitter: { value: 0.4 }, border: { value: true }, grain: { value: 0.05 }, grainTone: { value: "light" } },
+  }),
   circuitsTreeMixed: withLayer({
     id: "c",
     module: "circuits",

@@ -34,6 +34,21 @@ function insidePolygon(poly: PolylineItem, x: number, y: number): boolean {
   return inside;
 }
 
+/** Bounding box in one pass (spreading huge arrays into Math.min can overflow the stack). */
+export function extent(pts: readonly (readonly [number, number])[]): readonly [number, number, number, number] {
+  let x0 = Infinity;
+  let y0 = Infinity;
+  let x1 = -Infinity;
+  let y1 = -Infinity;
+  for (const [x, y] of pts) {
+    if (x < x0) x0 = x;
+    if (y < y0) y0 = y;
+    if (x > x1) x1 = x;
+    if (y > y1) y1 = y;
+  }
+  return [x0, y0, x1, y1];
+}
+
 const contains = (it: Item, x: number, y: number): boolean => {
   switch (it.type) {
     case "rect":
@@ -45,6 +60,8 @@ const contains = (it: Item, x: number, y: number): boolean => {
     }
     case "polyline":
       return it.closed === true && insidePolygon(it, x, y);
+    case "dots":
+      return false; // texture, never a surface to contrast against
   }
 };
 
@@ -54,11 +71,9 @@ const bounds = (it: Item): readonly [number, number, number, number] => {
       return [it.x, it.y, it.x + it.w, it.y + it.h];
     case "circle":
       return [it.cx - it.r, it.cy - it.r, it.cx + it.r, it.cy + it.r];
-    case "polyline": {
-      const xs = it.points.map((p) => p[0]);
-      const ys = it.points.map((p) => p[1]);
-      return [Math.min(...xs), Math.min(...ys), Math.max(...xs), Math.max(...ys)];
-    }
+    case "polyline":
+    case "dots":
+      return extent(it.points);
   }
 };
 

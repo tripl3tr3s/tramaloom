@@ -13,6 +13,8 @@ export { cellFillModule } from "./modules/cellFill.ts";
 export { circuitsModule } from "./modules/circuits.ts";
 export { insetsModule } from "./modules/insets.ts";
 export { tilesModule } from "./modules/tiles.ts";
+export { symmetryModule } from "./modules/symmetry.ts";
+export { postModule } from "./modules/post.ts";
 export { COLOR_RULES, colorUnder, luminance, pickColor } from "./modules/color.ts";
 export type { ColorRule } from "./modules/color.ts";
 export * from "./palettes/palettes.ts";

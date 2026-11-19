@@ -7,6 +7,7 @@ export interface Ctx2D {
   lineWidth: number;
   lineCap: string;
   lineJoin: string;
+  globalAlpha: number;
   save(): void;
   restore(): void;
   scale(x: number, y: number): void;
@@ -39,6 +40,8 @@ function roundedRect(ctx: Ctx2D, x: number, y: number, w: number, h: number, r: 
 }
 
 function paint(ctx: Ctx2D, it: Item): void {
+  const o = it.opacity;
+  ctx.globalAlpha = o === undefined || !Number.isFinite(o) ? 1 : Math.min(1, Math.max(0, o));
   if (it.fill) {
     ctx.fillStyle = it.fill;
     ctx.fill();
@@ -64,6 +67,13 @@ function drawItem(ctx: Ctx2D, it: Item, bleed: number): void {
     case "circle":
       ctx.beginPath();
       ctx.arc(it.cx, it.cy, it.r, 0, Math.PI * 2);
+      break;
+    case "dots":
+      ctx.beginPath();
+      it.points.forEach(([x, y]) => {
+        ctx.moveTo(x + it.r, y);
+        ctx.arc(x, y, it.r, 0, Math.PI * 2);
+      });
       break;
     case "polyline": {
       ctx.beginPath();

@@ -6,7 +6,11 @@ const esc = (s: string): string => s.replace(/[<>&"]/g, "");
 function paintAttrs(p: Paint): string {
   const fill = `fill="${p.fill ? esc(p.fill) : "none"}"`;
   const stroke = p.stroke ? ` stroke="${esc(p.stroke)}" stroke-width="${n(p.strokeWidth ?? 0.002)}"` : "";
-  return fill + stroke;
+  // fill-opacity/stroke-opacity, not group opacity, to match canvas globalAlpha per fill and stroke.
+  const o = p.opacity;
+  const a = o === undefined || !Number.isFinite(o) || o >= 1 ? "" : n(Math.max(0, o));
+  const opacity = a ? `${p.fill ? ` fill-opacity="${a}"` : ""}${p.stroke ? ` stroke-opacity="${a}"` : ""}` : "";
+  return fill + stroke + opacity;
 }
 
 function itemToSvg(it: Item): string {
@@ -18,6 +22,11 @@ function itemToSvg(it: Item): string {
     }
     case "circle":
       return `<circle cx="${n(it.cx)}" cy="${n(it.cy)}" r="${n(it.r)}" ${paintAttrs(it)}/>`;
+    case "dots": {
+      const r = n(it.r);
+      const d = it.points.map(([x, y]) => `M${n(x - it.r)} ${n(y)}a${r} ${r} 0 1 0 ${n(2 * it.r)} 0a${r} ${r} 0 1 0 ${n(-2 * it.r)} 0`).join("");
+      return `<path d="${d}" ${paintAttrs(it)}/>`;
+    }
     case "polyline": {
       const pts = it.points.map(([x, y]) => `${n(x)},${n(y)}`).join(" ");
       const tag = it.closed ? "polygon" : "polyline";

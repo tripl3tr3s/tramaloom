@@ -7,6 +7,8 @@ export interface Paint {
   readonly fill?: string;
   readonly stroke?: string;
   readonly strokeWidth?: number;
+  /** 0..1, applies to fill and stroke together. Omitted means opaque. */
+  readonly opacity?: number;
 }
 
 export interface RectItem extends Paint {
@@ -29,7 +31,14 @@ export interface PolylineItem extends Paint {
   readonly closed?: boolean;
 }
 
-export type Item = RectItem | CircleItem | PolylineItem;
+/** Many same-sized, same-paint dots in one item (grain, stipple). Drawn as a single path. */
+export interface DotsItem extends Paint {
+  readonly type: "dots";
+  readonly points: readonly (readonly [number, number])[];
+  readonly r: number;
+}
+
+export type Item = RectItem | CircleItem | PolylineItem | DotsItem;
 
 export interface Box {
   readonly x: number;

@@ -18,7 +18,8 @@ const chip = (on: boolean): string =>
   `rounded px-1.5 py-0.5 text-[10px] uppercase tracking-wide ${on ? "bg-sky-600 text-white" : "bg-zinc-800 text-zinc-400 hover:text-zinc-200"}`;
 
 function format(v: ParamValue | undefined): string {
-  if (typeof v === "number") return Number.isInteger(v) ? String(v) : v.toFixed(3);
+  // Up to 4 decimals, trailing zeros dropped, so small steps like 0.0012 stay visible.
+  if (typeof v === "number") return Number.isInteger(v) ? String(v) : String(Number(v.toFixed(4)));
   return String(v ?? "");
 }
 

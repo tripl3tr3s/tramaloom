@@ -4,6 +4,8 @@ import { circuitsModule } from "./circuits.ts";
 import { gridModule } from "./grid.ts";
 import { insetsModule } from "./insets.ts";
 import { paletteModule } from "./palette.ts";
+import { postModule } from "./post.ts";
+import { symmetryModule } from "./symmetry.ts";
 import { tilesModule } from "./tiles.ts";
 import type { ModuleDef } from "./types.ts";
 
@@ -24,4 +26,6 @@ export const defaultRegistry: Registry = {
   insets: asDef(insetsModule),
   tiles: asDef(tilesModule),
   circuits: asDef(circuitsModule),
+  symmetry: asDef(symmetryModule),
+  post: asDef(postModule),
 };

@@ -2,6 +2,7 @@ import { int } from "../prng/distributions.ts";
 import type { Rng } from "../prng/prng.ts";
 import type { Item, Lattice, Scene } from "../scene.ts";
 import { addItems } from "../scene.ts";
+import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -317,28 +318,6 @@ function shapeCorners(pts: readonly Pt[], kind: "sharp" | "chamfer" | "round", s
   });
 }
 
-function luminance(hex: string): number {
-  const m = /^#([0-9a-f]{2})([0-9a-f]{2})([0-9a-f]{2})$/i.exec(hex);
-  if (!m) return 0.5;
-  // Gamma 2 instead of the sRGB curve: only + and * so every JS engine agrees bit for bit.
-  const ch = (s: string | undefined) => {
-    const c = parseInt(s ?? "0", 16) / 255;
-    return c * c;
-  };
-  return 0.2126 * ch(m[1]) + 0.7152 * ch(m[2]) + 0.0722 * ch(m[3]);
-}
-
-/** Fill of the topmost filled rect or circle under a point, else the background. */
-function colorUnder(scene: Scene, [x, y]: Pt): string {
-  for (let k = scene.items.length - 1; k >= 0; k--) {
-    const it = scene.items[k];
-    if (!it?.fill) continue;
-    if (it.type === "rect" && x >= it.x && x <= it.x + it.w && y >= it.y && y <= it.y + it.h) return it.fill;
-    if (it.type === "circle" && (x - it.cx) ** 2 + (y - it.cy) ** 2 <= it.r * it.r) return it.fill;
-  }
-  return scene.background;
-}
-
 export const circuitsModule = defineModule({
   id: "circuits",
   label: "Circuits",
@@ -372,7 +351,7 @@ export const circuitsModule = defineModule({
     endTerminal: { kind: "enum", label: "End terminal", options: TERMINALS, default: "ring" },
     terminalSize: { kind: "number", label: "Terminal size", min: 0.05, max: 0.45, step: 0.01, default: 0.25 },
     junctions: { kind: "bool", label: "Junction dots", default: false, help: "tree only" },
-    colorRule: { kind: "enum", label: "Color", options: ["contrast", "zone", "palette", "single"], default: "contrast" },
+    colorRule: { kind: "enum", label: "Color", options: COLOR_RULES, default: "contrast" },
     wireColor: { kind: "color", label: "Single color", default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
@@ -380,34 +359,13 @@ export const circuitsModule = defineModule({
     const busy = new Uint8Array(g.nx * g.ny);
     const wires = v.style === "walk" ? routeWalks(g, busy, v, ctx.rng) : routeTree(g, busy, v, ctx.rng("tree"));
 
-    const pal = scene.palette;
-    const colors = pal?.colors.length ? pal.colors : ["#f4f1ea", "#111111"];
+    const under = colorLookup(scene);
     const groupColor = new Map<number, string>();
     const colorFor = (group: number, at: Pt): string => {
       const cached = groupColor.get(group);
       if (cached) return cached;
       // One draw per group regardless of rule.
-      const u = ctx.rng(`color/${group}`)();
-      const choose = (xs: readonly string[]) => xs[Math.floor(u * xs.length)] ?? colors[0] ?? "#000000";
-      let c: string;
-      switch (v.colorRule) {
-        case "single":
-          c = v.wireColor;
-          break;
-        case "palette":
-          c = choose(colors);
-          break;
-        case "zone":
-          c = choose(pal ? (pal.zoneColors[pal.zoneAt(at[0], at[1])] ?? colors) : colors);
-          break;
-        case "contrast": {
-          const base = luminance(colorUnder(scene, at));
-          const far = colors.filter((x) => Math.abs(luminance(x) - base) >= 0.3);
-          const best = [...colors].sort((a, b) => Math.abs(luminance(b) - base) - Math.abs(luminance(a) - base));
-          c = far.length ? choose(far) : (best[0] ?? "#000000");
-          break;
-        }
-      }
+      const c = pickColor(scene, v.colorRule, ctx.rng(`color/${group}`)(), at, v.wireColor, under);
       groupColor.set(group, c);
       return c;
     };

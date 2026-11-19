@@ -44,6 +44,16 @@ const DOCS: Record<string, ArtDocument> = {
     "grid",
     { mask: { value: "circle" }, subdivDepth: { value: 2 }, fit: { value: "stretch" }, rows: { value: 20 } },
   ),
+  insets: withLayer({ id: "i", module: "insets", enabled: true, params: { shape: { value: "mixed" }, roundness: { value: 0.2 } } }),
+  insetsStroke: withLayer({ id: "i", module: "insets", enabled: true, params: { style: { value: "stroke" }, cells: { value: "large" } } }),
+  tilesArcs: withLayer({ id: "t", module: "tiles", enabled: true, params: { lines: { value: 3 } } }),
+  tilesMixed: withLayer({
+    id: "t",
+    module: "tiles",
+    enabled: true,
+    params: { motif: { value: "mixed" }, rotation: { value: "noise" }, colorRule: { value: "zone" } },
+  }),
+  tilesChecker: withLayer({ id: "t", module: "tiles", enabled: true, params: { motif: { value: "triangle" }, rotation: { value: "checker" } } }),
   circuitsTreeMixed: withLayer({
     id: "c",
     module: "circuits",

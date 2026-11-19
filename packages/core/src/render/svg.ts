@@ -13,7 +13,8 @@ function itemToSvg(it: Item): string {
   switch (it.type) {
     case "rect": {
       const r = it.r ? ` rx="${n(it.r)}"` : "";
-      return `<rect x="${n(it.x)}" y="${n(it.y)}" width="${n(it.w)}" height="${n(it.h)}"${r} ${paintAttrs(it)}/>`;
+      const crisp = !it.r && !it.stroke ? ` shape-rendering="crispEdges"` : "";
+      return `<rect${crisp} x="${n(it.x)}" y="${n(it.y)}" width="${n(it.w)}" height="${n(it.h)}"${r} ${paintAttrs(it)}/>`;
     }
     case "circle":
       return `<circle cx="${n(it.cx)}" cy="${n(it.cy)}" r="${n(it.r)}" ${paintAttrs(it)}/>`;

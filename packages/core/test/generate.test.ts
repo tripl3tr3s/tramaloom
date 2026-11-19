@@ -87,3 +87,10 @@ describe("source hygiene", () => {
     expect(offenders).toEqual([]);
   });
 });
+
+describe("registry lookup", () => {
+  it("treats Object.prototype names as unknown modules", () => {
+    const bad: ArtDocument = { ...starterDocument, layers: [{ id: "x", module: "constructor", enabled: true, params: {} }] };
+    expect(() => generate(bad, A)).toThrow(/Unknown module/);
+  });
+});

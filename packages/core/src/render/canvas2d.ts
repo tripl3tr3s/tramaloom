@@ -50,11 +50,17 @@ function paint(ctx: Ctx2D, it: Item): void {
   }
 }
 
-function drawItem(ctx: Ctx2D, it: Item): void {
+/**
+ * `bleed` is half a device pixel in scene units. Square, unstroked rects are
+ * grown by it so flush neighbours do not show anti-aliasing seams.
+ */
+function drawItem(ctx: Ctx2D, it: Item, bleed: number): void {
   switch (it.type) {
-    case "rect":
-      roundedRect(ctx, it.x, it.y, it.w, it.h, it.r ?? 0);
+    case "rect": {
+      const e = !it.r && !it.stroke ? bleed : 0;
+      roundedRect(ctx, it.x - e, it.y - e, it.w + 2 * e, it.h + 2 * e, it.r ?? 0);
       break;
+    }
     case "circle":
       ctx.beginPath();
       ctx.arc(it.cx, it.cy, it.r, 0, Math.PI * 2);
@@ -84,7 +90,8 @@ export function drawScene(ctx: Ctx2D, scene: Scene, pxWidth: number, pxHeight: n
   ctx.fillStyle = scene.background;
   ctx.fill();
   ctx.clip();
-  scene.items.forEach((it) => drawItem(ctx, it));
+  const bleed = 0.5 / s;
+  scene.items.forEach((it) => drawItem(ctx, it, bleed));
   ctx.restore();
 }
 

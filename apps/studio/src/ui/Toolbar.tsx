@@ -1,0 +1,110 @@
+import { normaliseHash } from "@gridloom/core";
+import { useEffect, useState } from "react";
+
+interface Props {
+  readonly name: string;
+  readonly hash: string;
+  readonly canUndo: boolean;
+  readonly canRedo: boolean;
+  readonly canPrev: boolean;
+  readonly onRename: (name: string) => void;
+  readonly onHash: (hash: string) => void;
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
+  readonly onReroll: () => void;
+  readonly onUndo: () => void;
+  readonly onRedo: () => void;
+  readonly onExportPNG: (longSide: number) => void;
+  readonly onExportSVG: () => void;
+  readonly onExportJSON: () => void;
+  readonly onImport: (file: File) => void;
+  readonly onCopyLink: () => void;
+  readonly onToggleDebug: () => void;
+}
+
+const btn =
+  "rounded px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent";
+const sep = <span className="mx-1 h-4 w-px bg-zinc-700" />;
+
+export function Toolbar(p: Props) {
+  const [draft, setDraft] = useState(p.hash);
+  useEffect(() => setDraft(p.hash), [p.hash]);
+  const commitHash = () => {
+    try {
+      p.onHash(normaliseHash(draft));
+    } catch {
+      setDraft(p.hash);
+    }
+  };
+
+  return (
+    <header className="flex flex-wrap items-center gap-1 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5">
+      <span className="mr-2 text-sm font-semibold tracking-tight text-white">Gridloom</span>
+      <input
+        className="w-36 rounded bg-transparent px-1.5 py-0.5 text-xs text-zinc-300 outline-none hover:bg-zinc-800 focus:bg-zinc-800"
+        value={p.name}
+        onChange={(e) => p.onRename(e.target.value)}
+        aria-label="Piece name"
+      />
+      {sep}
+      <button type="button" className={btn} onClick={p.onPrev} disabled={!p.canPrev} title="Previous seed (Left)">
+        ←
+      </button>
+      <button type="button" className={btn} onClick={p.onReroll} title="New random seed (R)">
+        Reroll
+      </button>
+      <button type="button" className={btn} onClick={p.onNext} title="Next seed (Right)">
+        →
+      </button>
+      <input
+        className="w-44 rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400 outline-none focus:text-zinc-100 focus:ring-1 focus:ring-sky-500 lg:w-72"
+        value={draft}
+        onChange={(e) => setDraft(e.target.value)}
+        onBlur={commitHash}
+        onKeyDown={(e) => e.key === "Enter" && commitHash()}
+        spellCheck={false}
+        aria-label="Hash"
+      />
+      {sep}
+      <button type="button" className={btn} onClick={p.onUndo} disabled={!p.canUndo} title="Undo (Ctrl+Z)">
+        Undo
+      </button>
+      <button type="button" className={btn} onClick={p.onRedo} disabled={!p.canRedo} title="Redo (Ctrl+Shift+Z)">
+        Redo
+      </button>
+      <div className="flex-1" />
+      <button type="button" className={btn} onClick={() => p.onExportPNG(2000)} title="PNG 2000px (S)">
+        PNG
+      </button>
+      <button type="button" className={btn} onClick={() => p.onExportPNG(4000)} title="PNG 4000px (Shift+S)">
+        PNG 4k
+      </button>
+      <button type="button" className={btn} onClick={p.onExportSVG}>
+        SVG
+      </button>
+      <button type="button" className={btn} onClick={p.onExportJSON} title="Save the document as JSON">
+        Save
+      </button>
+      <label className={`${btn} cursor-pointer`} title="Open a .gridloom.json document">
+        Open
+        <input
+          type="file"
+          accept=".json,application/json"
+          className="hidden"
+          onChange={(e) => {
+            const f = e.target.files?.[0];
+            if (f) p.onImport(f);
+            e.target.value = "";
+          }}
+        />
+      </label>
+      {sep}
+      <button type="button" className={btn} onClick={p.onCopyLink} title="Copy shareable link">
+        Link
+      </button>
+      <button type="button" className={btn} onClick={p.onToggleDebug} title="Debug panel (G)">
+        Debug
+      </button>
+    </header>
+  );
+}

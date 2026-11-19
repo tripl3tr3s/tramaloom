@@ -2,7 +2,7 @@ import { seedFromHash, streamFromSeed } from "./prng/prng.ts";
 import type { ParamSetting, ParamValue } from "./params/params.ts";
 import { resolveParam } from "./params/params.ts";
 import type { Registry } from "./modules/registry.ts";
-import { defaultRegistry } from "./modules/registry.ts";
+import { defaultRegistry, getModule } from "./modules/registry.ts";
 import type { Scene } from "./scene.ts";
 import { emptyScene } from "./scene.ts";
 
@@ -43,7 +43,7 @@ export function resolveDocument(
   return doc.layers
     .filter((l) => l.enabled)
     .map((layer) => {
-      const def = registry[layer.module];
+      const def = getModule(registry, layer.module);
       if (!def) throw new Error(`Unknown module "${layer.module}" in layer "${layer.id}"`);
       const values = Object.fromEntries(
         Object.entries(def.params).map(([name, spec]) => [
@@ -59,7 +59,7 @@ export function generate(doc: ArtDocument, hash: string, registry: Registry = de
   const seed = seedFromHash(hash);
   const resolved = resolveDocument(doc, hash, registry);
   const scene = resolved.reduce<Scene>((acc, layer) => {
-    const def = registry[layer.module];
+    const def = getModule(registry, layer.module);
     if (!def) return acc;
     return def.apply(acc, layer.values, {
       rng: (label) => streamFromSeed(seed, `${layer.id}/draw/${label}`),

@@ -6,13 +6,30 @@ MIT licensed. Static web app, no backend.
 
 ## Status
 
-Phase 1 (core engine) is done: PRNG and sub-streams, the param system (fixed or variable), the display list, the canvas, palette, grid and cell fill modules, and the SVG and Canvas2D renderers.
+- Phase 1 (core engine), done: PRNG and sub-streams, the param system (fixed or variable), the display list, the canvas, palette, grid and cell fill modules, and the SVG and Canvas2D renderers.
+- Phase 2 (studio MVP), done: a layer stack, controls generated from each module's params (vary and lock per param), rendering in a Web Worker, document and hash in the URL, PNG/SVG/JSON export, JSON import, undo/redo, keyboard shortcuts, and an offline PWA.
+
+## Shortcuts
+
+| Key | Does |
+|---|---|
+| `R` | new random seed |
+| Left / Right | previous / next seed (the trail is remembered) |
+| `C` | copy hash |
+| `S` / `Shift+S` | PNG at 2000 / 4000 px (re-rendered, never upscaled) |
+| `G` | debug panel (hash, timing, resolved values) |
+| `F` | fullscreen viewport |
+| `Ctrl+Z` / `Ctrl+Shift+Z` | undo / redo |
+
+## Deploy
+
+Push to `main`. The GitHub Actions workflow typechecks, tests, builds `apps/studio` and publishes it to GitHub Pages. In the repo settings, set Pages to "GitHub Actions" once. There is no server, database or secret to maintain. Renovate (if installed on the repo) batches dependency updates monthly.
 
 ## Layout
 
 ```
 packages/core   pure TS, zero runtime deps; ships inside mint exports
-apps/studio     (phase 2) Vite + React UI
+apps/studio     Vite + React 19 + Tailwind 4 static app (PWA)
 ```
 
 ## Core concepts
@@ -34,6 +51,7 @@ apps/studio     (phase 2) Vite + React UI
 pnpm install
 pnpm -r test
 pnpm -r typecheck
+pnpm build && pnpm preview                   # production build served locally
 node packages/core/scripts/render.ts 9 out   # SVG previews of the starter document
 ```
 

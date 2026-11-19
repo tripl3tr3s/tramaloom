@@ -11,6 +11,7 @@ MIT licensed. Static web app, no backend.
 - Phase 3 (modules), done: Insets, Tiles (Truchet), Circuits, Symmetry and Post, plus engine versioning for share links.
 - Phase 4 (Apophysis features), done: mutation grid, preset library, six original built-in presets.
 - Phase 5 (long-form), done: traits with bins, rarity editing, census against the settings' targets, contact sheet, batch export, and a cross-browser determinism check.
+- Phase 6 (mint export), self-hosted done: one self-contained `index.html` per piece. Platform adapters come next, each written against that platform's current docs.
 
 ## Shortcuts
 
@@ -45,6 +46,19 @@ If you plan to invite other people, choose the final domain first, so their libr
 4. Look at many outputs on the contact sheet, then pick favourite seeds.
 5. Freeze the document before any mint or public sharing, and export with Batch (PNGs, manifest with seeds and traits, and the document).
 
+## Self-hosted release (Edition > Mint export)
+
+Exports one file named `index.html` (about 40 KB) with the player, the document frozen as it is, and a header documenting the seed format, traits and weights, licences and the suggested capture size. It follows a minimal contract that most tools understand:
+
+- **Seed in:** `?hash=` (exactly 64 hex, optional `0x`), or `#hash=`. Without one, a random seed is chosen and written into the address bar. Anything else is rejected, never padded: `window.gridloomError` is set and a `genart:error` event fires.
+- **Size:** `?width=` or `?height=` fixes that side in pixels and the other follows the aspect; both together fit the piece inside that box. Without them it fits the window, and resizes redraw the same piece. Capped at 8192 px a side and 16.7 megapixels so every current browser can draw it.
+- **Features out:** `window.$features`, computed from the hash before anything is drawn.
+- **Done:** `window.rendered` (the canvas) and a `genart:done` event, once per seed, when its frame is complete.
+- **Entry point:** `window.render(hash)`, and `window.gridloom.svg()` for the same piece as SVG.
+- **Offline:** a Content-Security-Policy blocks every network request. The e2e test opens the file with the network disabled and checks that features and the display list match the studio byte for byte, plus an A-B-A render, the error signal, sizing, and non-ASCII names.
+
+Host it somewhere permanent (IPFS with a pinning service you pay for, or Arweave); a personal domain is mortal. Freeze the rarity table before exporting.
+
 ## Share links and engine versions
 
 A link stores the settings and the seed, not the drawing code. Links carry `e=<engine>`; if a module's output ever changes on purpose, `ENGINE_VERSION` in `packages/core/src/version.ts` is bumped and older links show a notice. `packages/core/test/golden.test.ts` fails whenever an existing module draws differently, so this cannot happen by accident.
@@ -56,8 +70,9 @@ Push to `main`. The GitHub Actions workflow typechecks, tests, builds `apps/stud
 ## Layout
 
 ```
-packages/core   pure TS, zero runtime deps; ships inside mint exports
-apps/studio     Vite + React 19 + Tailwind 4 static app (PWA)
+packages/core     pure TS, zero runtime deps; ships inside mint exports
+packages/runtime  the player for exported pieces (built to one IIFE) and the HTML assembler
+apps/studio       Vite + React 19 + Tailwind 4 static app (PWA)
 ```
 
 ## Core concepts

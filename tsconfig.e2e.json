@@ -4,5 +4,5 @@
     "lib": ["ES2022", "DOM"],
     "types": ["node"]
   },
-  "include": ["e2e/**/*.ts", "playwright.config.ts", "apps/studio/src/check.ts"]
+  "include": ["e2e/**/*.ts", "playwright.config.ts", "apps/studio/src/check.ts", "packages/runtime/src/runtime.ts"]
 }

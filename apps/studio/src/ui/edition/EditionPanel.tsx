@@ -4,6 +4,7 @@ import { isTypingTarget, useDialog } from "../../hooks/useDialog.ts";
 import type { Action } from "../../state/store.ts";
 import { BatchTab } from "./BatchTab.tsx";
 import { CensusTab } from "./CensusTab.tsx";
+import { MintTab } from "./MintTab.tsx";
 import { SheetTab } from "./SheetTab.tsx";
 import { TraitsTab } from "./TraitsTab.tsx";
 
@@ -12,6 +13,7 @@ const TABS = [
   ["census", "Census"],
   ["sheet", "Contact sheet"],
   ["batch", "Batch export"],
+  ["mint", "Mint export"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -117,6 +119,7 @@ export function EditionPanel({ doc, hash, dispatch, onClose, notify }: Props) {
               />
             )}
             {id === "batch" && <BatchTab doc={doc} hash={hash} notify={notify} onBusy={onBusy} />}
+            {id === "mint" && <MintTab doc={doc} hash={hash} notify={notify} />}
           </div>
         ) : null,
       )}

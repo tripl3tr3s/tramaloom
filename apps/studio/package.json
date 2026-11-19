@@ -5,14 +5,15 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "tsc -p . && vite build",
+    "dev": "pnpm --filter @gridloom/runtime build && vite",
+    "build": "pnpm --filter @gridloom/runtime build && tsc -p . && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -p ."
   },
   "dependencies": {
     "@gridloom/core": "workspace:*",
+    "@gridloom/runtime": "workspace:*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.6.7"

@@ -25,6 +25,8 @@ jobs:
           node-version: lts/*
           cache: pnpm
       - run: pnpm install --frozen-lockfile
+      # The studio embeds the built player, and its safety test reads the bundle.
+      - run: pnpm --filter @gridloom/runtime build
       - run: pnpm typecheck
       - run: pnpm -r test
       - run: pnpm --filter @gridloom/studio build

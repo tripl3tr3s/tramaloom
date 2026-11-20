@@ -10,7 +10,7 @@ const LEVELS = 8;
 export const postModule = defineModule({
   id: "post",
   label: "Post",
-  description: "Finishing: hand-made jitter on everything below, an optional border, and film grain on top.",
+  description: "Finishing: hand-made jitter on everything drawn so far, an optional border, and film grain on top.",
   params: {
     jitter: {
       kind: "number",

@@ -55,7 +55,7 @@ export const symmetryModule = defineModule({
   id: "symmetry",
   label: "Symmetry",
   description:
-    "Rebuilds the shapes drawn below it from one half or quarter, mirrored or rotated. Layers above stay free and still see the original grid.",
+    "Mirrors or rotates everything the layers above it in the stack have drawn, rebuilt from one half or quarter.",
   params: {
     mode: {
       kind: "enum",

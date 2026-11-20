@@ -2,6 +2,7 @@ import type { ArtDocument, Layer } from "@gridloom/core";
 import { defaultRegistry, getModule } from "@gridloom/core";
 import type { DragEvent } from "react";
 import { useState } from "react";
+import { needsGrid } from "../state/layerOrder.ts";
 import { MAX_LAYERS } from "../state/limits.ts";
 import type { Action } from "../state/store.ts";
 import { CopyIcon, DownIcon, EyeIcon, EyeOffIcon, GripIcon, PlusIcon, TrashIcon, UpIcon } from "./icons.tsx";
@@ -146,6 +147,11 @@ export function LayerStack({ doc, selectedId, dispatch }: Props) {
                 }}
               >
                 {name}
+                {needsGrid(doc.layers, i) && (
+                  <span className="ml-1.5 inline-grid size-3.5 place-items-center rounded-full bg-amber-500/20 align-[-1px] text-[9px] font-bold text-amber-300" title="Draws nothing: needs a Grid layer above it">
+                    !<span className="sr-only">, draws nothing: needs a Grid layer above it</span>
+                  </span>
+                )}
               </button>
               {!isCanvas && (
                 <span className={`flex items-center ${selected ? "" : "opacity-0 group-hover:opacity-100 group-focus-within:opacity-100"}`}>

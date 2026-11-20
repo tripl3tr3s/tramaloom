@@ -1,5 +1,6 @@
 import type { ArtDocument, Layer, ParamSetting, TraitDef } from "@gridloom/core";
 import { stepHash } from "@gridloom/core";
+import { insertIndex } from "./layerOrder.ts";
 import { MAX_LAYERS } from "./limits.ts";
 
 const HISTORY_LIMIT = 100;
@@ -149,7 +150,10 @@ export function reducer(s: StudioState, a: Action): StudioState {
     case "addLayer": {
       if (s.doc.layers.length >= MAX_LAYERS) return s;
       const layer: Layer = { id: freshId(s.doc, a.module), module: a.module, enabled: true, params: {} };
-      return { ...commit(s, { ...s.doc, layers: [...s.doc.layers, layer] }), selectedId: layer.id };
+      // Where it belongs, not simply last: a grid added after its drawing layers would leave them blank.
+      const at = insertIndex(s.doc.layers, a.module);
+      const layers = [...s.doc.layers.slice(0, at), layer, ...s.doc.layers.slice(at)];
+      return { ...commit(s, { ...s.doc, layers }), selectedId: layer.id };
     }
     case "removeLayer": {
       const target = s.doc.layers.find((l) => l.id === a.layerId);

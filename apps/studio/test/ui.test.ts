@@ -2,6 +2,7 @@ import { starterDocument } from "@gridloom/core";
 import { describe, expect, it } from "vitest";
 import type { ParamSpec } from "@gridloom/core";
 import { MAX_FAVORITES, parseFavorites, toggleFavorite } from "../src/state/favorites.ts";
+import { insertIndex, needsGrid } from "../src/state/layerOrder.ts";
 import { initialState, reducer } from "../src/state/store.ts";
 import { groupParams, isDefaultSetting, weightShares } from "../src/ui/params.ts";
 import { SHORTCUT_GROUPS } from "../src/ui/shortcuts.ts";
@@ -190,5 +191,35 @@ describe("weightShares", () => {
 
   it("is all zero when nothing can be drawn", () => {
     expect(weightShares(["a", "b"], { a: 0 })).toEqual([0, 0]);
+  });
+});
+
+describe("layer order help", () => {
+  const L = (id: string, module: string, enabled = true) => ({ id, module, enabled, params: {} });
+  const doc = (...layers: ReturnType<typeof L>[]) => ({ version: 1 as const, name: "t", layers });
+
+  it("adds grid and palette above drawing layers, post and symmetry at the end", () => {
+    const d = doc(L("canvas", "canvas"), L("tiles", "tiles"), L("post", "post"));
+    expect(insertIndex(d.layers, "grid")).toBe(1);
+    expect(insertIndex(d.layers, "palette")).toBe(1);
+    expect(insertIndex(d.layers, "maze")).toBe(2);
+    expect(insertIndex(d.layers, "symmetry")).toBe(2);
+    expect(insertIndex(d.layers, "post")).toBe(3);
+  });
+
+  it("flags drawing layers with no enabled grid above them", () => {
+    const d = doc(L("canvas", "canvas"), L("tiles", "tiles"), L("grid", "grid"), L("maze", "maze"), L("flow", "flow"));
+    expect(needsGrid(d.layers, 1)).toBe(true);
+    expect(needsGrid(d.layers, 3)).toBe(false);
+    // Flow draws without a grid (the grid only adds its mask).
+    expect(needsGrid(doc(L("canvas", "canvas"), L("flow", "flow")).layers, 1)).toBe(false);
+    expect(needsGrid(doc(L("canvas", "canvas"), L("grid", "grid", false), L("hatch", "hatch")).layers, 2)).toBe(true);
+  });
+
+  it("addLayer puts a new grid above the drawing layers", () => {
+    const s0 = initialState({ version: 1, name: "t", layers: [L("canvas", "canvas"), L("tiles", "tiles")] }, H);
+    const s = reducer(s0, { type: "addLayer", module: "grid" });
+    expect(s.doc.layers.map((l) => l.module)).toEqual(["canvas", "grid", "tiles"]);
+    expect(s.selectedId).toBe(s.doc.layers[1]?.id);
   });
 });

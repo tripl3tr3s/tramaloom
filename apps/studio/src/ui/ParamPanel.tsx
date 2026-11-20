@@ -13,6 +13,8 @@ interface Props {
   readonly onCheckpoint: () => void;
   readonly onResetParam: (layerId: string, name: string) => void;
   readonly onResetLayer: (layerId: string) => void;
+  /** Shown above the params when this layer cannot draw as it stands, with a one-click fix. */
+  readonly problem?: { readonly message: string; readonly fix: string; readonly onFix: () => void } | null;
 }
 
 const COLLAPSED_KEY = "gridloom.collapsedGroups";
@@ -41,7 +43,7 @@ function useCollapsed(): readonly [ReadonlySet<string>, (key: string) => void] {
   return [collapsed, toggle];
 }
 
-export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer }: Props) {
+export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer, problem }: Props) {
   const [collapsed, toggle] = useCollapsed();
   if (!layer) return <p className="p-3 text-xs text-zinc-500">Select a layer.</p>;
   const def = getModule(defaultRegistry, layer.module);
@@ -63,6 +65,14 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
         </button>
       </div>
       <p className="mb-2 text-[11px] leading-snug text-zinc-500">{def.description}</p>
+      {problem && (
+        <div role="status" className="mb-2 flex flex-col items-start gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[11px] leading-snug text-amber-200">
+          {problem.message}
+          <button type="button" className="rounded bg-amber-500/20 px-2 py-0.5 text-amber-100 hover:bg-amber-500/30" onClick={problem.onFix}>
+            {problem.fix}
+          </button>
+        </div>
+      )}
       {groupParams(def.params).map(({ title, names }) => {
         const rows = names.map((name) => {
           const spec = def.params[name];

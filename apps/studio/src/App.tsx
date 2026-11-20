@@ -6,6 +6,7 @@ import { useUrlSync } from "./hooks/useUrlSync.ts";
 import { exportJSON, exportPNG, exportSVG } from "./render/export.ts";
 import { useRenderer } from "./render/useRenderer.ts";
 import { loadFavorites, MAX_FAVORITES, saveFavorites, toggleFavorite } from "./state/favorites.ts";
+import { insertIndex, needsGrid } from "./state/layerOrder.ts";
 import { parseDocument } from "./state/schema.ts";
 import { encodeState } from "./state/url.ts";
 import { initialState, randomHash, reducer } from "./state/store.ts";
@@ -134,6 +135,35 @@ export function App() {
     () => state.doc !== state.savedDoc && JSON.stringify(state.doc) !== JSON.stringify(state.savedDoc),
     [state.doc, state.savedDoc],
   );
+
+  // A drawing layer with no grid above it renders nothing: say why, and offer the fix that applies.
+  const problem = (() => {
+    const i = state.doc.layers.findIndex((l) => l.id === state.selectedId);
+    if (i < 0 || !needsGrid(state.doc.layers, i)) return null;
+    const grids = state.doc.layers.filter((l) => l.module === "grid");
+    const below = grids.find((g) => g.enabled);
+    if (below) {
+      const rest = state.doc.layers.filter((l) => l.id !== below.id);
+      return {
+        message: "This layer draws into the grid's cells, but the Grid layer runs after it, so there is nothing to draw on yet.",
+        fix: "Move Grid above",
+        onFix: () => dispatch({ type: "moveLayerTo", layerId: below.id, index: insertIndex(rest, "grid") }),
+      };
+    }
+    const hidden = grids[0];
+    if (hidden) {
+      return {
+        message: "This layer draws into the grid's cells, but the Grid layer is hidden.",
+        fix: "Show Grid",
+        onFix: () => dispatch({ type: "toggleLayer", layerId: hidden.id }),
+      };
+    }
+    return {
+      message: "This layer draws into the grid's cells, and there is no Grid layer.",
+      fix: "Add a Grid layer",
+      onFix: () => dispatch({ type: "addLayer", module: "grid" }),
+    };
+  })();
 
   const selected = state.doc.layers.find((l) => l.id === state.selectedId);
   const onParam = (layerId: string, name: string, setting: ParamSetting, record: boolean) =>
@@ -284,6 +314,7 @@ export function App() {
             onCheckpoint={() => dispatch({ type: "checkpoint" })}
             onResetParam={(layerId, name) => dispatch({ type: "resetParam", layerId, name })}
             onResetLayer={(layerId) => dispatch({ type: "resetLayer", layerId })}
+            problem={problem}
           />
         </aside>
         <nav inert={behind} aria-label="Panels" className="order-4 flex shrink-0 border-t border-zinc-800 bg-zinc-900 md:hidden">

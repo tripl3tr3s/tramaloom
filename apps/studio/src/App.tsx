@@ -17,11 +17,12 @@ import { FavoritesStrip } from "./ui/FavoritesStrip.tsx";
 import { ParamPanel } from "./ui/ParamPanel.tsx";
 import { ShortcutsHelp } from "./ui/ShortcutsHelp.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
+import { isFirstVisit, Welcome } from "./ui/Welcome.tsx";
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
   const [debug, setDebug] = useState(false);
-  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts">("none");
+  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome">(() => (isFirstVisit() ? "welcome" : "none"));
   const [toast, setToast] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<readonly string[]>(loadFavorites);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
@@ -204,6 +205,7 @@ export function App() {
             />
           )}
           {overlay === "shortcuts" && <ShortcutsHelp onClose={() => setOverlay("none")} />}
+          {overlay === "welcome" && <Welcome onClose={() => setOverlay("none")} onPresets={() => setOverlay("library")} />}
           {toast && (
             <div className="absolute top-3 z-40 rounded-full bg-zinc-800/95 px-3 py-1 text-xs text-zinc-200 shadow">{toast}</div>
           )}

@@ -187,7 +187,7 @@ export function App() {
         <aside
           id="sheet-layers"
           inert={behind}
-          className={`order-2 h-[40dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:order-1 md:block md:h-auto md:w-60 md:border-r md:border-t-0 md:bg-zinc-900/60 ${sheet === "layers" ? "block" : "hidden"}`}
+          className={`panel-scroll order-2 h-[40dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:order-1 md:block md:h-auto md:w-60 md:border-r md:border-t-0 md:bg-zinc-900/60 ${sheet === "layers" ? "block" : "hidden"}`}
         >
           <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} />
         </aside>
@@ -249,7 +249,7 @@ export function App() {
         <aside
           id="sheet-params"
           inert={behind}
-          className={`order-3 h-[40dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:block md:h-auto md:w-72 md:border-l md:border-t-0 md:bg-zinc-900/60 ${sheet === "params" ? "block" : "hidden"}`}
+          className={`panel-scroll order-3 h-[40dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:block md:h-auto md:w-80 md:border-l md:border-t-0 md:bg-zinc-900/60 ${sheet === "params" ? "block" : "hidden"}`}
         >
           <ParamPanel
             layer={selected}

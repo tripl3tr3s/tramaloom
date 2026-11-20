@@ -65,3 +65,10 @@ body {
     height: 18px;
   }
 }
+
+/* Side panels: the scrollbar gets its own lane, so it never covers the controls at the edge. */
+.panel-scroll {
+  scrollbar-gutter: stable;
+  scrollbar-width: thin;
+  scrollbar-color: #3f3f46 transparent;
+}

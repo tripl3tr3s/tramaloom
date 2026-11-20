@@ -48,7 +48,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
   if (!def) return <p className="p-3 text-xs text-red-400">Unknown module {layer.module}</p>;
   const changed = Object.entries(def.params).some(([name, spec]) => !isDefaultSetting(spec, layer.params[name]));
   return (
-    <div className="px-3 pb-6">
+    <div className="pb-24 pl-4 pr-3">
       <div className="flex items-baseline justify-between gap-2 pt-3">
         <h2 className="text-sm font-semibold text-zinc-100">{def.label}</h2>
         {/* aria-disabled, not disabled: the button would drop focus to <body> the moment it disabled itself. */}

@@ -1,6 +1,7 @@
 export * from "./prng/prng.ts";
 export * from "./prng/distributions.ts";
 export * from "./prng/noise.ts";
+export * from "./math/trig.ts";
 export * from "./params/params.ts";
 export * from "./scene.ts";
 export * from "./document.ts";

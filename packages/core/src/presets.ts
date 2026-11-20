@@ -239,4 +239,62 @@ export const builtinPresets: readonly Preset[] = [
       { name: "Runs", layerId: "pipes", param: "straight", bins: [{ label: "Winding", upTo: 0.5 }, { label: "Mixed", upTo: 0.65 }, { label: "Straight" }] },
     ]),
   },
+  {
+    id: "specimens",
+    hash: "510e527fade682d19b05688c2b3e6c1f1f83d9abfb41bd6b5be0cd19137e2179",
+    doc: doc("Specimens", [
+      L("canvas", "canvas", { aspect: fixed("4:5"), margin: fixed(0.08) }),
+      L("palette", "palette", { palette: pick("ink", { ink: 2, harbor: 1, bloom: 1 }), background: fixed("first") }),
+      L("grid", "grid", { cols: range(4, 3, 6), subdivDepth: fixed(0), gap: fixed(0.02) }),
+      L("figures", "spiro", { mode: pick("spirograph", { spirograph: 2, harmonograph: 1 }), placement: fixed("cells"), ring: range(80, 60, 110), wheel: range(36, 20, 50), variety: range(0.6, 0.3, 0.9), fill: fixed(0.85) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Toy", layerId: "figures", param: "mode" },
+      { name: "Columns", layerId: "grid", param: "cols" },
+    ]),
+  },
+  {
+    id: "resonance",
+    hash: "1f83d9abfb41bd6b5be0cd19137e2179428a2f98d728ae227137449123ef65cd",
+    doc: doc("Resonance", [
+      L("canvas", "canvas", { aspect: fixed("1:1"), margin: fixed(0.07) }),
+      L("palette", "palette", { palette: pick("ember", { ember: 2, lagoon: 1, ink: 1 }), background: fixed("first") }),
+      L("grid", "grid", { cols: fixed(8), subdivDepth: fixed(0) }),
+      L("plate", "waves", { n: pick(3, { "2": 1, "3": 2, "4": 2, "5": 1 }), m: pick(7, { "5": 1, "6": 1, "7": 2, "9": 1 }), symmetric: { value: false, vary: { kind: "weights", weights: { false: 2, true: 1 } } }, lines: range(4, 1, 7), colorRule: fixed("ramp") }),
+      L("post", "post", { grain: fixed(0.15) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Mode n", layerId: "plate", param: "n" },
+      { name: "Mode m", layerId: "plate", param: "m" },
+    ]),
+  },
+  {
+    id: "bloom",
+    hash: "428a2f98d728ae227137449123ef65cd71374491b5c0fbcfe9b5dba5c97e4c3a",
+    doc: doc("Bloom", [
+      L("canvas", "canvas", { aspect: fixed("4:5") }),
+      L("palette", "palette", { palette: pick("orchard", { orchard: 2, bloom: 2, moss: 1 }), background: fixed("first") }),
+      L("grid", "grid", { cols: fixed(10), subdivDepth: fixed(0) }),
+      L("ripples", "waves", { mode: fixed("interference"), sources: range(3, 2, 5), wavelength: range(0.1, 0.06, 0.16), lines: fixed(1), lineWidth: fixed(0.0012) }),
+      L("seeds", "phyllotaxis", { seeds: range(900, 400, 1600), angle: pick(137.51, { "137.51": 4, "137.3": 1, "137.8": 1 }), size: range(0.85, 0.6, 1) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Angle", layerId: "seeds", param: "angle" },
+      { name: "Seeds", layerId: "seeds", param: "seeds", bins: [{ label: "Sparse", upTo: 700 }, { label: "Full", upTo: 1200 }, { label: "Dense" }] },
+    ]),
+  },
+  {
+    id: "chaos",
+    hash: "b5c0fbcfe9b5dba5c97e4c3a71374491428a2f98d728ae227137449123ef65cd",
+    doc: doc("Chaos", [
+      L("canvas", "canvas", { aspect: fixed("3:4"), margin: fixed(0.05) }),
+      L("palette", "palette", { palette: pick("signal", { signal: 2, lagoon: 1, bloom: 1, ember: 1 }), background: fixed("first") }),
+      L("grid", "grid", { cols: fixed(12), subdivDepth: fixed(0) }),
+      L("cloud", "attractor", { kind: fixed("clifford"), a: range(-1.4, -1.8, -1.1), b: range(1.6, 1.3, 1.9), c: range(1, 0.6, 1.4), d: range(0.7, 0.4, 1), points: fixed(40000) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Twist", layerId: "cloud", param: "a", bins: [{ label: "Coiled", upTo: -1.55 }, { label: "Balanced", upTo: -1.3 }, { label: "Loose" }] },
+      { name: "Spread", layerId: "cloud", param: "c", bins: [{ label: "Tight", upTo: 0.9 }, { label: "Open", upTo: 1.15 }, { label: "Wide" }] },
+    ]),
+  },
 ];

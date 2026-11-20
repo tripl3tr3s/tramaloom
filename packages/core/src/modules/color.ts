@@ -109,6 +109,17 @@ export function colorLookup(scene: Scene): ColorLookup {
   };
 }
 
+/**
+ * The palette for a ramp (low to high, centre to rim): colors that stand apart from
+ * the background, in palette order, so no band of the ramp vanishes into it.
+ */
+export function rampColors(scene: Scene): readonly string[] {
+  const pal = scene.palette?.colors ?? [];
+  const bg = luminance(scene.background);
+  const apart = pal.filter((c) => Math.abs(luminance(c) - bg) >= 0.12);
+  return apart.length >= 2 ? apart : pal;
+}
+
 /** One-off lookup. Prefer colorLookup when querying many points. */
 export const colorUnder = (scene: Scene, at: Pt): string => colorLookup(scene)(at);
 

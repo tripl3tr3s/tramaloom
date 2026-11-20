@@ -1,4 +1,8 @@
 import { canvasModule } from "./canvas.ts";
+import { attractorModule } from "./attractor.ts";
+import { phyllotaxisModule } from "./phyllotaxis.ts";
+import { spiroModule } from "./spiro.ts";
+import { wavesModule } from "./waves.ts";
 import { contourModule } from "./contour.ts";
 import { knotModule } from "./knot.ts";
 import { packingModule } from "./packing.ts";
@@ -44,6 +48,10 @@ export const defaultRegistry: Registry = {
   pipes: asDef(pipesModule),
   packing: asDef(packingModule),
   threads: asDef(threadsModule),
+  phyllotaxis: asDef(phyllotaxisModule),
+  spiro: asDef(spiroModule),
+  waves: asDef(wavesModule),
+  attractor: asDef(attractorModule),
   symmetry: asDef(symmetryModule),
   post: asDef(postModule),
 };

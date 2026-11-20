@@ -20,3 +20,10 @@ export function groupParams(params: ParamSpecs): readonly ParamSection[] {
   const grouped = titles.map((title) => ({ title, names: entries.filter(([, spec]) => spec.group === title).map(([name]) => name) }));
   return loose.length ? [{ title: null, names: loose }, ...grouped] : grouped;
 }
+
+/** Each option's chance of being drawn, 0 to 1, in option order. All zero when every weight is zero. */
+export function weightShares(options: readonly string[], weights: Readonly<Record<string, number>>): readonly number[] {
+  const ws = options.map((o) => Math.max(0, weights[o] ?? 0));
+  const total = ws.reduce((a, b) => a + b, 0);
+  return ws.map((w) => (total > 0 ? w / total : 0));
+}

@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import type { ParamSpec } from "@gridloom/core";
 import { MAX_FAVORITES, parseFavorites, toggleFavorite } from "../src/state/favorites.ts";
 import { initialState, reducer } from "../src/state/store.ts";
-import { groupParams, isDefaultSetting } from "../src/ui/params.ts";
+import { groupParams, isDefaultSetting, weightShares } from "../src/ui/params.ts";
 import { SHORTCUT_GROUPS } from "../src/ui/shortcuts.ts";
 import { densityCurve } from "../src/ui/vary.ts";
 
@@ -173,5 +173,15 @@ describe("favorites", () => {
     expect(parseFavorites([a, a, b])).toEqual([a, b]);
     expect(parseFavorites([a, "nope"])).toEqual([]);
     expect(parseFavorites({ a })).toEqual([]);
+  });
+});
+
+describe("weightShares", () => {
+  it("turns weights into chances that sum to 1", () => {
+    expect(weightShares(["a", "b", "c"], { a: 3, b: 1 })).toEqual([0.75, 0.25, 0]);
+  });
+
+  it("is all zero when nothing can be drawn", () => {
+    expect(weightShares(["a", "b"], { a: 0 })).toEqual([0, 0]);
   });
 });

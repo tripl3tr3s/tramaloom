@@ -2,7 +2,7 @@ import type { Distribution, ParamSetting, ParamSpec, ParamValue, Variation } fro
 import { useRef } from "react";
 import { MAX_WEIGHT } from "../state/limits.ts";
 import { ResetIcon } from "./icons.tsx";
-import { isDefaultSetting } from "./params.ts";
+import { isDefaultSetting, weightShares } from "./params.ts";
 import type { OptionSwatches } from "./Swatches.tsx";
 import { Swatch, SwatchPicker } from "./Swatches.tsx";
 import { SLIDER_KEYS } from "./vary.ts";
@@ -228,27 +228,40 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
         </label>
       )}
 
-      {(spec.kind === "enum" || spec.kind === "bool") && vary?.kind === "weights" && (
-        <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1">
-          {(spec.kind === "enum" ? spec.options : ["false", "true"]).map((o) => (
-            <label key={o} className="flex items-center justify-between gap-1 text-[11px] text-zinc-400" title={o}>
-              {swatches?.[o] ? <Swatch colors={swatches[o]} className="h-3 flex-1" /> : <span className="flex-1 truncate">{o}</span>}
-              <input
-                type="number"
-                className={`${input} w-12 font-mono`}
-                min={0}
-                max={MAX_WEIGHT}
-                step={1}
-                value={vary.weights[o] ?? 0}
-                aria-label={`${spec.label}, weight of ${o}`}
-                onChange={(e) =>
-                  onChange(withVary({ kind: "weights", weights: { ...vary.weights, [o]: Math.min(MAX_WEIGHT, Math.max(0, Number(e.target.value) || 0)) } }), true)
-                }
-              />
-            </label>
-          ))}
-        </div>
-      )}
+      {(spec.kind === "enum" || spec.kind === "bool") && vary?.kind === "weights" && (() => {
+        const options = spec.kind === "enum" ? spec.options : ["false", "true"];
+        const shares = weightShares(options, vary.weights);
+        const drawn = varying ? String(resolved) : null;
+        return (
+          <div className="mt-1.5 flex flex-col gap-1">
+            {options.map((o, i) => {
+              const share = shares[i] ?? 0;
+              const isDrawn = o === drawn;
+              return (
+                <label key={o} className="flex items-center gap-2 text-[11px] text-zinc-400" title={`${o}: ${Math.round(share * 100)}% of seeds`}>
+                  {swatches?.[o] ? <Swatch colors={swatches[o]} className="h-3 w-16 shrink-0" /> : <span className={`w-16 shrink-0 truncate ${isDrawn ? "text-zinc-100" : ""}`}>{o}</span>}
+                  <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800" aria-hidden="true">
+                    <span className={`absolute inset-y-0 left-0 rounded-full ${isDrawn ? "bg-sky-400" : "bg-sky-700"}`} style={{ width: `${share * 100}%` }} />
+                  </span>
+                  <span className={`w-8 shrink-0 text-right font-mono tabular-nums ${share === 0 ? "text-zinc-600" : isDrawn ? "text-zinc-100" : ""}`}>{Math.round(share * 100)}%</span>
+                  <input
+                    type="number"
+                    className={`${input} w-12 font-mono`}
+                    min={0}
+                    max={MAX_WEIGHT}
+                    step={1}
+                    value={vary.weights[o] ?? 0}
+                    aria-label={`${spec.label}, weight of ${o}`}
+                    onChange={(e) =>
+                      onChange(withVary({ kind: "weights", weights: { ...vary.weights, [o]: Math.min(MAX_WEIGHT, Math.max(0, Number(e.target.value) || 0)) } }), true)
+                    }
+                  />
+                </label>
+              );
+            })}
+          </div>
+        );
+      })()}
 
       {spec.kind === "color" && (
         <div className="flex items-center gap-2">

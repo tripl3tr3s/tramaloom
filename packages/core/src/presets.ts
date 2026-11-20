@@ -194,4 +194,49 @@ export const builtinPresets: readonly Preset[] = [
       { name: "Lines", layerId: "flow", param: "count", bins: [{ label: "Calm", upTo: 130 }, { label: "Busy", upTo: 210 }, { label: "Torrent" }] },
     ]),
   },
+  {
+    id: "knotwork",
+    hash: "6a09e667f3bcc908b2fb1366ea957d3e3adec17512775099da2f590b0667322a",
+    doc: doc("Knotwork", [
+      L("canvas", "canvas", { aspect: fixed("1:1"), margin: fixed(0.09) }),
+      L("palette", "palette", { palette: pick("moss", { moss: 2, ember: 1, harbor: 1, bloom: 1 }), background: fixed("first") }),
+      L("grid", "grid", { cols: range(7, 5, 10), subdivDepth: fixed(0), mask: pick("none", { none: 3, circle: 2 }) }),
+      L("knot", "knot", { breaks: range(0.18, 0.05, 0.35), width: range(0.24, 0.18, 0.3) }),
+      L("post", "post", { grain: fixed(0.2) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Shape", layerId: "grid", param: "mask" },
+      { name: "Weave", layerId: "knot", param: "breaks", bins: [{ label: "Plait", upTo: 0.12 }, { label: "Knotted", upTo: 0.25 }, { label: "Broken" }] },
+    ]),
+  },
+  {
+    id: "topography",
+    hash: "bb67ae8584caa73b3c6ef372fe94f82ba54ff53a5f1d36f1510e527fade682d1",
+    doc: doc("Topography", [
+      L("canvas", "canvas", { aspect: fixed("4:5"), margin: fixed(0.06) }),
+      L("palette", "palette", { palette: pick("orchard", { orchard: 2, lagoon: 1, ink: 1 }), background: fixed("first") }),
+      L("grid", "grid", { cols: fixed(10), subdivDepth: fixed(0) }),
+      L("land", "contour", { field: pick("noise", { noise: 2, island: 2, ridged: 1 }), levels: range(16, 10, 26), faults: pick(0, { "0": 3, "1": 1, "2": 1 }) }),
+      L("strings", "threads", { mode: fixed("warp"), count: range(14, 6, 24), sag: fixed(0.02), lineWidth: fixed(0.0015), colorRule: fixed("palette") }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Land", layerId: "land", param: "field" },
+      { name: "Faults", layerId: "land", param: "faults" },
+    ]),
+  },
+  {
+    id: "waterworks",
+    hash: "3c6ef372fe94f82ba54ff53a5f1d36f1510e527fade682d19b05688c2b3e6c1f",
+    doc: doc("Waterworks", [
+      L("canvas", "canvas", { aspect: fixed("3:4") }),
+      L("palette", "palette", { palette: pick("signal", { signal: 2, harbor: 1, ember: 1 }), background: fixed("first") }),
+      L("grid", "grid", { cols: range(9, 7, 12), subdivDepth: fixed(0) }),
+      L("bubbles", "packing", { style: fixed("ripples"), attempts: fixed(400), maxSize: fixed(0.1), colorRule: fixed("zone") }),
+      L("pipes", "pipes", { straight: range(0.55, 0.35, 0.8), branching: range(0.2, 0.05, 0.4), density: range(0.7, 0.5, 0.9) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Branching", layerId: "pipes", param: "branching", bins: [{ label: "Simple", upTo: 0.15 }, { label: "Branched", upTo: 0.3 }, { label: "Tangled" }] },
+      { name: "Runs", layerId: "pipes", param: "straight", bins: [{ label: "Winding", upTo: 0.5 }, { label: "Mixed", upTo: 0.65 }, { label: "Straight" }] },
+    ]),
+  },
 ];

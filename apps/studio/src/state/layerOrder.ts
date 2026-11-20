@@ -74,7 +74,7 @@ export function promoteIndex(layers: readonly Layer[], layerId: string): number 
 }
 
 /** Modules that draw into the grid's cells or route on its lattice: with no grid above, they draw nothing. */
-const GRID_USERS: ReadonlySet<string> = new Set(["cellFill", "insets", "tiles", "circuits", "maze", "halftone", "hatch"]);
+const GRID_USERS: ReadonlySet<string> = new Set(["cellFill", "insets", "tiles", "circuits", "maze", "halftone", "hatch", "knot", "pipes"]);
 
 /** The layer at `index` needs a grid and no enabled Grid layer runs before it. */
 export function needsGrid(layers: readonly Layer[], index: number): boolean {

@@ -10,6 +10,7 @@ MIT licensed. Static web app, no backend.
 - Phase 2 (studio MVP), done: a layer stack, controls generated from each module's params (vary and lock per param), rendering in a Web Worker, document and hash in the URL, PNG/SVG/JSON export, JSON import, undo/redo, keyboard shortcuts, and an offline PWA.
 - Phase 3 (modules), done: Insets, Tiles (Truchet), Circuits, Symmetry and Post, plus engine versioning for share links.
 - More modules: Maze (walls or corridors on the base grid, with braiding), Halftone (dots sized by a field), Hatching (plotter-friendly line shading) and Flow (streamlines through a noise field), with the Labyrinth and Currents presets.
+- Batch 1 of borrowed ideas (written fresh): Contour (marching-squares topography with faults), Celtic knot (alternating knotwork on the grid), Pipes (one-pass wave function collapse), Circle packing and Threads, with the Knotwork, Topography and Waterworks presets.
 - Phase 4 (Apophysis features), done: mutation grid, preset library, six original built-in presets.
 - Phase 5 (long-form), done: traits with bins, rarity editing, census against the settings' targets, contact sheet, batch export, and a cross-browser determinism check.
 - Phase 6 (mint export), self-hosted done: one self-contained `index.html` per piece. Platform adapters come next, each written against that platform's current docs.

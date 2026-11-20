@@ -1,4 +1,9 @@
 import { canvasModule } from "./canvas.ts";
+import { contourModule } from "./contour.ts";
+import { knotModule } from "./knot.ts";
+import { packingModule } from "./packing.ts";
+import { pipesModule } from "./pipes.ts";
+import { threadsModule } from "./threads.ts";
 import { cellFillModule } from "./cellFill.ts";
 import { circuitsModule } from "./circuits.ts";
 import { flowModule } from "./flow.ts";
@@ -34,6 +39,11 @@ export const defaultRegistry: Registry = {
   halftone: asDef(halftoneModule),
   hatch: asDef(hatchModule),
   flow: asDef(flowModule),
+  contour: asDef(contourModule),
+  knot: asDef(knotModule),
+  pipes: asDef(pipesModule),
+  packing: asDef(packingModule),
+  threads: asDef(threadsModule),
   symmetry: asDef(symmetryModule),
   post: asDef(postModule),
 };

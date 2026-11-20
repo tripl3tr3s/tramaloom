@@ -1,5 +1,5 @@
 import { normaliseHash } from "@gridloom/core";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ChevronIcon, StarIcon } from "./icons.tsx";
 import { Menu } from "./Menu.tsx";
 
@@ -34,11 +34,16 @@ interface Props {
 }
 
 const btn =
-  "rounded px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent";
-const sep = <span className="mx-1 h-4 w-px bg-zinc-700" />;
+  "rounded px-2 py-1 text-xs text-zinc-300 hover:bg-zinc-700 hover:text-white disabled:opacity-30 disabled:hover:bg-transparent pointer-coarse:py-1.5";
+const sep = <span className="mx-1 h-4 w-px bg-zinc-700 max-md:hidden" />;
+/** Desktop only: on phones these live in the More menu. */
+const wide = "max-md:hidden";
+/** Phones: seed controls go to a second row (same order value keeps their source order). */
+const row2 = "max-md:order-last";
 
 export function Toolbar(p: Props) {
   const [draft, setDraft] = useState(p.hash);
+  const fileRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => setDraft(p.hash), [p.hash]);
   const commitHash = () => {
     try {
@@ -49,10 +54,10 @@ export function Toolbar(p: Props) {
   };
 
   return (
-    <header className="flex flex-wrap items-center gap-1 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5">
-      <span className="mr-2 text-sm font-semibold tracking-tight text-white">Gridloom</span>
+    <header className="flex flex-wrap items-center gap-1 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5 max-md:gap-y-1.5 max-md:px-2">
+      <span className="mr-2 text-sm font-semibold tracking-tight text-white max-sm:hidden">Gridloom</span>
       <input
-        className="w-36 rounded bg-transparent px-1.5 py-0.5 text-xs text-zinc-300 outline-none hover:bg-zinc-800 focus:bg-zinc-800"
+        className="w-36 rounded bg-transparent max-md:min-w-0 max-md:flex-1 px-1.5 py-0.5 text-xs text-zinc-300 outline-none hover:bg-zinc-800 focus:bg-zinc-800"
         value={p.name}
         onChange={(e) => p.onRename(e.target.value)}
         aria-label="Piece name"
@@ -64,17 +69,19 @@ export function Toolbar(p: Props) {
         </span>
       )}
       {sep}
-      <button type="button" className={btn} onClick={p.onPrev} disabled={!p.canPrev} title="Previous seed (Left)">
+      {/* Phones: forces the seed controls onto their own row. */}
+      <span className={`hidden basis-full max-md:block ${row2}`} aria-hidden="true" />
+      <button type="button" className={`${btn} ${row2}`} onClick={p.onPrev} disabled={!p.canPrev} title="Previous seed (Left)">
         ←
       </button>
-      <button type="button" className={btn} onClick={p.onReroll} title="New random seed (R)">
+      <button type="button" className={`${btn} ${row2}`} onClick={p.onReroll} title="New random seed (R)">
         Reroll
       </button>
-      <button type="button" className={btn} onClick={p.onNext} title="Next seed (Right)">
+      <button type="button" className={`${btn} ${row2}`} onClick={p.onNext} title="Next seed (Right)">
         →
       </button>
       <input
-        className="w-44 rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400 outline-none focus:text-zinc-100 focus:ring-1 focus:ring-sky-500 lg:w-72"
+        className="w-44 rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400 outline-none focus:text-zinc-100 focus:ring-1 focus:ring-sky-500 lg:w-72 max-md:order-last max-md:min-w-0 max-md:flex-1"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commitHash}
@@ -84,7 +91,7 @@ export function Toolbar(p: Props) {
       />
       <button
         type="button"
-        className={`${btn} ${p.favorite ? "text-amber-300 hover:text-amber-200" : ""}`}
+        className={`${btn} ${row2} ${p.favorite ? "text-amber-300 hover:text-amber-200" : ""}`}
         onClick={p.onFavorite}
         aria-pressed={p.favorite}
         aria-label="Favourite this seed"
@@ -100,19 +107,20 @@ export function Toolbar(p: Props) {
         Redo
       </button>
       {sep}
-      <button type="button" className={btn} onClick={p.onMutate} title="Mutation grid (M)">
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onMutate} title="Mutation grid (M)">
         Mutate
       </button>
-      <button type="button" className={btn} onClick={p.onLibrary} title="Preset library (L)">
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onLibrary} title="Preset library (L)">
         Library
       </button>
-      <button type="button" className={btn} onClick={p.onEdition} title="Traits, census, contact sheet, batch export (E)">
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onEdition} title="Traits, census, contact sheet, batch export (E)">
         Edition
       </button>
-      <div className="flex-1" />
-      <label className={`${btn} cursor-pointer has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-sky-500`} title="Open a .gridloom.json document">
+      <div className="flex-1 max-md:hidden" />
+      <label className={`${btn} ${wide} cursor-pointer has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-sky-500`} title="Open a .gridloom.json document">
         Open
         <input
+          ref={fileRef}
           type="file"
           accept=".json,application/json"
           className="sr-only"
@@ -141,11 +149,31 @@ export function Toolbar(p: Props) {
           { label: "Copy share link", description: "Settings and seed, no server", onSelect: p.onCopyLink },
         ]}
       />
+      <div className="md:hidden">
+        <Menu
+          label="More"
+          align="right"
+          triggerClass={`${btn} inline-flex items-center gap-1`}
+          trigger={
+            <>
+              More <ChevronIcon />
+            </>
+          }
+          items={[
+            { label: "Mutate", description: "Grid of variations to pick from", onSelect: p.onMutate },
+            { label: "Library", description: "Presets and saved pieces", onSelect: p.onLibrary },
+            { label: "Edition", description: "Traits, census, sheet, batch, mint", onSelect: p.onEdition },
+            { label: "Open document", description: "A .gridloom.json file", separatorBefore: true, onSelect: () => fileRef.current?.click() },
+            { label: "Debug panel", separatorBefore: true, onSelect: p.onToggleDebug },
+            { label: "Keyboard shortcuts", onSelect: p.onShortcuts },
+          ]}
+        />
+      </div>
       {sep}
-      <button type="button" className={btn} onClick={p.onToggleDebug} title="Debug panel (G)">
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onToggleDebug} title="Debug panel (G)">
         Debug
       </button>
-      <button type="button" className={btn} onClick={p.onShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
         ?
       </button>
     </header>

@@ -214,9 +214,10 @@ Enforced by tests:
 - `packages/core/test/golden.test.ts` freezes the output of every existing module. If it fails, an existing module now draws differently, which changes saved links: restore the old output (put new behaviour behind a param whose default keeps it), or bump `ENGINE_VERSION` in `packages/core/src/version.ts` and regenerate with `UPDATE_GOLDEN=1 pnpm test`.
 - Every built-in preset is drawn in Node, Chromium, Firefox and WebKit and the display lists must match byte for byte (`e2e/determinism.spec.ts`).
 
+- Drawing code uses only `+ - * /`, `Math.floor`, `Math.round`, `Math.sqrt`, `Math.abs`, `Math.min` and `Math.max`. Engines are not required to agree on the last bit of `Math.sin`, `Math.cos`, `Math.exp`, `Math.pow`, `**`, `Math.atan2` or `Math.hypot`, so a test (`generate.test.ts`) rejects them anywhere in `packages/core/src`: use `dsin` and `dcos` from `packages/core/src/math/trig.ts`, which do agree. A line that only feeds text on screen can opt out with the comment `determinism: display only`.
+
 By convention (review them in every change to `packages/core`):
 
-- Geometry uses only `+ - * /`, `Math.floor`, `Math.round`, `Math.sqrt`, `Math.abs`, `Math.min` and `Math.max`. Engines are not required to agree on the last bit of `Math.sin`, `Math.cos`, `Math.exp`, `Math.pow`, `Math.atan2` or `Math.hypot`: use `dsin` and `dcos` from `packages/core/src/math/trig.ts`, which are.
 - Draw a fixed number of random values per cell, line or attempt, before any early return, so changing one probability does not reshuffle everything after it. Or give the varying part its own named stream.
 - Layer ids name random streams: never reuse or renumber them.
 

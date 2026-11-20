@@ -86,6 +86,27 @@ describe("source hygiene", () => {
     );
     expect(offenders).toEqual([]);
   });
+
+  it("draws with deterministic math only: no Math.sin, cos, exp, pow, ** and friends", () => {
+    // Engines may differ in the last bit of these, which can flip a layout decision and
+    // change a share link's picture. Use dsin/dcos (math/trig.ts), sqrt and + - * /.
+    // A line that only feeds text on screen can opt out with "determinism: display only".
+    const banned = /Math\.(sin|cos|tan|asin|acos|atan2?|sinh|cosh|tanh|exp|expm1|log1p|log2|log10|log|pow|cbrt|hypot)\b|[^*/]\*\*[^*/=]/;
+    const offenders = files(join(import.meta.dirname, "../src")).flatMap((f) => {
+      const code = readFileSync(f, "utf8").replace(/\/\*[\s\S]*?\*\//g, (c) => c.replace(/[^\n]/g, " "));
+      return code.split("\n").flatMap((line, i) => {
+        if (line.includes("determinism: display only")) return [];
+        return banned.test(line.replace(/\/\/.*$/, "")) ? [`${f.split("/src/")[1]}:${i + 1}`] : [];
+      });
+    });
+    expect(offenders).toEqual([]);
+  });
+
+  it("the guard catches what it is meant to", () => {
+    const banned = /Math\.(sin|cos|tan|asin|acos|atan2?|sinh|cosh|tanh|exp|expm1|log1p|log2|log10|log|pow|cbrt|hypot)\b|[^*/]\*\*[^*/=]/;
+    for (const bad of ["x = Math.sin(a)", "y = Math.hypot(a, b)", "z = a ** 2", "Math.atan2(y, x)"]) expect(banned.test(bad)).toBe(true);
+    for (const ok of ["x = dsin(a)", "y = Math.sqrt(a)", "/** doc */", "a *= 2", "Math.PI"]) expect(banned.test(ok)).toBe(false);
+  });
 });
 
 describe("registry lookup", () => {

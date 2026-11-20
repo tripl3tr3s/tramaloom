@@ -1,6 +1,9 @@
 import { starterDocument } from "@gridloom/core";
 import { describe, expect, it } from "vitest";
+import type { ParamSpec } from "@gridloom/core";
 import { initialState, reducer } from "../src/state/store.ts";
+import { isDefaultSetting } from "../src/ui/params.ts";
+import { SHORTCUT_GROUPS } from "../src/ui/shortcuts.ts";
 import { densityCurve } from "../src/ui/vary.ts";
 
 const H = "a".repeat(64);
@@ -55,5 +58,51 @@ describe("densityCurve", () => {
     expect(lo[0]).toBeGreaterThan(lo[39] as number);
     expect(hi).toEqual([...lo].reverse());
     expect(area(lo.slice(0, 20))).toBeGreaterThan(area(lo.slice(20)));
+  });
+});
+
+describe("resetParam and resetLayer", () => {
+  const s0 = initialState(starterDocument, H);
+  const palette = (s: ReturnType<typeof initialState>) => s.doc.layers.find((l) => l.id === "palette");
+
+  it("removes one param, so it falls back to its default, as one undo step", () => {
+    const s = reducer(s0, { type: "resetParam", layerId: "palette", name: "palette" });
+    expect(palette(s)?.params.palette).toBeUndefined();
+    expect(s.past.length).toBe(1);
+    expect(reducer(s, { type: "undo" }).doc).toBe(starterDocument);
+  });
+
+  it("is a no-op for a param already at its default", () => {
+    expect(reducer(s0, { type: "resetParam", layerId: "palette", name: "nope" })).toBe(s0);
+    expect(reducer(s0, { type: "resetParam", layerId: "missing", name: "palette" })).toBe(s0);
+  });
+
+  it("clears every param of a layer in one undo step", () => {
+    const s = reducer(s0, { type: "resetLayer", layerId: "palette" });
+    expect(palette(s)?.params).toEqual({});
+    expect(s.past.length).toBe(1);
+    expect(reducer(s0, { type: "resetLayer", layerId: "canvas" })).toBe(s0);
+  });
+});
+
+describe("isDefaultSetting", () => {
+  const spec: ParamSpec = { kind: "number", label: "Inset", default: 0.1, min: 0, max: 0.5, step: 0.01 };
+
+  it("treats a missing setting and the default value as default", () => {
+    expect(isDefaultSetting(spec, undefined)).toBe(true);
+    expect(isDefaultSetting(spec, { value: 0.1 })).toBe(true);
+  });
+
+  it("treats another value, a variation or a lock as changed", () => {
+    expect(isDefaultSetting(spec, { value: 0.2 })).toBe(false);
+    expect(isDefaultSetting(spec, { value: 0.1, vary: { kind: "range", min: 0, max: 0.2, dist: "uniform" } })).toBe(false);
+  });
+});
+
+describe("SHORTCUT_GROUPS", () => {
+  it("lists every key once", () => {
+    const keys = SHORTCUT_GROUPS.flatMap((g) => g.items.map((i) => `${g.title}/${i.combos.map((c) => c.join("+")).join(",")}`));
+    expect(new Set(keys).size).toBe(keys.length);
+    expect(keys.some((k) => k.endsWith("/?"))).toBe(true);
   });
 });

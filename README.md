@@ -27,6 +27,7 @@ MIT licensed. Static web app, no backend.
 | `M` | mutation grid (1-9 adopt, `R` shuffle, `Esc` close) |
 | `L` | preset library |
 | `E` | edition: traits and rarity, census, contact sheet, batch export |
+| `?` | every shortcut, in one list |
 
 ## Where your work lives
 

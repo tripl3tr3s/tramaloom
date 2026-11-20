@@ -81,3 +81,10 @@ export const ChevronIcon = () => (
     <path d="M4 6l4 4 4-4" />
   </Icon>
 );
+
+export const ResetIcon = () => (
+  <Icon size={12}>
+    <path d="M3.5 8a4.5 4.5 0 1 0 1.3-3.2" />
+    <path d="M3.5 2.5v2.8h2.8" />
+  </Icon>
+);

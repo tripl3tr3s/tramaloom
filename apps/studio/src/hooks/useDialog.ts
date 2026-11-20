@@ -1,4 +1,4 @@
-import { useEffect, useLayoutEffect, useRef } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 
 /**
  * Modal dialog plumbing: moves focus into the dialog on open, gives it back on
@@ -7,11 +7,13 @@ import { useEffect, useLayoutEffect, useRef } from "react";
 export function useDialog<T extends HTMLElement>(onKey: (e: KeyboardEvent) => void) {
   const ref = useRef<T | null>(null);
   const handler = useRef(onKey);
+  // Read during the first render: by the time effects run, the app behind the dialog
+  // is already inert and the browser has moved focus off the opener to <body>.
+  const [previous] = useState(() => (document.activeElement instanceof HTMLElement ? document.activeElement : null));
   useLayoutEffect(() => {
     handler.current = onKey;
   });
   useEffect(() => {
-    const previous = document.activeElement instanceof HTMLElement ? document.activeElement : null;
     ref.current?.focus();
     const listener = (e: KeyboardEvent) => handler.current(e);
     window.addEventListener("keydown", listener);
@@ -19,7 +21,7 @@ export function useDialog<T extends HTMLElement>(onKey: (e: KeyboardEvent) => vo
       window.removeEventListener("keydown", listener);
       if (previous?.isConnected) previous.focus();
     };
-  }, []);
+  }, [previous]);
   return ref;
 }
 

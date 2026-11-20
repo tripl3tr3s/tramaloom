@@ -22,6 +22,7 @@ interface Props {
   readonly onImport: (file: File) => void;
   readonly onCopyLink: () => void;
   readonly onToggleDebug: () => void;
+  readonly onShortcuts: () => void;
   readonly onMutate: () => void;
   readonly onLibrary: () => void;
   readonly onEdition: () => void;
@@ -122,6 +123,9 @@ export function Toolbar(p: Props) {
       {sep}
       <button type="button" className={btn} onClick={p.onToggleDebug} title="Debug panel (G)">
         Debug
+      </button>
+      <button type="button" className={btn} onClick={p.onShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+        ?
       </button>
     </header>
   );

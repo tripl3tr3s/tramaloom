@@ -13,12 +13,13 @@ import { Library } from "./ui/Library.tsx";
 import { MutationGrid } from "./ui/MutationGrid.tsx";
 import { EditionPanel } from "./ui/edition/EditionPanel.tsx";
 import { ParamPanel } from "./ui/ParamPanel.tsx";
+import { ShortcutsHelp } from "./ui/ShortcutsHelp.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
   const [debug, setDebug] = useState(false);
-  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition">("none");
+  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts">("none");
   const [toast, setToast] = useState<string | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
@@ -80,6 +81,9 @@ export function App() {
     m: () => setOverlay("mutate"),
     l: () => setOverlay("library"),
     e: () => setOverlay("edition"),
+    // "?" is Shift+/ on most layouts, so it arrives shifted; accept both.
+    "?": () => setOverlay("shortcuts"),
+    "shift+?": () => setOverlay("shortcuts"),
     r: () => dispatch({ type: "setHash", hash: randomHash() }),
     ArrowLeft: () => dispatch({ type: "seedPrev" }),
     ArrowRight: () => dispatch({ type: "seedNext" }),
@@ -136,6 +140,7 @@ export function App() {
         onMutate={() => setOverlay((o) => (o === "mutate" ? "none" : "mutate"))}
         onLibrary={() => setOverlay((o) => (o === "library" ? "none" : "library"))}
         onEdition={() => setOverlay((o) => (o === "edition" ? "none" : "edition"))}
+        onShortcuts={() => setOverlay("shortcuts")}
       />
       </div>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
@@ -176,6 +181,7 @@ export function App() {
               notify={notify}
             />
           )}
+          {overlay === "shortcuts" && <ShortcutsHelp onClose={() => setOverlay("none")} />}
           {toast && (
             <div className="absolute top-3 z-40 rounded-full bg-zinc-800/95 px-3 py-1 text-xs text-zinc-200 shadow">{toast}</div>
           )}
@@ -186,6 +192,8 @@ export function App() {
             resolved={info.resolved.find((r) => r.id === state.selectedId)}
             onChange={onParam}
             onCheckpoint={() => dispatch({ type: "checkpoint" })}
+            onResetParam={(layerId, name) => dispatch({ type: "resetParam", layerId, name })}
+            onResetLayer={(layerId) => dispatch({ type: "resetLayer", layerId })}
           />
         </aside>
       </div>

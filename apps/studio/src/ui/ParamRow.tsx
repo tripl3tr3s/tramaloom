@@ -1,5 +1,8 @@
 import type { Distribution, ParamSetting, ParamSpec, ParamValue, Variation } from "@gridloom/core";
+import { useRef } from "react";
 import { MAX_WEIGHT } from "../state/limits.ts";
+import { ResetIcon } from "./icons.tsx";
+import { isDefaultSetting } from "./params.ts";
 import type { OptionSwatches } from "./Swatches.tsx";
 import { Swatch, SwatchPicker } from "./Swatches.tsx";
 import { SLIDER_KEYS } from "./vary.ts";
@@ -14,6 +17,8 @@ interface Props {
   readonly swatches?: OptionSwatches | undefined;
   readonly onChange: (setting: ParamSetting, record: boolean) => void;
   readonly onCheckpoint: () => void;
+  /** Back to the module default (drops value, variation and lock). */
+  readonly onReset: () => void;
 }
 
 
@@ -46,7 +51,7 @@ function defaultVary(spec: ParamSpec, value: ParamValue): Variation | null {
   }
 }
 
-export function ParamRow({ name, spec, setting, resolved, swatches, onChange, onCheckpoint }: Props) {
+export function ParamRow({ name, spec, setting, resolved, swatches, onChange, onCheckpoint, onReset }: Props) {
   const value = setting?.value ?? spec.default;
   const vary = setting?.vary;
   const locked = setting?.locked === true;
@@ -55,6 +60,12 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
   const withValue = (v: ParamValue): ParamSetting => ({ ...(setting ?? { value }), value: v });
   const withVary = (vr: Variation): ParamSetting => ({ ...(setting ?? { value }), vary: vr });
   const canVary = spec.kind !== "color";
+  const rowRef = useRef<HTMLDivElement | null>(null);
+  const reset = () => {
+    onReset();
+    // The reset button leaves with the change; keep focus in this row instead of dropping it to <body>.
+    rowRef.current?.querySelector<HTMLElement>("button:not([data-reset]), input, select")?.focus();
+  };
 
   const toggleVary = () => {
     if (vary) return onChange(fixedOnly(setting ?? { value }), true);
@@ -84,7 +95,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
     );
 
   return (
-    <div className="border-b border-zinc-800/80 py-2" data-param={name}>
+    <div ref={rowRef} className="border-b border-zinc-800/80 py-2" data-param={name}>
       <div className="mb-1 flex items-center gap-2">
         <span className="flex-1 truncate text-xs text-zinc-300" title={spec.help ?? spec.label}>
           {spec.label}
@@ -102,6 +113,18 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
         {vary && (
           <button type="button" className={chip(locked)} onClick={toggleLock} aria-pressed={locked} title="Ignore variation, use the fixed value">
             lock
+          </button>
+        )}
+        {!isDefaultSetting(spec, setting) && (
+          <button
+            type="button"
+            className="grid size-5 place-items-center rounded text-zinc-500 hover:bg-zinc-700 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
+            data-reset=""
+            onClick={reset}
+            aria-label={`Reset ${spec.label} to default`}
+            title={`Reset to default (${format(spec.default)})`}
+          >
+            <ResetIcon />
           </button>
         )}
       </div>

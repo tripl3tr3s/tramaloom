@@ -29,6 +29,9 @@ export interface StudioState {
 
 export type Action =
   | { readonly type: "setParam"; readonly layerId: string; readonly name: string; readonly setting: ParamSetting; readonly record: boolean }
+  /** Back to the module default: the setting is removed, so core falls back to the spec default. */
+  | { readonly type: "resetParam"; readonly layerId: string; readonly name: string }
+  | { readonly type: "resetLayer"; readonly layerId: string }
   | { readonly type: "checkpoint" }
   | { readonly type: "toggleLayer"; readonly layerId: string }
   | { readonly type: "moveLayer"; readonly layerId: string; readonly dir: -1 | 1 }
@@ -103,6 +106,17 @@ export function reducer(s: StudioState, a: Action): StudioState {
       return snap
         ? { ...s, doc, past: [...s.past, { doc: snap, hash: null }].slice(-HISTORY_LIMIT), future: [], pendingCheckpoint: null }
         : { ...s, doc };
+    }
+    case "resetParam": {
+      const target = s.doc.layers.find((l) => l.id === a.layerId);
+      if (!target || !(a.name in target.params)) return s;
+      const { [a.name]: _removed, ...params } = target.params;
+      return commit(s, mapLayers(s.doc, (l) => (l.id === a.layerId ? { ...l, params } : l)));
+    }
+    case "resetLayer": {
+      const target = s.doc.layers.find((l) => l.id === a.layerId);
+      if (!target || Object.keys(target.params).length === 0) return s;
+      return commit(s, mapLayers(s.doc, (l) => (l.id === a.layerId ? { ...l, params: {} } : l)));
     }
     case "checkpoint":
       return { ...s, pendingCheckpoint: s.doc };

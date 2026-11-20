@@ -123,3 +123,28 @@ describe("groupParams", () => {
     expect(groupParams({ a: n("A"), b: n("B") })).toEqual([{ title: null, names: ["a", "b"] }]);
   });
 });
+
+describe("unsaved changes", () => {
+  const s0 = initialState(starterDocument, H);
+  const edit = { type: "resetLayer", layerId: "palette" } as const;
+  const dirty = (s: ReturnType<typeof initialState>) => s.doc !== s.savedDoc;
+
+  it("starts clean, turns dirty on an edit and clean again when undone", () => {
+    expect(dirty(s0)).toBe(false);
+    const s1 = reducer(s0, edit);
+    expect(dirty(s1)).toBe(true);
+    expect(dirty(reducer(s1, { type: "undo" }))).toBe(false);
+  });
+
+  it("is clean after markSaved and after opening a document", () => {
+    const s1 = reducer(reducer(s0, edit), { type: "markSaved" });
+    expect(dirty(s1)).toBe(false);
+    expect(dirty(reducer(s1, { type: "undo" }))).toBe(true);
+    const opened = reducer(reducer(s0, edit), { type: "loadDoc", doc: starterDocument });
+    expect(dirty(opened)).toBe(false);
+  });
+
+  it("treats a rename as a change", () => {
+    expect(dirty(reducer(s0, { type: "rename", name: "Other" }))).toBe(true);
+  });
+});

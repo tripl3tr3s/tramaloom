@@ -25,6 +25,8 @@ export interface StudioState {
   readonly selectedId: string | null;
   /** Snapshot taken when a drag starts; pushed to history only if the drag changes something. */
   readonly pendingCheckpoint: ArtDocument | null;
+  /** The doc as last saved, opened or shared; the toolbar shows a dot while `doc` differs. Undo can return to it. */
+  readonly savedDoc: ArtDocument;
 }
 
 export type Action =
@@ -50,6 +52,8 @@ export type Action =
   | { readonly type: "setHash"; readonly hash: string }
   | { readonly type: "seedPrev" }
   | { readonly type: "seedNext" }
+  /** Saved to a file or the library, or shared as a link. */
+  | { readonly type: "markSaved" }
   | { readonly type: "undo" }
   | { readonly type: "redo" };
 
@@ -63,6 +67,7 @@ export function initialState(doc: ArtDocument, hash: string): StudioState {
     future: [],
     selectedId: doc.layers[1]?.id ?? doc.layers[0]?.id ?? null,
     pendingCheckpoint: null,
+    savedDoc: doc,
   };
 }
 
@@ -165,7 +170,9 @@ export function reducer(s: StudioState, a: Action): StudioState {
     case "rename":
       return { ...s, doc: { ...s.doc, name: a.name.slice(0, 100) } };
     case "loadDoc":
-      return { ...commit(s, a.doc), selectedId: a.doc.layers[1]?.id ?? a.doc.layers[0]?.id ?? null };
+      return { ...commit(s, a.doc), selectedId: a.doc.layers[1]?.id ?? a.doc.layers[0]?.id ?? null, savedDoc: a.doc };
+    case "markSaved":
+      return s.savedDoc === s.doc ? s : { ...s, savedDoc: s.doc };
     case "setTraits": {
       // Traits never change the picture, but they are part of the piece: undoable.
       const { traits: _old, ...rest } = s.doc;

@@ -12,6 +12,8 @@ interface Props {
   readonly doc: ArtDocument;
   readonly hash: string;
   readonly onLoad: (doc: ArtDocument, hash: string) => void;
+  /** The current doc was stored as a preset. */
+  readonly onSaved: () => void;
   readonly onClose: () => void;
   readonly notify: (msg: string) => void;
 }
@@ -26,7 +28,7 @@ interface Entry {
 
 const THUMB = 220;
 
-export function Library({ doc, hash, onLoad, onClose, notify }: Props) {
+export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) {
   const [user, setUser] = useState<readonly UserPreset[]>([]);
   const [name, setName] = useState(doc.name);
   const [available, setAvailable] = useState(true);
@@ -62,6 +64,7 @@ export function Library({ doc, hash, onLoad, onClose, notify }: Props) {
     const label = name.trim().slice(0, 100) || doc.name;
     try {
       await savePreset({ id: presetId(), name: label, doc: { ...doc, name: label }, hash, createdAt: Date.now() });
+      onSaved();
       void requestPersistence();
       notify(`Saved "${label}" to your library`);
       refresh();

@@ -60,9 +60,12 @@ export function App() {
     },
     [state.doc, state.hash, notify],
   );
-  const copy = (text: string, msg: string) =>
+  const copy = (text: string, msg: string, onDone?: () => void) =>
     navigator.clipboard.writeText(text).then(
-      () => notify(msg),
+      () => {
+        notify(msg);
+        onDone?.();
+      },
       () => notify("Clipboard unavailable"),
     );
   const importFile = async (file: File) => {
@@ -114,6 +117,7 @@ export function App() {
       <div className="contents" inert={behind}>
       <Toolbar
         name={state.doc.name}
+        unsaved={state.doc !== state.savedDoc}
         hash={state.hash}
         canUndo={state.past.length > 0}
         canRedo={state.future.length > 0}
@@ -133,9 +137,12 @@ export function App() {
             notify(`Export failed: ${String(e)}`);
           }
         }}
-        onExportJSON={() => exportJSON(state.doc)}
+        onExportJSON={() => {
+          exportJSON(state.doc);
+          dispatch({ type: "markSaved" });
+        }}
         onImport={importFile}
-        onCopyLink={() => copy(window.location.href, "Link copied")}
+        onCopyLink={() => copy(window.location.href, "Link copied", () => dispatch({ type: "markSaved" }))}
         onToggleDebug={() => setDebug((d) => !d)}
         onMutate={() => setOverlay((o) => (o === "mutate" ? "none" : "mutate"))}
         onLibrary={() => setOverlay((o) => (o === "library" ? "none" : "library"))}
@@ -174,9 +181,11 @@ export function App() {
               hash={state.hash}
               onLoad={(doc, hash) => {
                 adopt(doc, hash);
+                dispatch({ type: "markSaved" });
                 setOverlay("none");
                 notify(`Loaded ${doc.name}`);
               }}
+              onSaved={() => dispatch({ type: "markSaved" })}
               onClose={() => setOverlay("none")}
               notify={notify}
             />

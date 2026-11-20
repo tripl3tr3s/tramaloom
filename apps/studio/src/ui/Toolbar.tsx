@@ -5,6 +5,8 @@ import { Menu } from "./Menu.tsx";
 
 interface Props {
   readonly name: string;
+  /** The doc differs from the last save, open or shared link. */
+  readonly unsaved: boolean;
   readonly hash: string;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
@@ -52,6 +54,12 @@ export function Toolbar(p: Props) {
         onChange={(e) => p.onRename(e.target.value)}
         aria-label="Piece name"
       />
+      {p.unsaved && (
+        <span className="-ml-1 grid size-4 place-items-center" title="Unsaved changes: Save document, add it to the Library, or copy a share link to keep them">
+          <span className="size-1.5 rounded-full bg-amber-400" aria-hidden="true" />
+          <span className="sr-only">Unsaved changes</span>
+        </span>
+      )}
       {sep}
       <button type="button" className={btn} onClick={p.onPrev} disabled={!p.canPrev} title="Previous seed (Left)">
         ←

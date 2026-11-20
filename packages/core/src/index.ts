@@ -19,6 +19,7 @@ export { COLOR_RULES, colorUnder, luminance, pickColor } from "./modules/color.t
 export type { ColorRule } from "./modules/color.ts";
 export * from "./palettes/palettes.ts";
 export * from "./render/svg.ts";
+export * from "./render/plotter.ts";
 export * from "./render/canvas2d.ts";
 export * from "./presets.ts";
 export { ENGINE_VERSION } from "./version.ts";

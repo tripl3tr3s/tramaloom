@@ -28,7 +28,7 @@ MIT licensed. Static web app, no backend.
 | `Ctrl+Z` / `Ctrl+Shift+Z` | undo / redo |
 | `M` | mutation grid (1-9 adopt, `R` shuffle, `Esc` close) |
 | `L` | preset library |
-| `E` | edition: traits and rarity, census, contact sheet, batch export |
+| `E` | edition: traits and rarity, census, contact sheet, batch export, plotter SVG, mint export |
 | `?` | every shortcut, in one list |
 
 ## Where your work lives

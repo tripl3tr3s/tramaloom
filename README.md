@@ -166,7 +166,7 @@ For an edition (many outputs of one design, one per seed), open **Edition** with
 
 ## Self-hosted release (Edition > Mint export)
 
-Exports one file named `index.html` (about 40 KB) with the player, the document frozen as it is, and a header documenting the seed format, traits and weights, licences and the suggested capture size. It follows a minimal contract that most tools understand:
+Exports one file named `index.html` (about 80 KB; the settings help is left out) with the player, the document frozen as it is, and a header documenting the seed format, traits and weights, licences and the suggested capture size. It follows a minimal contract that most tools understand:
 
 - **Seed in:** `?hash=` (exactly 64 hex, optional `0x`), or `#hash=`. Without one, a random seed is chosen and written into the address bar. Anything else is rejected, never padded: `window.gridloomError` is set and a `genart:error` event fires.
 - **Size:** `?width=` or `?height=` fixes that side in pixels and the other follows the aspect; both together fit the piece inside that box. Without them it fits the window, and resizes redraw the same piece. Capped at 8192 px a side and 16.7 megapixels so every current browser can draw it.

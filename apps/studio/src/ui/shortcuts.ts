@@ -45,6 +45,7 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       { combos: [["E"]], does: "Edition: traits, census, contact sheet, mint" },
       { combos: [["G"]], does: "Debug panel" },
       { combos: [["F"]], does: "Fullscreen viewport" },
+      { combos: [["T"]], does: "Tile preview: the piece repeated 3x3" },
       { combos: [["?"]], does: "This list" },
       { combos: [["Esc"]], does: "Close the open panel" },
     ],

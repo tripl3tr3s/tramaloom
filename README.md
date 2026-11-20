@@ -25,6 +25,7 @@ MIT licensed. Static web app, no backend.
 | `S` / `Shift+S` | PNG at 2000 / 4000 px (re-rendered, never upscaled) |
 | `G` | debug panel (hash, timing, resolved values) |
 | `F` | fullscreen viewport |
+| `T` | tile preview: the piece repeated 3x3 to check that edges join |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | undo / redo |
 | `M` | mutation grid (1-9 adopt, `R` shuffle, `Esc` close) |
 | `L` | preset library |

@@ -17,6 +17,7 @@ import { EditionPanel } from "./ui/edition/EditionPanel.tsx";
 import { FavoritesStrip } from "./ui/FavoritesStrip.tsx";
 import { ParamPanel } from "./ui/ParamPanel.tsx";
 import { ShortcutsHelp } from "./ui/ShortcutsHelp.tsx";
+import { TilePreview } from "./ui/TilePreview.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 import { isFirstVisit, Welcome } from "./ui/Welcome.tsx";
 
@@ -28,6 +29,7 @@ export function App() {
   const [favorites, setFavorites] = useState<readonly string[]>(loadFavorites);
   // Phones: which panel is open as a bottom sheet (null shows the art alone). Ignored from md up.
   const [sheet, setSheet] = useState<"layers" | "params" | null>(null);
+  const [tiled, setTiled] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -111,6 +113,7 @@ export function App() {
     s: () => png(2000),
     "shift+s": () => png(4000),
     g: () => setDebug((d) => !d),
+    t: () => setTiled((x) => !x),
     f: () => {
       if (document.fullscreenElement) document.exitFullscreen();
       else viewportRef.current?.requestFullscreen();
@@ -197,6 +200,29 @@ export function App() {
           className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,#27272a_0,#09090b_70%)]"
         >
           <canvas ref={canvasRef} className="rounded shadow-2xl shadow-black/60" />
+          {tiled && (
+            <TilePreview
+              source={canvasRef}
+              version={info}
+              box={box}
+              seamHint={(() => {
+                const canvasLayer = state.doc.layers.find((l) => l.module === "canvas");
+                const v = info.resolved.find((r) => r.id === canvasLayer?.id)?.values;
+                const margin = Number(v?.["margin"] ?? 0);
+                const corner = Number(v?.["cornerRadius"] ?? 0);
+                return margin > 0 || corner > 0 ? "Set the Canvas margin and corner radius to 0 for a seamless repeat" : null;
+              })()}
+            />
+          )}
+          <button
+            type="button"
+            className={`absolute bottom-3 right-3 z-20 rounded px-2 py-1 text-[11px] ring-1 ${tiled ? "bg-sky-700 text-white ring-sky-500" : "bg-zinc-900/80 text-zinc-300 ring-zinc-700 hover:bg-zinc-800"}`}
+            aria-pressed={tiled}
+            onClick={() => setTiled((x) => !x)}
+            title="Repeat the piece 3x3 to check that edges join (T)"
+          >
+            Tile 3x3
+          </button>
           {debug && <DebugPanel hash={state.hash} info={info} />}
           {info.error && !debug && (
             <div className="absolute bottom-3 left-3 rounded bg-red-950/90 px-2 py-1 text-xs text-red-300">{info.error}</div>

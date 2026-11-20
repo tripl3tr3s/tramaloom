@@ -10,14 +10,14 @@ export const cellFillModule = defineModule({
   label: "Cell fill",
   description: "Fills grid cells with palette colors.",
   params: {
-    fillChance: { kind: "number", label: "Fill chance", min: 0, max: 1, step: 0.01, default: 0.85 },
-    source: { kind: "enum", label: "Color source", options: ["zone", "palette", "noise"], default: "zone" },
-    shape: { kind: "enum", label: "Shape", options: ["square", "rounded", "circle"], default: "square" },
-    roundness: { kind: "number", label: "Roundness", min: 0, max: 0.5, step: 0.01, default: 0.2 },
-    inset: { kind: "number", label: "Inset", min: 0, max: 0.4, step: 0.01, default: 0 },
-    outline: { kind: "bool", label: "Outline", default: false },
-    outlineColor: { kind: "color", label: "Outline color", default: "#0d1b2a" },
-    outlineWidth: { kind: "number", label: "Outline width", min: 0.0005, max: 0.01, step: 0.0005, default: 0.002 },
+    fillChance: { kind: "number", group: "Fill", label: "Fill chance", min: 0, max: 1, step: 0.01, default: 0.85 },
+    source: { kind: "enum", group: "Fill", label: "Color source", options: ["zone", "palette", "noise"], default: "zone" },
+    shape: { kind: "enum", group: "Fill", label: "Shape", options: ["square", "rounded", "circle"], default: "square" },
+    roundness: { kind: "number", group: "Fill", label: "Roundness", min: 0, max: 0.5, step: 0.01, default: 0.2 },
+    inset: { kind: "number", group: "Fill", label: "Inset", min: 0, max: 0.4, step: 0.01, default: 0 },
+    outline: { kind: "bool", group: "Outline", label: "Outline", default: false },
+    outlineColor: { kind: "color", group: "Outline", label: "Outline color", default: "#0d1b2a" },
+    outlineWidth: { kind: "number", group: "Outline", label: "Outline width", min: 0.0005, max: 0.01, step: 0.0005, default: 0.002 },
   },
   apply(scene, v, ctx) {
     const pal = scene.palette;

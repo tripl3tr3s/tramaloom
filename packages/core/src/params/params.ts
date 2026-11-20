@@ -9,6 +9,8 @@ import { gaussian, skewHigh, skewLow, weighted } from "../prng/distributions.ts"
 interface Base {
   readonly label: string;
   readonly help?: string;
+  /** Section heading in the studio's param panel. Display only: never read by generation. */
+  readonly group?: string;
 }
 export interface NumberSpec extends Base {
   readonly kind: "number";

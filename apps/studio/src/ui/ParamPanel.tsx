@@ -1,6 +1,8 @@
 import type { Layer, ParamSetting, ResolvedLayer } from "@gridloom/core";
 import { defaultRegistry, getModule } from "@gridloom/core";
-import { isDefaultSetting } from "./params.ts";
+import { useState } from "react";
+import { ChevronIcon } from "./icons.tsx";
+import { groupParams, isDefaultSetting } from "./params.ts";
 import { ParamRow } from "./ParamRow.tsx";
 import { swatchesFor } from "./Swatches.tsx";
 
@@ -13,7 +15,34 @@ interface Props {
   readonly onResetLayer: (layerId: string) => void;
 }
 
+const COLLAPSED_KEY = "gridloom.collapsedGroups";
+
+/** Which groups this viewer folded away ("module/Group"). A convenience only, so storage failures are ignored. */
+function useCollapsed(): readonly [ReadonlySet<string>, (key: string) => void] {
+  const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(() => {
+    try {
+      const raw: unknown = JSON.parse(localStorage.getItem(COLLAPSED_KEY) ?? "[]");
+      return new Set(Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string") : []);
+    } catch {
+      return new Set();
+    }
+  });
+  const toggle = (key: string) =>
+    setCollapsed((prev) => {
+      const next = new Set(prev);
+      if (!next.delete(key)) next.add(key);
+      try {
+        localStorage.setItem(COLLAPSED_KEY, JSON.stringify([...next]));
+      } catch {
+        // Private mode or blocked storage: the fold still works for this session.
+      }
+      return next;
+    });
+  return [collapsed, toggle];
+}
+
 export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer }: Props) {
+  const [collapsed, toggle] = useCollapsed();
   if (!layer) return <p className="p-3 text-xs text-zinc-500">Select a layer.</p>;
   const def = getModule(defaultRegistry, layer.module);
   if (!def) return <p className="p-3 text-xs text-red-400">Unknown module {layer.module}</p>;
@@ -34,19 +63,58 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
         </button>
       </div>
       <p className="mb-2 text-[11px] leading-snug text-zinc-500">{def.description}</p>
-      {Object.entries(def.params).map(([name, spec]) => (
-        <ParamRow
-          key={`${layer.id}:${name}`}
-          name={name}
-          spec={spec}
-          setting={layer.params[name]}
-          resolved={resolved?.values[name]}
-          swatches={swatchesFor(layer.module, name)}
-          onChange={(s, record) => onChange(layer.id, name, s, record)}
-          onCheckpoint={onCheckpoint}
-          onReset={() => onResetParam(layer.id, name)}
-        />
-      ))}
+      {groupParams(def.params).map(({ title, names }) => {
+        const rows = names.map((name) => {
+          const spec = def.params[name];
+          return (
+            spec && (
+              <ParamRow
+                key={`${layer.id}:${name}`}
+                name={name}
+                spec={spec}
+                setting={layer.params[name]}
+                resolved={resolved?.values[name]}
+                swatches={swatchesFor(layer.module, name)}
+                onChange={(s, record) => onChange(layer.id, name, s, record)}
+                onCheckpoint={onCheckpoint}
+                onReset={() => onResetParam(layer.id, name)}
+              />
+            )
+          );
+        });
+        if (title === null) return <div key="loose">{rows}</div>;
+        const key = `${layer.module}/${title}`;
+        const open = !collapsed.has(key);
+        const bodyId = `params-${layer.id}-${title.replace(/\W+/g, "-")}`;
+        const changedCount = names.filter((n) => {
+          const spec = def.params[n];
+          return spec && !isDefaultSetting(spec, layer.params[n]);
+        }).length;
+        return (
+          <section key={title} className="mt-1">
+            <button
+              type="button"
+              className="flex w-full items-center gap-1.5 rounded py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
+              aria-expanded={open}
+              aria-controls={bodyId}
+              onClick={() => toggle(key)}
+            >
+              <span className={`transition-transform ${open ? "" : "-rotate-90"}`}>
+                <ChevronIcon />
+              </span>
+              <span className="flex-1">{title}</span>
+              {!open && changedCount > 0 && (
+                <span className="rounded bg-zinc-800 px-1.5 py-px text-[10px] font-normal normal-case tracking-normal text-sky-300">
+                  {changedCount} changed
+                </span>
+              )}
+            </button>
+            <div id={bodyId} hidden={!open}>
+              {rows}
+            </div>
+          </section>
+        );
+      })}
     </div>
   );
 }

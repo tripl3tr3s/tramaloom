@@ -11,20 +11,21 @@ export const paletteModule = defineModule({
   label: "Palette",
   description: "Chooses colors and splits the canvas into color zones.",
   params: {
-    palette: { kind: "enum", label: "Palette", options: PALETTE_NAMES, default: "harbor" },
-    shuffle: { kind: "bool", label: "Shuffle order", default: false },
-    zoneMode: { kind: "enum", label: "Zones", options: ZONE_MODES, default: "split-x" },
-    zoneCount: { kind: "int", label: "Zone count", min: 1, max: 4, default: 2 },
-    colorsPerZone: { kind: "int", label: "Colors per zone", min: 1, max: 5, default: 3 },
-    zoneShift: { kind: "int", label: "Zone shift", min: 0, max: 4, default: 2 },
+    palette: { kind: "enum", group: "Colors", label: "Palette", options: PALETTE_NAMES, default: "harbor" },
+    shuffle: { kind: "bool", group: "Colors", label: "Shuffle order", default: false },
+    zoneMode: { kind: "enum", group: "Zones", label: "Zones", options: ZONE_MODES, default: "split-x" },
+    zoneCount: { kind: "int", group: "Zones", label: "Zone count", min: 1, max: 4, default: 2 },
+    colorsPerZone: { kind: "int", group: "Zones", label: "Colors per zone", min: 1, max: 5, default: 3 },
+    zoneShift: { kind: "int", group: "Zones", label: "Zone shift", min: 0, max: 4, default: 2 },
     background: {
       kind: "enum",
+      group: "Colors",
       label: "Background",
       options: ["canvas", "first", "middle", "last"],
       default: "canvas",
       help: "canvas keeps the Canvas layer color; otherwise take a palette slot",
     },
-    noiseScale: { kind: "number", label: "Noise scale", min: 0.5, max: 8, step: 0.1, default: 2 },
+    noiseScale: { kind: "number", group: "Zones", label: "Noise scale", min: 0.5, max: 8, step: 0.1, default: 2 },
   },
   apply(scene, v, ctx) {
     const base = PALETTES[v.palette];

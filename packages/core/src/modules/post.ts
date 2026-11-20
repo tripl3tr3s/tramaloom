@@ -14,6 +14,7 @@ export const postModule = defineModule({
   params: {
     jitter: {
       kind: "number",
+      group: "Jitter",
       label: "Jitter",
       min: 0,
       max: 1,
@@ -21,9 +22,10 @@ export const postModule = defineModule({
       default: 0,
       help: "Nudges each shape on its own (1 is about 1% of the short side); neighbours separate, so keep it low for flush grids",
     },
-    border: { kind: "bool", label: "Border", default: false },
+    border: { kind: "bool", group: "Border", label: "Border", default: false },
     borderOffset: {
       kind: "number",
+      group: "Border",
       label: "Border offset",
       min: 0,
       max: 0.05,
@@ -31,11 +33,11 @@ export const postModule = defineModule({
       default: 0.015,
       help: "Distance outside the artwork frame; limited so the line stays on the canvas",
     },
-    borderWidth: { kind: "number", label: "Border width", min: 0.001, max: 0.03, step: 0.0005, default: 0.004 },
-    borderColor: { kind: "color", label: "Border color", default: "#0d1b2a" },
-    grain: { kind: "number", label: "Grain", min: 0, max: 1, step: 0.01, default: 0.25 },
-    grainSize: { kind: "number", label: "Grain size", min: 0.0005, max: 0.004, step: 0.0001, default: 0.0012 },
-    grainTone: { kind: "enum", label: "Grain tone", options: ["both", "light", "dark"], default: "both" },
+    borderWidth: { kind: "number", group: "Border", label: "Border width", min: 0.001, max: 0.03, step: 0.0005, default: 0.004 },
+    borderColor: { kind: "color", group: "Border", label: "Border color", default: "#0d1b2a" },
+    grain: { kind: "number", group: "Grain", label: "Grain", min: 0, max: 1, step: 0.01, default: 0.25 },
+    grainSize: { kind: "number", group: "Grain", label: "Grain size", min: 0.0005, max: 0.004, step: 0.0001, default: 0.0012 },
+    grainTone: { kind: "enum", group: "Grain", label: "Grain tone", options: ["both", "light", "dark"], default: "both" },
   },
   apply(scene, v, ctx) {
     // Jitter: two draws per existing item, always, so the jitter amount never reshuffles anything.

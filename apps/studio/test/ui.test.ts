@@ -2,7 +2,7 @@ import { starterDocument } from "@gridloom/core";
 import { describe, expect, it } from "vitest";
 import type { ParamSpec } from "@gridloom/core";
 import { initialState, reducer } from "../src/state/store.ts";
-import { isDefaultSetting } from "../src/ui/params.ts";
+import { groupParams, isDefaultSetting } from "../src/ui/params.ts";
 import { SHORTCUT_GROUPS } from "../src/ui/shortcuts.ts";
 import { densityCurve } from "../src/ui/vary.ts";
 
@@ -104,5 +104,22 @@ describe("SHORTCUT_GROUPS", () => {
     const keys = SHORTCUT_GROUPS.flatMap((g) => g.items.map((i) => `${g.title}/${i.combos.map((c) => c.join("+")).join(",")}`));
     expect(new Set(keys).size).toBe(keys.length);
     expect(keys.some((k) => k.endsWith("/?"))).toBe(true);
+  });
+});
+
+describe("groupParams", () => {
+  const n = (label: string, group?: string): ParamSpec => ({ kind: "bool", label, default: false, ...(group ? { group } : {}) });
+
+  it("keeps ungrouped params first, then groups in first-appearance order", () => {
+    const groups = groupParams({ a: n("A", "Shape"), b: n("B"), c: n("C", "Color"), d: n("D", "Shape") });
+    expect(groups).toEqual([
+      { title: null, names: ["b"] },
+      { title: "Shape", names: ["a", "d"] },
+      { title: "Color", names: ["c"] },
+    ]);
+  });
+
+  it("returns one untitled section when nothing is grouped", () => {
+    expect(groupParams({ a: n("A"), b: n("B") })).toEqual([{ title: null, names: ["a", "b"] }]);
   });
 });

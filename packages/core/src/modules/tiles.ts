@@ -61,20 +61,21 @@ export const tilesModule = defineModule({
   description:
     "Truchet tiles: arcs, diagonals, triangles and quarter discs, rotated per cell. Arcs join up across equal-size cells with no gap.",
   params: {
-    motif: { kind: "enum", label: "Motif", options: ["arcs", "diagonal", "triangle", "quarter", "mixed"], default: "arcs" },
-    chance: { kind: "number", label: "Chance", min: 0, max: 1, step: 0.01, default: 1 },
-    lines: { kind: "int", label: "Lines", min: 1, max: 5, default: 1, help: "Parallel arcs per corner" },
-    lineWidth: { kind: "number", label: "Line width", min: 0.02, max: 0.3, step: 0.005, default: 0.08 },
+    motif: { kind: "enum", group: "Pattern", label: "Motif", options: ["arcs", "diagonal", "triangle", "quarter", "mixed"], default: "arcs" },
+    chance: { kind: "number", group: "Pattern", label: "Chance", min: 0, max: 1, step: 0.01, default: 1 },
+    lines: { kind: "int", group: "Pattern", label: "Lines", min: 1, max: 5, default: 1, help: "Parallel arcs per corner" },
+    lineWidth: { kind: "number", group: "Pattern", label: "Line width", min: 0.02, max: 0.3, step: 0.005, default: 0.08 },
     rotation: {
       kind: "enum",
+      group: "Pattern",
       label: "Rotation",
       options: ["random", "noise", "checker"],
       default: "random",
       help: "noise: neighbouring cells tend to agree; checker: fixed pattern by grid position",
     },
-    noiseScale: { kind: "number", label: "Noise scale", min: 0.5, max: 10, step: 0.1, default: 3, help: "Features per canvas width" },
-    colorRule: { kind: "enum", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", label: "Single color", default: "#f4f1ea" },
+    noiseScale: { kind: "number", group: "Pattern", label: "Noise scale", min: 0.5, max: 10, step: 0.1, default: 3, help: "Features per canvas width" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     // Exactly four draws per cell (chance, rotation, color, motif).

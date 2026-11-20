@@ -166,7 +166,7 @@ For an edition (many outputs of one design, one per seed), open **Edition** with
 
 ## Self-hosted release (Edition > Mint export)
 
-Exports one file named `index.html` (about 80 KB; the settings help is left out) with the player, the document frozen as it is, and a header documenting the seed format, traits and weights, licences and the suggested capture size. It follows a minimal contract that most tools understand:
+Exports one file named `index.html` (about 35 to 50 KB) with the player engine, only the modules the piece uses, the document frozen as it is, and a header documenting the seed format, traits and weights, licences and the suggested capture size. It follows a minimal contract that most tools understand:
 
 - **Seed in:** `?hash=` (exactly 64 hex, optional `0x`), or `#hash=`. Without one, a random seed is chosen and written into the address bar. Anything else is rejected, never padded: `window.gridloomError` is set and a `genart:error` event fires.
 - **Size:** `?width=` or `?height=` fixes that side in pixels and the other follows the aspect; both together fit the piece inside that box. Without them it fits the window, and resizes redraw the same piece. Capped at 8192 px a side and 16.7 megapixels so every current browser can draw it.
@@ -195,7 +195,7 @@ node packages/core/scripts/render.ts 9 out   # SVG previews of the starter docum
 
 ```
 packages/core     pure TS, zero runtime deps; the engine, modules and presets. Ships inside mint exports.
-packages/runtime  the player for exported pieces (built to one IIFE) and the HTML assembler
+packages/runtime  the player for exported pieces (an engine plus one script per module) and the HTML assembler
 apps/studio       Vite + React 19 + Tailwind 4 static app (PWA)
 ```
 
@@ -230,7 +230,7 @@ By convention (review them in every change to `packages/core`):
 5. Test its invariants, add entries to `packages/core/test/golden.test.ts`, and run `UPDATE_GOLDEN=1 pnpm test`: the diff of `golden.json` must only add entries.
 6. Add a built-in preset that uses it (with at least 3 traits), so the cross-engine check covers it.
 
-The studio builds the settings panel, the Add menu entry, mutation, breeding, traits and plotter support from the module definition alone.
+The studio builds the settings panel, the Add menu entry, mutation, breeding, traits and plotter support from the module definition alone, and the mint player build (`packages/runtime/scripts/build.ts`) gives it its own small script from the registry, so a minted piece only carries the modules it uses.
 
 ### Deploy
 

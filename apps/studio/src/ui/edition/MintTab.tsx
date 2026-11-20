@@ -1,6 +1,7 @@
 import type { ArtDocument } from "@gridloom/core";
 import { generate, pixelSize } from "@gridloom/core";
 import { assembleMint } from "@gridloom/runtime/assemble";
+import modulesSource from "@gridloom/runtime/modules.json?raw";
 import runtimeSource from "@gridloom/runtime/runtime.js?raw";
 import { useMemo, useState } from "react";
 import { download } from "../../render/export.ts";
@@ -9,6 +10,14 @@ const field = "rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-100 outline-n
 const LICENCES = ["All rights reserved", "CC BY-NC 4.0", "CC BY 4.0", "CC0 1.0", "NFT licence 2.0"] as const;
 
 const kb = (n: number) => `${(n / 1024).toFixed(1)} KB`;
+
+/** The built player: the engine plus one script per module; a page takes only what its piece uses. */
+const PLAYER = ((): { readonly engine: string; readonly modules: Readonly<Record<string, string>> } => {
+  const parsed: unknown = JSON.parse(modulesSource);
+  const modules =
+    parsed && typeof parsed === "object" ? Object.fromEntries(Object.entries(parsed).filter((e): e is [string, string] => typeof e[1] === "string")) : {};
+  return { engine: runtimeSource, modules };
+})();
 
 /** Self-hosted release: one index.html with the player, the frozen document and its documentation. */
 export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; readonly hash: string; readonly notify: (m: string) => void }) {
@@ -21,7 +30,7 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
   const capture = useMemo(() => pixelSize(generate(doc, hash).scene, 2000), [doc, hash]);
   const html = useMemo(() => {
     try {
-      return assembleMint(runtimeSource, doc, { title, artist, licence, captureWidth: capture.width, captureHeight: capture.height });
+      return assembleMint(PLAYER, doc, { title, artist, licence, captureWidth: capture.width, captureHeight: capture.height });
     } catch (e) {
       return e instanceof Error ? e : new Error(String(e));
     }

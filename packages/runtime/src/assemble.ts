@@ -13,6 +13,17 @@ export interface MintMeta {
 
 const MAX_META = 200;
 
+/** The built player: the engine, and one script per module (dist/runtime.js and dist/modules.json). */
+export interface Player {
+  readonly engine: string;
+  readonly modules: Readonly<Record<string, string>>;
+}
+
+/** Modules the piece's layers use, in stack order (so the bytes never depend on anything else). */
+export function modulesUsed(doc: ArtDocument): readonly string[] {
+  return [...new Set(doc.layers.map((l) => l.module))];
+}
+
 /** Cut by code points, so a surrogate pair is never split. */
 const cut = (s: string, n: number): string => Array.from(s).slice(0, n).join("");
 
@@ -62,7 +73,12 @@ function traitTable(doc: ArtDocument): string[] {
  * Build the single self-contained index.html for a self-hosted release.
  * Pure: the same inputs always give the same bytes.
  */
-export function assembleMint(runtime: string, doc: ArtDocument, meta: MintMeta): string {
+export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): string {
+  const moduleScripts = modulesUsed(doc).map((id) => {
+    const code = Object.hasOwn(player.modules, id) ? player.modules[id] : undefined;
+    if (code === undefined) throw new Error(`no player code for module "${id}": rebuild @gridloom/runtime`);
+    return `<script>${scriptSafeCode(code)}</script>`;
+  });
   const title = meta.title.trim() || doc.name || "Untitled";
   const table = traitTable(doc);
   const header = [
@@ -103,7 +119,10 @@ export function assembleMint(runtime: string, doc: ArtDocument, meta: MintMeta):
     "</head>",
     "<body>",
     `<script id="gridloom-document" type="application/json">${scriptSafeJson(doc)}</script>`,
-    `<script>${scriptSafeCode(runtime)}</script>`,
+    `<script>${scriptSafeCode(player.engine)}</script>`,
+    // Only the modules this piece uses; each registers itself with the engine above.
+    ...moduleScripts,
+    "<script>GridloomRuntime.start()</script>",
     "</body>",
     "</html>",
     "",

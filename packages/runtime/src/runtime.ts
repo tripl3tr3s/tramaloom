@@ -5,10 +5,32 @@
  * - window.$features: flat traits object, from the hash alone, set before rendering
  * - window.render(hash): pure entry point; window.rendered + "genart:done" when the frame is complete
  * No network: everything this needs is in the page.
+ *
+ * Built as an engine without modules. An exported page loads this, then one small
+ * script per module the piece uses (each calls registerModule), then calls start().
+ * The helpers below are exported so those module scripts can share them.
  */
-import type { ArtDocument, Traits } from "@gridloom/core";
+import type { ArtDocument, ModuleDef, Registry, Traits } from "@gridloom/core";
 import type { Scene } from "@gridloom/core";
 import { computeTraits, drawScene, ENGINE_VERSION, generate, toSVG } from "@gridloom/core";
+
+// Shared helpers the module scripts import (their imports become GridloomRuntime.<name>).
+export { addItems } from "../../core/src/scene.ts";
+export { COLOR_RULES, colorHelp, colorLookup, extent, pickColor, rampColors } from "../../core/src/modules/color.ts";
+export { defineModule } from "../../core/src/modules/types.ts";
+export { sampleField } from "../../core/src/modules/trace.ts";
+export { chance, int, shuffled } from "../../core/src/prng/distributions.ts";
+export { makeNoise2D } from "../../core/src/prng/noise.ts";
+export { dcos, dsin, TAU } from "../../core/src/math/trig.ts";
+export { PALETTE_NAMES, PALETTES } from "../../core/src/palettes/palettes.ts";
+
+/** The modules this page's script tags registered: exactly the ones the piece uses. */
+const modules: Record<string, ModuleDef> = {};
+const registry: Registry = modules;
+
+export function registerModule(id: string, def: ModuleDef): void {
+  modules[id] = def;
+}
 
 interface GridloomApi {
   readonly engine: number;
@@ -130,8 +152,8 @@ function main(): void {
     if (!hash) throw new Error("hash must be 64 hex characters (optionally 0x-prefixed)");
     api.hash = hash;
     // Features first, from the hash alone; never from what gets drawn.
-    window.$features = computeTraits(doc, hash);
-    const { scene } = generate(doc, hash);
+    window.$features = computeTraits(doc, hash, registry);
+    const { scene } = generate(doc, hash, registry);
     current = { hash, scene };
     draw(scene);
     document.dispatchEvent(new CustomEvent("genart:done", { detail: { hash, features: window.$features } }));
@@ -172,8 +194,11 @@ function main(): void {
   }
 }
 
-try {
-  main();
-} catch (e) {
-  fail(`Cannot start this piece: ${e instanceof Error ? e.message : String(e)}`);
+/** Called by the page once every module script has registered. */
+export function start(): void {
+  try {
+    main();
+  } catch (e) {
+    fail(`Cannot start this piece: ${e instanceof Error ? e.message : String(e)}`);
+  }
 }

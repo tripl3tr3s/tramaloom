@@ -12,7 +12,11 @@ import { assembleMint } from "../packages/runtime/src/assemble.ts";
  * The exported index.html must work with no network at all, fire its done
  * signal, and draw exactly what the studio draws for the same seed.
  */
-const runtime = readFileSync(join(import.meta.dirname, "../packages/runtime/dist/runtime.js"), "utf8");
+const built = join(import.meta.dirname, "../packages/runtime/dist");
+const runtime = {
+  engine: readFileSync(join(built, "runtime.js"), "utf8"),
+  modules: JSON.parse(readFileSync(join(built, "modules.json"), "utf8")) as Record<string, string>,
+};
 const dir = mkdtempSync(join(tmpdir(), "gridloom-mint-"));
 const meta = { title: "Mint test", artist: "", licence: "CC0 1.0", captureWidth: 1000, captureHeight: 1000 };
 declare global {
@@ -23,7 +27,8 @@ declare global {
 
 const sha = (s: string) => createHash("sha256").update(s).digest("hex");
 
-const presets = builtinPresets.filter((p) => ["breadboard", "quilt", "totem"].includes(p.id));
+// Every preset: between them they use every module, each loaded as its own script.
+const presets = builtinPresets;
 
 async function openOffline(page: Page, file: string, query: string): Promise<string[]> {
   const requests: string[] = [];
@@ -75,8 +80,8 @@ for (const p of presets) {
 }
 
 test("fixed size, done event and a random seed written to the URL", async ({ page }) => {
-  const p = presets[0];
-  if (!p) throw new Error("no preset");
+  const p = builtinPresets.find((x) => x.id === "breadboard");
+  if (!p) throw new Error("no breadboard preset");
   const file = join(dir, "size.html");
   writeFileSync(file, assembleMint(runtime, p.doc, meta));
   await page.addInitScript(() => {

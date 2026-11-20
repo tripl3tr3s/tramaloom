@@ -7,10 +7,11 @@
   "description": "Self-contained player for exported Gridloom pieces, plus the HTML assembler.",
   "exports": {
     "./assemble": "./src/assemble.ts",
-    "./runtime.js": "./dist/runtime.js"
+    "./runtime.js": "./dist/runtime.js",
+    "./modules.json": "./dist/modules.json"
   },
   "scripts": {
-    "build": "vite build",
+    "build": "node scripts/build.ts",
     "test": "vitest run",
     "typecheck": "tsc -p ."
   },

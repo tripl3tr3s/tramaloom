@@ -32,6 +32,8 @@ export type Action =
   | { readonly type: "checkpoint" }
   | { readonly type: "toggleLayer"; readonly layerId: string }
   | { readonly type: "moveLayer"; readonly layerId: string; readonly dir: -1 | 1 }
+  /** Drag reorder: put the layer at `index` in the final order (canvas stays at 0). */
+  | { readonly type: "moveLayerTo"; readonly layerId: string; readonly index: number }
   | { readonly type: "addLayer"; readonly module: string }
   | { readonly type: "removeLayer"; readonly layerId: string }
   | { readonly type: "duplicateLayer"; readonly layerId: string }
@@ -114,6 +116,14 @@ export function reducer(s: StudioState, a: Action): StudioState {
       const j = i + a.dir;
       if (i < 1 || j < 1 || j >= s.doc.layers.length) return s; // canvas stays first
       const layers = s.doc.layers.map((l, k) => (k === i ? s.doc.layers[j] : k === j ? s.doc.layers[i] : l) as Layer);
+      return commit(s, { ...s.doc, layers });
+    }
+    case "moveLayerTo": {
+      const i = s.doc.layers.findIndex((l) => l.id === a.layerId);
+      const n = s.doc.layers.length;
+      if (i < 1 || a.index < 1 || a.index >= n || a.index === i) return s;
+      const rest = s.doc.layers.filter((_, k) => k !== i);
+      const layers = [...rest.slice(0, a.index), s.doc.layers[i] as Layer, ...rest.slice(a.index)];
       return commit(s, { ...s.doc, layers });
     }
     case "addLayer": {

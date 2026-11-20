@@ -76,6 +76,18 @@ const DOCS: Record<string, ArtDocument> = {
     enabled: true,
     params: { jitter: { value: 0.4 }, border: { value: true }, grain: { value: 0.05 }, grainTone: { value: "light" } },
   }),
+  mazeWalls: withLayer({ id: "m", module: "maze", enabled: true, params: {} }),
+  mazePathsMasked: tweak(
+    withLayer({ id: "m", module: "maze", enabled: true, params: { style: { value: "paths" }, braid: { value: 0.5 }, colorRule: { value: "zone" } } }),
+    "grid",
+    { mask: { value: "circle" } },
+  ),
+  halftone: withLayer({ id: "h", module: "halftone", enabled: true, params: {} }),
+  halftoneRadial: withLayer({ id: "h", module: "halftone", enabled: true, params: { field: { value: "radial" }, shape: { value: "diamond" }, invert: { value: true } } }),
+  hatch: withLayer({ id: "x", module: "hatch", enabled: true, params: {} }),
+  hatchNoiseCross: withLayer({ id: "x", module: "hatch", enabled: true, params: { direction: { value: "cross" }, lines: { value: 9 } } }),
+  flow: withLayer({ id: "f", module: "flow", enabled: true, params: {} }),
+  flowMasked: tweak(withLayer({ id: "f", module: "flow", enabled: true, params: { colorRule: { value: "palette" } } }), "grid", { mask: { value: "noise" } }),
   circuitsTreeMixed: withLayer({
     id: "c",
     module: "circuits",

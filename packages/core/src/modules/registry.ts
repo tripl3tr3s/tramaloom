@@ -1,8 +1,12 @@
 import { canvasModule } from "./canvas.ts";
 import { cellFillModule } from "./cellFill.ts";
 import { circuitsModule } from "./circuits.ts";
+import { flowModule } from "./flow.ts";
 import { gridModule } from "./grid.ts";
+import { halftoneModule } from "./halftone.ts";
+import { hatchModule } from "./hatch.ts";
 import { insetsModule } from "./insets.ts";
+import { mazeModule } from "./maze.ts";
 import { paletteModule } from "./palette.ts";
 import { postModule } from "./post.ts";
 import { symmetryModule } from "./symmetry.ts";
@@ -26,6 +30,10 @@ export const defaultRegistry: Registry = {
   insets: asDef(insetsModule),
   tiles: asDef(tilesModule),
   circuits: asDef(circuitsModule),
+  maze: asDef(mazeModule),
+  halftone: asDef(halftoneModule),
+  hatch: asDef(hatchModule),
+  flow: asDef(flowModule),
   symmetry: asDef(symmetryModule),
   post: asDef(postModule),
 };

@@ -163,4 +163,35 @@ export const builtinPresets: readonly Preset[] = [
       L("post", "post", { jitter: fixed(0.08), grain: fixed(0.35) }),
     ]),
   },
+  {
+    id: "labyrinth",
+    hash: "9e3779b97f4a7c15f39cc0605cedc8341082276bf3a27251f86c6a11d0c18e95",
+    doc: doc("Labyrinth", [
+      L("canvas", "canvas", { aspect: fixed("4:5"), margin: fixed(0.08) }),
+      L("palette", "palette", { palette: pick("ink", { ink: 2, signal: 1, ember: 1 }), zoneMode: pick("radial", { radial: 2, noise: 1 }), background: fixed("first") }),
+      L("grid", "grid", { cols: range(14, 10, 20), subdivDepth: fixed(0), mask: pick("none", { none: 2, circle: 1 }) }),
+      L("dots", "halftone", { field: pick("radial", { radial: 2, noise: 1 }), maxSize: fixed(0.7), invert: fixed(true), colorRule: fixed("zone") }),
+      L("maze", "maze", { style: pick("walls", { walls: 2, paths: 1 }), braid: range(0.1, 0, 0.4, "low"), lineWidth: fixed(0.12) }),
+      L("post", "post", { grain: fixed(0.15) }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Maze", layerId: "maze", param: "style" },
+      { name: "Shape", layerId: "grid", param: "mask" },
+    ]),
+  },
+  {
+    id: "currents",
+    hash: "243f6a8885a308d313198a2e03707344a4093822299f31d0082efa98ec4e6c89",
+    doc: doc("Currents", [
+      L("canvas", "canvas", { aspect: fixed("3:4"), margin: fixed(0.06) }),
+      L("palette", "palette", { palette: pick("lagoon", { lagoon: 2, harbor: 1, moss: 1 }), zoneMode: fixed("noise") }),
+      L("grid", "grid", { cols: range(10, 8, 14), subdivDepth: fixed(0) }),
+      L("shade", "hatch", { direction: pick("noise", { noise: 2, cross: 1 }), lines: range(5, 3, 8), chance: range(0.6, 0.4, 0.9), colorRule: fixed("zone") }),
+      L("flow", "flow", { count: range(160, 80, 260), noiseScale: range(2, 1.2, 3.5, "gaussian"), lineWidth: fixed(0.0035), colorRule: fixed("palette") }),
+    ], [
+      { name: "Palette", layerId: "palette", param: "palette" },
+      { name: "Shading", layerId: "shade", param: "direction" },
+      { name: "Lines", layerId: "flow", param: "count", bins: [{ label: "Calm", upTo: 130 }, { label: "Busy", upTo: 210 }, { label: "Torrent" }] },
+    ]),
+  },
 ];

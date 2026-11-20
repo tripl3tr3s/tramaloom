@@ -1,6 +1,7 @@
 import type { Layer, ParamSetting, ResolvedLayer } from "@gridloom/core";
 import { defaultRegistry, getModule } from "@gridloom/core";
 import { ParamRow } from "./ParamRow.tsx";
+import { swatchesFor } from "./Swatches.tsx";
 
 interface Props {
   readonly layer: Layer | undefined;
@@ -24,6 +25,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint }: Props) {
           spec={spec}
           setting={layer.params[name]}
           resolved={resolved?.values[name]}
+          swatches={swatchesFor(layer.module, name)}
           onChange={(s, record) => onChange(layer.id, name, s, record)}
           onCheckpoint={onCheckpoint}
         />

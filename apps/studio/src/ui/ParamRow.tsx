@@ -1,11 +1,15 @@
 import type { Distribution, ParamSetting, ParamSpec, ParamValue, Variation } from "@gridloom/core";
 import { MAX_WEIGHT } from "../state/limits.ts";
+import type { OptionSwatches } from "./Swatches.tsx";
+import { Swatch, SwatchPicker } from "./Swatches.tsx";
 
 interface Props {
   readonly name: string;
   readonly spec: ParamSpec;
   readonly setting: ParamSetting | undefined;
   readonly resolved: ParamValue | undefined;
+  /** Enum options drawn as color swatches instead of a dropdown. */
+  readonly swatches?: OptionSwatches | undefined;
   readonly onChange: (setting: ParamSetting, record: boolean) => void;
   readonly onCheckpoint: () => void;
 }
@@ -40,7 +44,7 @@ function defaultVary(spec: ParamSpec, value: ParamValue): Variation | null {
   }
 }
 
-export function ParamRow({ name, spec, setting, resolved, onChange, onCheckpoint }: Props) {
+export function ParamRow({ name, spec, setting, resolved, swatches, onChange, onCheckpoint }: Props) {
   const value = setting?.value ?? spec.default;
   const vary = setting?.vary;
   const locked = setting?.locked === true;
@@ -145,15 +149,33 @@ export function ParamRow({ name, spec, setting, resolved, onChange, onCheckpoint
         </div>
       )}
 
-      {spec.kind === "enum" && (
-        <select className={`${input} w-full ${vary && !locked ? "opacity-40 hover:opacity-100" : ""}`} value={String(value)} onChange={(e) => onChange(withValue(e.target.value), true)}>
-          {spec.options.map((o) => (
-            <option key={o} value={o}>
-              {o}
-            </option>
-          ))}
-        </select>
-      )}
+      {spec.kind === "enum" &&
+        (swatches ? (
+          <div>
+            {vary && !locked && <p className="mb-1 text-[11px] text-zinc-500">Outlined: used when locked. The seed draws by the weights below.</p>}
+            <SwatchPicker
+              label={spec.label}
+              options={spec.options}
+              swatches={swatches}
+              value={String(value)}
+              drawn={vary && !locked && typeof resolved === "string" ? resolved : undefined}
+              onPick={(o) => onChange(withValue(o), true)}
+            />
+          </div>
+        ) : (
+          <select
+            className={`${input} w-full ${vary && !locked ? "opacity-40 hover:opacity-100" : ""}`}
+            value={String(value)}
+            aria-label={spec.label}
+            onChange={(e) => onChange(withValue(e.target.value), true)}
+          >
+            {spec.options.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        ))}
 
       {spec.kind === "bool" && (
         <label className={`flex items-center gap-2 text-xs text-zinc-400 ${vary && !locked ? "opacity-40" : ""}`}>
@@ -170,8 +192,8 @@ export function ParamRow({ name, spec, setting, resolved, onChange, onCheckpoint
       {(spec.kind === "enum" || spec.kind === "bool") && vary?.kind === "weights" && (
         <div className="mt-1.5 grid grid-cols-2 gap-x-3 gap-y-1">
           {(spec.kind === "enum" ? spec.options : ["false", "true"]).map((o) => (
-            <label key={o} className="flex items-center justify-between gap-1 text-[11px] text-zinc-400">
-              <span className="truncate">{o}</span>
+            <label key={o} className="flex items-center justify-between gap-1 text-[11px] text-zinc-400" title={o}>
+              {swatches?.[o] ? <Swatch colors={swatches[o]} className="h-3 flex-1" /> : <span className="flex-1 truncate">{o}</span>}
               <input
                 type="number"
                 className={`${input} w-12 font-mono`}
@@ -179,6 +201,7 @@ export function ParamRow({ name, spec, setting, resolved, onChange, onCheckpoint
                 max={MAX_WEIGHT}
                 step={1}
                 value={vary.weights[o] ?? 0}
+                aria-label={`${spec.label}, weight of ${o}`}
                 onChange={(e) =>
                   onChange(withVary({ kind: "weights", weights: { ...vary.weights, [o]: Math.min(MAX_WEIGHT, Math.max(0, Number(e.target.value) || 0)) } }), true)
                 }

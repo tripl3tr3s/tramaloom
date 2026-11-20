@@ -1,5 +1,7 @@
 import { normaliseHash } from "@gridloom/core";
 import { useEffect, useState } from "react";
+import { ChevronIcon } from "./icons.tsx";
+import { Menu } from "./Menu.tsx";
 
 interface Props {
   readonly name: string;
@@ -86,24 +88,12 @@ export function Toolbar(p: Props) {
         Edition
       </button>
       <div className="flex-1" />
-      <button type="button" className={btn} onClick={() => p.onExportPNG(2000)} title="PNG 2000px (S)">
-        PNG
-      </button>
-      <button type="button" className={btn} onClick={() => p.onExportPNG(4000)} title="PNG 4000px (Shift+S)">
-        PNG 4k
-      </button>
-      <button type="button" className={btn} onClick={p.onExportSVG}>
-        SVG
-      </button>
-      <button type="button" className={btn} onClick={p.onExportJSON} title="Save the document as JSON">
-        Save
-      </button>
-      <label className={`${btn} cursor-pointer`} title="Open a .gridloom.json document">
+      <label className={`${btn} cursor-pointer has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-sky-500`} title="Open a .gridloom.json document">
         Open
         <input
           type="file"
           accept=".json,application/json"
-          className="hidden"
+          className="sr-only"
           onChange={(e) => {
             const f = e.target.files?.[0];
             if (f) p.onImport(f);
@@ -111,10 +101,25 @@ export function Toolbar(p: Props) {
           }}
         />
       </label>
+      <Menu
+        label="Export"
+        title="Export images, save the document, copy a share link"
+        align="right"
+        triggerClass={`${btn} inline-flex items-center gap-1 bg-sky-700/80 text-white hover:bg-sky-600`}
+        trigger={
+          <>
+            Export <ChevronIcon />
+          </>
+        }
+        items={[
+          { label: "PNG, 2000 px", hint: "S", onSelect: () => p.onExportPNG(2000) },
+          { label: "PNG, 4000 px", hint: "Shift+S", onSelect: () => p.onExportPNG(4000) },
+          { label: "SVG", description: "Vector, from the same drawing", onSelect: p.onExportSVG },
+          { label: "Save document", description: "JSON file you can Open later", separatorBefore: true, onSelect: p.onExportJSON },
+          { label: "Copy share link", description: "Settings and seed, no server", onSelect: p.onCopyLink },
+        ]}
+      />
       {sep}
-      <button type="button" className={btn} onClick={p.onCopyLink} title="Copy shareable link">
-        Link
-      </button>
       <button type="button" className={btn} onClick={p.onToggleDebug} title="Debug panel (G)">
         Debug
       </button>

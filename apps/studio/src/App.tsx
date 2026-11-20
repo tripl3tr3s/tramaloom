@@ -1,6 +1,6 @@
 import type { ArtDocument, ParamSetting } from "@gridloom/core";
 import { defaultRegistry, ENGINE_VERSION, getModule, starterDocument } from "@gridloom/core";
-import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
+import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";
 import { exportJSON, exportPNG, exportSVG } from "./render/export.ts";
@@ -12,16 +12,26 @@ import { encodeState } from "./state/url.ts";
 import { initialState, randomHash, reducer } from "./state/store.ts";
 import { DebugPanel } from "./ui/DebugPanel.tsx";
 import { LayerStack } from "./ui/LayerStack.tsx";
-import { Library } from "./ui/Library.tsx";
-import { MutationGrid } from "./ui/MutationGrid.tsx";
-import { EditionPanel } from "./ui/edition/EditionPanel.tsx";
 import { FavoritesStrip } from "./ui/FavoritesStrip.tsx";
 import { ParamPanel } from "./ui/ParamPanel.tsx";
 import { ScrollHints } from "./ui/ScrollHints.tsx";
-import { ShortcutsHelp } from "./ui/ShortcutsHelp.tsx";
 import { TilePreview } from "./ui/TilePreview.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 import { isFirstVisit, Welcome } from "./ui/Welcome.tsx";
+
+// Overlays load on demand, so the first paint does not wait for them. The Edition panel is the
+// heaviest: its Mint tab carries the whole player. All are fetched once the page is idle.
+const loadMutation = () => import("./ui/MutationGrid.tsx");
+const loadEdition = () => import("./ui/edition/EditionPanel.tsx");
+const loadLibrary = () => import("./ui/Library.tsx");
+const loadShortcuts = () => import("./ui/ShortcutsHelp.tsx");
+const MutationGrid = lazy(() => loadMutation().then((m) => ({ default: m.MutationGrid })));
+const EditionPanel = lazy(() => loadEdition().then((m) => ({ default: m.EditionPanel })));
+const Library = lazy(() => loadLibrary().then((m) => ({ default: m.Library })));
+const ShortcutsHelp = lazy(() => loadShortcuts().then((m) => ({ default: m.ShortcutsHelp })));
+const preloadOverlays = () => {
+  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts]) load().catch(() => undefined);
+};
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
@@ -49,6 +59,16 @@ export function App() {
       notify(`This link was made with engine v${engine}; this is v${ENGINE_VERSION}, so it may look different`, 6000);
     }
   });
+
+  useEffect(() => {
+    // After the first picture: warm the overlay chunks so opening one never waits on the network.
+    if (typeof requestIdleCallback === "function") {
+      const id = requestIdleCallback(preloadOverlays, { timeout: 3000 });
+      return () => cancelIdleCallback(id);
+    }
+    const t = setTimeout(preloadOverlays, 1500);
+    return () => clearTimeout(t);
+  }, []);
 
   useEffect(() => {
     const el = viewportRef.current;
@@ -257,6 +277,7 @@ export function App() {
           {info.error && !debug && (
             <div className="absolute bottom-3 left-3 rounded bg-red-950/90 px-2 py-1 text-xs text-red-300">{info.error}</div>
           )}
+          <Suspense fallback={null}>
           {overlay === "mutate" && (
             <MutationGrid
               doc={state.doc}
@@ -285,6 +306,7 @@ export function App() {
             />
           )}
           {overlay === "shortcuts" && <ShortcutsHelp onClose={() => setOverlay("none")} />}
+          </Suspense>
           {overlay === "welcome" && <Welcome onClose={() => setOverlay("none")} onPresets={() => setOverlay("library")} />}
           {toast && (
             <div className="absolute top-3 z-40 rounded-full bg-zinc-800/95 px-3 py-1 text-xs text-zinc-200 shadow">{toast}</div>

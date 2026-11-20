@@ -19,9 +19,9 @@ export interface Player {
   readonly modules: Readonly<Record<string, string>>;
 }
 
-/** Modules the piece's layers use, in stack order (so the bytes never depend on anything else). */
+/** Modules the piece's enabled layers use, in stack order (so the bytes never depend on anything else). Hidden layers are never drawn. */
 export function modulesUsed(doc: ArtDocument): readonly string[] {
-  return [...new Set(doc.layers.map((l) => l.module))];
+  return [...new Set(doc.layers.filter((l) => l.enabled).map((l) => l.module))];
 }
 
 /** Cut by code points, so a surrogate pair is never split. */
@@ -76,7 +76,7 @@ function traitTable(doc: ArtDocument): string[] {
 export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): string {
   const moduleScripts = modulesUsed(doc).map((id) => {
     const code = Object.hasOwn(player.modules, id) ? player.modules[id] : undefined;
-    if (code === undefined) throw new Error(`no player code for module "${id}": rebuild @gridloom/runtime`);
+    if (code === undefined) throw new Error(`no player code for module "${id}" (unknown module, or @gridloom/runtime needs a rebuild)`);
     return `<script>${scriptSafeCode(code)}</script>`;
   });
   const title = meta.title.trim() || doc.name || "Untitled";

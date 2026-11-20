@@ -62,6 +62,12 @@ describe("assembleMint", () => {
     expect(html.trimEnd().endsWith("<script>GridloomRuntime.start()</script>\n</body>\n</html>")).toBe(true);
   });
 
+  it("leaves out the modules of hidden layers: they are never drawn", () => {
+    const hidden: ArtDocument = { ...starterDocument, layers: [...starterDocument.layers, { id: "t", module: "tiles", enabled: false, params: {} }] };
+    expect(modulesUsed(hidden)).not.toContain("tiles");
+    expect(assembleMint(RUNTIME, hidden, meta)).not.toContain("/*module:tiles*/");
+  });
+
   it("refuses to build a page with a module the player lacks", () => {
     const { tiles: _drop, ...rest } = RUNTIME.modules;
     const weave = builtinPresets.find((p) => p.id === "weave")?.doc ?? starterDocument;

@@ -1,6 +1,6 @@
 import type { ArtDocument, Layer } from "@gridloom/core";
 import { defaultRegistry, getModule } from "@gridloom/core";
-import type { DragEvent } from "react";
+import type { PointerEvent as ReactPointerEvent } from "react";
 import { useState } from "react";
 import type { Zones } from "../state/layerOrder.ts";
 import { needsGrid, zones } from "../state/layerOrder.ts";
@@ -72,10 +72,18 @@ export function LayerStack({ doc, selectedId, dispatch }: Props) {
   const [drop, setDrop] = useState<number | null>(null);
   const full = doc.layers.length >= MAX_LAYERS;
 
-  const gapAt = (e: DragEvent<HTMLElement>, i: number): number => {
-    const r = e.currentTarget.getBoundingClientRect();
+  const gapAt = (row: Element, clientY: number, i: number): number => {
+    const r = row.getBoundingClientRect();
     // Drops land only between free layers.
-    return Math.min(z.tail, Math.max(z.head, e.clientY < r.top + r.height / 2 ? i : i + 1));
+    return Math.min(z.tail, Math.max(z.head, clientY < r.top + r.height / 2 ? i : i + 1));
+  };
+  // Touch and pen: HTML drag and drop does not fire for fingers, so the grip drives the same
+  // dragId/drop state with pointer events. The mouse keeps native drag and drop.
+  const touchMove = (e: ReactPointerEvent<HTMLElement>) => {
+    if (!dragId) return;
+    const row = document.elementFromPoint(e.clientX, e.clientY)?.closest<HTMLElement>("[data-layer-index]");
+    const i = Number(row?.dataset["layerIndex"]);
+    if (row && Number.isInteger(i)) setDrop(gapAt(row, e.clientY, i));
   };
   const endDrag = () => {
     setDragId(null);
@@ -133,6 +141,7 @@ export function LayerStack({ doc, selectedId, dispatch }: Props) {
           return (
             <li key={l.id} className={divider}>
               <div
+                data-layer-index={i}
                 draggable={movable}
                 onDragStart={(e) => {
                   e.dataTransfer.setData(DRAG_TYPE, l.id);
@@ -144,7 +153,7 @@ export function LayerStack({ doc, selectedId, dispatch }: Props) {
                   if (!dragId) return;
                   e.preventDefault();
                   e.dataTransfer.dropEffect = "move";
-                  setDrop(gapAt(e, i));
+                  setDrop(gapAt(e.currentTarget, e.clientY, i));
                 }}
                 onDrop={(e) => {
                   e.preventDefault();
@@ -155,7 +164,19 @@ export function LayerStack({ doc, selectedId, dispatch }: Props) {
                 {showBefore && <span className="pointer-events-none absolute inset-x-1 -top-px h-0.5 rounded bg-sky-400" />}
                 {showAfter && <span className="pointer-events-none absolute inset-x-1 -bottom-px h-0.5 rounded bg-sky-400" />}
                 {movable ? (
-                  <span className="grid size-5 cursor-grab place-items-center text-zinc-600 group-hover:text-zinc-400" title="Drag to reorder">
+                  <span
+                    className="grid size-5 cursor-grab touch-none place-items-center text-zinc-600 group-hover:text-zinc-400 pointer-coarse:size-8"
+                    title="Drag to reorder"
+                    onPointerDown={(e) => {
+                      if (e.pointerType === "mouse") return;
+                      e.preventDefault();
+                      e.currentTarget.setPointerCapture(e.pointerId);
+                      setDragId(l.id);
+                    }}
+                    onPointerMove={touchMove}
+                    onPointerUp={(e) => e.pointerType !== "mouse" && onDrop()}
+                    onPointerCancel={endDrag}
+                  >
                     <GripIcon />
                   </span>
                 ) : (

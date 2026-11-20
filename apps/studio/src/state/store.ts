@@ -53,7 +53,8 @@ export type Action =
   | { readonly type: "seedPrev" }
   | { readonly type: "seedNext" }
   /** Saved to a file or the library, or shared as a link. */
-  | { readonly type: "markSaved" }
+  /** `doc` pins exactly what was saved when the save finished asynchronously; default is the current doc. */
+  | { readonly type: "markSaved"; readonly doc?: ArtDocument }
   | { readonly type: "undo" }
   | { readonly type: "redo" };
 
@@ -171,8 +172,10 @@ export function reducer(s: StudioState, a: Action): StudioState {
       return { ...s, doc: { ...s.doc, name: a.name.slice(0, 100) } };
     case "loadDoc":
       return { ...commit(s, a.doc), selectedId: a.doc.layers[1]?.id ?? a.doc.layers[0]?.id ?? null, savedDoc: a.doc };
-    case "markSaved":
-      return s.savedDoc === s.doc ? s : { ...s, savedDoc: s.doc };
+    case "markSaved": {
+      const saved = a.doc ?? s.doc;
+      return s.savedDoc === saved ? s : { ...s, savedDoc: saved };
+    }
     case "setTraits": {
       // Traits never change the picture, but they are part of the piece: undoable.
       const { traits: _old, ...rest } = s.doc;

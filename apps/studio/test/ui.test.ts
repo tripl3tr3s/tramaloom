@@ -145,6 +145,13 @@ describe("unsaved changes", () => {
     expect(dirty(opened)).toBe(false);
   });
 
+  it("marks the doc that was saved, not a later edit", () => {
+    const s1 = reducer(s0, edit);
+    const s2 = reducer(reducer(s1, { type: "rename", name: "Later" }), { type: "markSaved", doc: s1.doc });
+    expect(s2.savedDoc).toBe(s1.doc);
+    expect(s2.doc !== s2.savedDoc).toBe(true);
+  });
+
   it("treats a rename as a change", () => {
     expect(dirty(reducer(s0, { type: "rename", name: "Other" }))).toBe(true);
   });
@@ -171,7 +178,7 @@ describe("favorites", () => {
 
   it("keeps only valid, distinct hashes from storage", () => {
     expect(parseFavorites([a, a, b])).toEqual([a, b]);
-    expect(parseFavorites([a, "nope"])).toEqual([]);
+    expect(parseFavorites([a, "nope", 7])).toEqual([a]);
     expect(parseFavorites({ a })).toEqual([]);
   });
 });

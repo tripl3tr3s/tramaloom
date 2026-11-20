@@ -1,12 +1,13 @@
 import type { ArtDocument, ParamSetting } from "@gridloom/core";
 import { defaultRegistry, ENGINE_VERSION, getModule, starterDocument } from "@gridloom/core";
-import { useCallback, useEffect, useReducer, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";
 import { exportJSON, exportPNG, exportSVG } from "./render/export.ts";
 import { useRenderer } from "./render/useRenderer.ts";
 import { loadFavorites, MAX_FAVORITES, saveFavorites, toggleFavorite } from "./state/favorites.ts";
 import { parseDocument } from "./state/schema.ts";
+import { encodeState } from "./state/url.ts";
 import { initialState, randomHash, reducer } from "./state/store.ts";
 import { DebugPanel } from "./ui/DebugPanel.tsx";
 import { LayerStack } from "./ui/LayerStack.tsx";
@@ -124,6 +125,13 @@ export function App() {
   // While a dialog is open, everything behind it is inert: no stray clicks or tab stops.
   const behind = overlay !== "none";
 
+  // Reference first (cheap, and what undo restores); content second, so typing a name back or
+  // dragging a slider back to where it was also reads as saved.
+  const unsaved = useMemo(
+    () => state.doc !== state.savedDoc && JSON.stringify(state.doc) !== JSON.stringify(state.savedDoc),
+    [state.doc, state.savedDoc],
+  );
+
   const selected = state.doc.layers.find((l) => l.id === state.selectedId);
   const onParam = (layerId: string, name: string, setting: ParamSetting, record: boolean) =>
     dispatch({ type: "setParam", layerId, name, setting, record });
@@ -133,7 +141,7 @@ export function App() {
       <div className="contents" inert={behind}>
       <Toolbar
         name={state.doc.name}
-        unsaved={state.doc !== state.savedDoc}
+        unsaved={unsaved}
         favorite={favorites.includes(state.hash)}
         onFavorite={() => toggleFav(state.hash)}
         hash={state.hash}
@@ -160,7 +168,14 @@ export function App() {
           dispatch({ type: "markSaved" });
         }}
         onImport={importFile}
-        onCopyLink={() => copy(window.location.href, "Link copied", () => dispatch({ type: "markSaved" }))}
+        onCopyLink={() => {
+          // Build the link from state now: the address bar updates on a debounce and may still be stale.
+          const doc = state.doc;
+          encodeState(doc, state.hash).then(
+            (frag) => copy(`${window.location.origin}${window.location.pathname}#${frag}`, "Link copied", () => dispatch({ type: "markSaved", doc })),
+            () => notify("Could not build the link"),
+          );
+        }}
         onToggleDebug={() => setDebug((d) => !d)}
         onMutate={() => setOverlay((o) => (o === "mutate" ? "none" : "mutate"))}
         onLibrary={() => setOverlay((o) => (o === "library" ? "none" : "library"))}
@@ -172,7 +187,7 @@ export function App() {
         <aside
           id="sheet-layers"
           inert={behind}
-          className={`order-2 h-[45dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:order-1 md:block md:h-auto md:w-60 md:border-r md:border-t-0 md:bg-zinc-900/60 ${sheet === "layers" ? "block" : "hidden"}`}
+          className={`order-2 h-[40dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:order-1 md:block md:h-auto md:w-60 md:border-r md:border-t-0 md:bg-zinc-900/60 ${sheet === "layers" ? "block" : "hidden"}`}
         >
           <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} />
         </aside>
@@ -220,7 +235,7 @@ export function App() {
           )}
         </main>
         {favorites.length > 0 && (
-          <div inert={behind}>
+          <div inert={behind} className={sheet ? "hidden md:block" : undefined}>
             <FavoritesStrip
               doc={state.doc}
               hash={state.hash}
@@ -234,7 +249,7 @@ export function App() {
         <aside
           id="sheet-params"
           inert={behind}
-          className={`order-3 h-[45dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:block md:h-auto md:w-72 md:border-l md:border-t-0 md:bg-zinc-900/60 ${sheet === "params" ? "block" : "hidden"}`}
+          className={`order-3 h-[40dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:block md:h-auto md:w-72 md:border-l md:border-t-0 md:bg-zinc-900/60 ${sheet === "params" ? "block" : "hidden"}`}
         >
           <ParamPanel
             layer={selected}

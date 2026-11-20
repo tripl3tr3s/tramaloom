@@ -27,3 +27,20 @@ export function weightShares(options: readonly string[], weights: Readonly<Recor
   const total = ws.reduce((a, b) => a + b, 0);
   return ws.map((w) => (total > 0 ? w / total : 0));
 }
+
+/**
+ * Whether a setting applies, from its spec's showIf. A controlling setting that
+ * varies (and is not locked) could take any value, so the setting stays visible.
+ */
+export function isRelevant(spec: ParamSpec, params: ParamSpecs, settings: Readonly<Record<string, ParamSetting | undefined>>): boolean {
+  const cond = spec.showIf;
+  if (!cond) return true;
+  const target = params[cond.param];
+  if (!target) return true;
+  const s = settings[cond.param];
+  if (s?.vary && s.locked !== true) return true;
+  const value = s?.value ?? target.default;
+  if (cond.is) return cond.is.includes(value);
+  if (cond.not) return !cond.not.includes(value);
+  return true;
+}

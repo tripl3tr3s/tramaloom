@@ -1,7 +1,7 @@
 import { makeNoise2D } from "../prng/noise.ts";
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 /** One dot per cell, sized by a field across the frame: the classic print halftone, on the grid. */
@@ -10,14 +10,14 @@ export const halftoneModule = defineModule({
   label: "Halftone",
   description: "A dot or square in every cell, sized by a field: noise, distance from the centre, a gradient or chance.",
   params: {
-    field: { kind: "enum", group: "Field", label: "Field", options: ["noise", "radial", "horizontal", "vertical", "random"], default: "noise" },
-    noiseScale: { kind: "number", group: "Field", label: "Noise scale", min: 0.5, max: 10, step: 0.1, default: 2.5, help: "Features per canvas width" },
-    invert: { kind: "bool", group: "Field", label: "Invert", default: false },
-    shape: { kind: "enum", group: "Dots", label: "Shape", options: ["circle", "square", "diamond"], default: "circle" },
+    field: { kind: "enum", group: "Field", label: "Field", help: "What sets each dot's size", options: ["noise", "radial", "horizontal", "vertical", "random"], default: "noise" },
+    noiseScale: { kind: "number", group: "Field", label: "Noise scale", showIf: { param: "field", is: ["noise"] }, min: 0.5, max: 10, step: 0.1, default: 2.5, help: "Features per canvas width" },
+    invert: { kind: "bool", group: "Field", label: "Invert", help: "Big dots where they would be small, and the reverse", default: false },
+    shape: { kind: "enum", group: "Dots", label: "Shape", help: "Shape of each dot", options: ["circle", "square", "diamond"], default: "circle" },
     minSize: { kind: "number", group: "Dots", label: "Smallest", min: 0, max: 1, step: 0.01, default: 0.08, help: "Share of the cell" },
     maxSize: { kind: "number", group: "Dots", label: "Largest", min: 0, max: 1.2, step: 0.01, default: 0.92, help: "Share of the cell; above 1 dots overlap" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#111111" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#111111" },
   },
   apply(scene, v, ctx) {
     // Exactly two draws per cell (field, color).

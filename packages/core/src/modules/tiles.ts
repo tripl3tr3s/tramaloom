@@ -1,7 +1,7 @@
 import { makeNoise2D } from "../prng/noise.ts";
 import type { Cell, Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -61,10 +61,10 @@ export const tilesModule = defineModule({
   description:
     "Truchet tiles: arcs, diagonals, triangles and quarter discs, rotated per cell. Arcs join up across equal-size cells with no gap.",
   params: {
-    motif: { kind: "enum", group: "Pattern", label: "Motif", options: ["arcs", "diagonal", "triangle", "quarter", "mixed"], default: "arcs" },
-    chance: { kind: "number", group: "Pattern", label: "Chance", min: 0, max: 1, step: 0.01, default: 1 },
-    lines: { kind: "int", group: "Pattern", label: "Lines", min: 1, max: 5, default: 1, help: "Parallel arcs per corner" },
-    lineWidth: { kind: "number", group: "Pattern", label: "Line width", min: 0.02, max: 0.3, step: 0.005, default: 0.08 },
+    motif: { kind: "enum", group: "Pattern", label: "Motif", help: "The tile drawn in each cell; mixed picks per cell", options: ["arcs", "diagonal", "triangle", "quarter", "mixed"], default: "arcs" },
+    chance: { kind: "number", group: "Pattern", label: "Chance", help: "Chance that a cell gets a tile", min: 0, max: 1, step: 0.01, default: 1 },
+    lines: { kind: "int", group: "Pattern", label: "Lines", showIf: { param: "motif", is: ["arcs", "mixed"] }, min: 1, max: 5, default: 1, help: "Parallel arcs per corner" },
+    lineWidth: { kind: "number", group: "Pattern", label: "Line width", help: "Stroke width, as a share of the cell", min: 0.02, max: 0.3, step: 0.005, default: 0.08 },
     rotation: {
       kind: "enum",
       group: "Pattern",
@@ -73,9 +73,9 @@ export const tilesModule = defineModule({
       default: "random",
       help: "noise: neighbouring cells tend to agree; checker: fixed pattern by grid position",
     },
-    noiseScale: { kind: "number", group: "Pattern", label: "Noise scale", min: 0.5, max: 10, step: 0.1, default: 3, help: "Features per canvas width" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    noiseScale: { kind: "number", group: "Pattern", label: "Noise scale", showIf: { param: "rotation", is: ["noise"] }, min: 0.5, max: 10, step: 0.1, default: 3, help: "Features per canvas width" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     // Exactly four draws per cell (chance, rotation, color, motif).

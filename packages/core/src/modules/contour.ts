@@ -1,7 +1,7 @@
 import { makeNoise2D } from "../prng/noise.ts";
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor, rampColors } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor, rampColors } from "./color.ts";
 import { sampleField } from "./trace.ts";
 import { defineModule } from "./types.ts";
 
@@ -15,13 +15,13 @@ export const contourModule = defineModule({
     noiseScale: { kind: "number", group: "Landscape", label: "Noise scale", min: 0.3, max: 8, step: 0.1, default: 2, help: "Hills per canvas width" },
     octaves: { kind: "int", group: "Landscape", label: "Detail", min: 1, max: 4, default: 2, help: "Layers of finer noise on top" },
     faults: { kind: "int", group: "Landscape", label: "Faults", min: 0, max: 6, default: 0, help: "Straight cracks that shift the land on one side" },
-    faultShift: { kind: "number", group: "Landscape", label: "Fault shift", min: 0, max: 0.6, step: 0.01, default: 0.2 },
-    levels: { kind: "int", group: "Lines", label: "Levels", min: 2, max: 40, default: 12 },
+    faultShift: { kind: "number", group: "Landscape", label: "Fault shift", showIf: { param: "faults", not: [0] }, help: "How far the land jumps across each fault", min: 0, max: 0.6, step: 0.01, default: 0.2 },
+    levels: { kind: "int", group: "Lines", label: "Levels", help: "Number of contour lines, spread from low to high ground", min: 2, max: 40, default: 12 },
     resolution: { kind: "int", group: "Lines", label: "Resolution", min: 10, max: 160, default: 70, help: "Samples across the canvas; higher is smoother and slower" },
-    lineWidth: { kind: "number", group: "Lines", label: "Line width", min: 0.0005, max: 0.012, step: 0.0005, default: 0.0025 },
+    lineWidth: { kind: "number", group: "Lines", label: "Line width", help: "Line thickness, as a share of the short side", min: 0.0005, max: 0.012, step: 0.0005, default: 0.0025 },
     followMask: { kind: "bool", group: "Lines", label: "Stay in mask", default: false, help: "Only draw over cells the grid mask kept" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: [...COLOR_RULES, "ramp"], default: "ramp", help: "ramp: walk the palette from low to high ground" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", options: [...COLOR_RULES, "ramp"], default: "ramp", help: colorHelp({ ramp: true }) },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const f = scene.frame;

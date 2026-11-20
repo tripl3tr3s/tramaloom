@@ -1,7 +1,7 @@
 import { makeNoise2D } from "../prng/noise.ts";
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -16,14 +16,14 @@ export const flowModule = defineModule({
   label: "Flow",
   description: "Streamlines that follow the contours of a noise field, optionally stopping where the grid mask ends.",
   params: {
-    count: { kind: "int", group: "Lines", label: "Lines", min: 1, max: 600, default: 140 },
+    count: { kind: "int", group: "Lines", label: "Lines", help: "Number of streamlines", min: 1, max: 600, default: 140 },
     steps: { kind: "int", group: "Lines", label: "Length", min: 2, max: 400, default: 80, help: "Steps per line" },
-    stepLength: { kind: "number", group: "Lines", label: "Step", min: 0.001, max: 0.03, step: 0.0005, default: 0.006 },
-    lineWidth: { kind: "number", group: "Lines", label: "Line width", min: 0.0005, max: 0.02, step: 0.0005, default: 0.003 },
+    stepLength: { kind: "number", group: "Lines", label: "Step", help: "Length of each step along a line; shorter is smoother", min: 0.001, max: 0.03, step: 0.0005, default: 0.006 },
+    lineWidth: { kind: "number", group: "Lines", label: "Line width", help: "Line thickness, as a share of the short side", min: 0.0005, max: 0.02, step: 0.0005, default: 0.003 },
     noiseScale: { kind: "number", group: "Field", label: "Noise scale", min: 0.3, max: 8, step: 0.1, default: 2, help: "Swirls per canvas width" },
     followMask: { kind: "bool", group: "Field", label: "Stay in mask", default: true, help: "Stop where the grid mask removed cells" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#111111" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#111111" },
   },
   apply(scene, v, ctx) {
     // Exactly three draws per line (x, y, color).

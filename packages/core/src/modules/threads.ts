@@ -1,6 +1,6 @@
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -17,14 +17,14 @@ export const threadsModule = defineModule({
   description: "Threads hung between the frame edges, sagging under their weight: a loose web, a loom's warp, or hammocks from side to side.",
   params: {
     mode: { kind: "enum", group: "Threads", label: "Hang", options: ["web", "warp", "hammock"], default: "web", help: "web: any edge to another; warp: top to bottom; hammock: side to side" },
-    count: { kind: "int", group: "Threads", label: "Threads", min: 1, max: 400, default: 60 },
+    count: { kind: "int", group: "Threads", label: "Threads", help: "Number of threads", min: 1, max: 400, default: 60 },
     sag: { kind: "number", group: "Threads", label: "Sag", min: 0, max: 0.6, step: 0.01, default: 0.18, help: "How far a thread droops, as a share of its length" },
-    sagJitter: { kind: "number", group: "Threads", label: "Sag variation", min: 0, max: 1, step: 0.01, default: 0.5 },
-    drift: { kind: "number", group: "Threads", label: "Drift", min: 0, max: 1, step: 0.01, default: 0.25, help: "warp and hammock: how far a thread wanders from straight across" },
+    sagJitter: { kind: "number", group: "Threads", label: "Sag variation", help: "How much the sag differs from thread to thread", min: 0, max: 1, step: 0.01, default: 0.5 },
+    drift: { kind: "number", group: "Threads", label: "Drift", showIf: { param: "mode", not: ["web"] }, min: 0, max: 1, step: 0.01, default: 0.25, help: "warp and hammock: how far a thread wanders from straight across" },
     snap: { kind: "bool", group: "Threads", label: "Snap to grid", default: false, help: "Anchor on the grid's lines" },
-    lineWidth: { kind: "number", group: "Look", label: "Line width", min: 0.0005, max: 0.012, step: 0.0005, default: 0.002 },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    lineWidth: { kind: "number", group: "Look", label: "Line width", help: "Thread thickness, as a share of the short side", min: 0.0005, max: 0.012, step: 0.0005, default: 0.002 },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const f = scene.frame;

@@ -3,6 +3,16 @@ import type { Item, PolylineItem, Scene } from "../scene.ts";
 type Pt = readonly [number, number];
 
 export const COLOR_RULES = ["contrast", "zone", "palette", "single"] as const;
+
+/** Help for every Color setting, written once so the modules agree. */
+export const colorHelp = (opts: { readonly ramp?: boolean; readonly per?: string } = {}): string =>
+  [
+    "contrast: palette colors that stand out from what is underneath",
+    "zone: the colors of the palette zone at that spot",
+    "palette: any palette color",
+    "single: the color set below",
+    ...(opts.ramp ? ["ramp: steps through the palette in order"] : []),
+  ].join("; ") + (opts.per ? `. Picked once per ${opts.per}.` : "");
 export type ColorRule = (typeof COLOR_RULES)[number];
 
 const FALLBACK = ["#f4f1ea", "#111111"] as const;

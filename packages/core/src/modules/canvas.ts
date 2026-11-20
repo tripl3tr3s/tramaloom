@@ -13,10 +13,10 @@ export const canvasModule = defineModule({
   label: "Canvas",
   description: "Format, margin and background. Always the first layer.",
   params: {
-    aspect: { kind: "enum", label: "Aspect", options: ASPECTS, default: "3:4" },
-    margin: { kind: "number", label: "Margin", min: 0, max: 0.25, step: 0.005, default: 0.06 },
-    background: { kind: "color", label: "Background", default: "#2f7fd8" },
-    cornerRadius: { kind: "number", label: "Corner radius", min: 0, max: 0.1, step: 0.002, default: 0.03 },
+    aspect: { kind: "enum", label: "Aspect", help: "Width to height of the piece", options: ASPECTS, default: "3:4" },
+    margin: { kind: "number", label: "Margin", help: "Empty border around the artwork, as a share of the short side", min: 0, max: 0.25, step: 0.005, default: 0.06 },
+    background: { kind: "color", label: "Background", help: "Color behind everything; the Palette layer's Background can replace it", default: "#2f7fd8" },
+    cornerRadius: { kind: "number", label: "Corner radius", help: "Rounds the canvas corners; 0 keeps them square, which a seamless tile needs", min: 0, max: 0.1, step: 0.002, default: 0.03 },
   },
   apply(scene, v) {
     const { width, height } = parseAspect(v.aspect);

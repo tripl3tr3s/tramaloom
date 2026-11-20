@@ -1,6 +1,6 @@
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -36,9 +36,9 @@ export const pipesModule = defineModule({
     width: { kind: "number", group: "Look", label: "Pipe width", min: 0.08, max: 0.7, step: 0.01, default: 0.34, help: "Share of the cell size" },
     style: { kind: "enum", group: "Look", label: "Style", options: ["tube", "flat"], default: "tube", help: "tube: an outline around every pipe" },
     flanges: { kind: "bool", group: "Look", label: "Flanges", default: true, help: "Collars where pipes join between cells" },
-    outlineColor: { kind: "color", group: "Look", label: "Outline color", default: "#0d1b2a" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast", help: "Picked once per network" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    outlineColor: { kind: "color", group: "Look", label: "Outline color", help: "Color of the tube outlines, caps and flange edges", default: "#0d1b2a" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast", help: colorHelp({ per: "network" }) },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const L = scene.lattice;

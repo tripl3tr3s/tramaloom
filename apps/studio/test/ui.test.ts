@@ -4,7 +4,7 @@ import type { ParamSpec } from "@gridloom/core";
 import { MAX_FAVORITES, parseFavorites, toggleFavorite } from "../src/state/favorites.ts";
 import { insertIndex, needsGrid, zones } from "../src/state/layerOrder.ts";
 import { initialState, reducer } from "../src/state/store.ts";
-import { groupParams, isDefaultSetting, weightShares } from "../src/ui/params.ts";
+import { groupParams, isDefaultSetting, isRelevant, weightShares } from "../src/ui/params.ts";
 import { SHORTCUT_GROUPS } from "../src/ui/shortcuts.ts";
 import { densityCurve } from "../src/ui/vary.ts";
 
@@ -251,5 +251,27 @@ describe("layer order help", () => {
     const s = reducer(s0, { type: "addLayer", module: "grid" });
     expect(s.doc.layers.map((l) => l.module)).toEqual(["canvas", "grid", "tiles"]);
     expect(s.selectedId).toBe(s.doc.layers[1]?.id);
+  });
+});
+
+describe("isRelevant", () => {
+  const params: Record<string, ParamSpec> = {
+    mode: { kind: "enum", label: "Mode", options: ["a", "b"], default: "a" },
+    onlyB: { kind: "int", label: "Only b", min: 0, max: 9, default: 1, showIf: { param: "mode", is: ["b"] } },
+    notA: { kind: "int", label: "Not a", min: 0, max: 9, default: 1, showIf: { param: "mode", not: ["a"] } },
+  };
+  const spec = (k: string) => params[k] as ParamSpec;
+
+  it("follows the fixed value of the controlling setting, or its default", () => {
+    expect(isRelevant(spec("onlyB"), params, {})).toBe(false);
+    expect(isRelevant(spec("onlyB"), params, { mode: { value: "b" } })).toBe(true);
+    expect(isRelevant(spec("notA"), params, { mode: { value: "a" } })).toBe(false);
+    expect(isRelevant(spec("mode"), params, {})).toBe(true);
+  });
+
+  it("stays visible while the controlling setting varies, but not when it is locked", () => {
+    const vary = { kind: "weights" as const, weights: { a: 1, b: 1 } };
+    expect(isRelevant(spec("onlyB"), params, { mode: { value: "a", vary } })).toBe(true);
+    expect(isRelevant(spec("onlyB"), params, { mode: { value: "a", vary, locked: true } })).toBe(false);
   });
 });

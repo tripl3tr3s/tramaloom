@@ -1,6 +1,6 @@
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -55,10 +55,10 @@ export const knotModule = defineModule({
   params: {
     breaks: { kind: "number", group: "Knot", label: "Breaks", min: 0, max: 0.7, step: 0.01, default: 0.18, help: "Share of links removed; more breaks, more separate knots" },
     width: { kind: "number", group: "Knot", label: "Strand width", min: 0.06, max: 0.4, step: 0.01, default: 0.22, help: "Share of the cell size" },
-    outline: { kind: "bool", group: "Knot", label: "Outline", default: true },
-    outlineColor: { kind: "color", group: "Knot", label: "Outline color", default: "#0d1b2a" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast", help: "Picked once per strand" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    outline: { kind: "bool", group: "Knot", label: "Outline", help: "A dark edge around each strand, so the crossings read clearly", default: true },
+    outlineColor: { kind: "color", group: "Knot", label: "Outline color", showIf: { param: "outline", is: [true] }, help: "Color of the strand edges", default: "#0d1b2a" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast", help: colorHelp({ per: "strand" }) },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const L = scene.lattice;

@@ -1,5 +1,5 @@
 import type { Distribution, ParamSetting, ParamSpec, ParamValue, Variation } from "@gridloom/core";
-import { useRef } from "react";
+import { useId, useRef, useState } from "react";
 import { MAX_WEIGHT } from "../state/limits.ts";
 import { ResetIcon } from "./icons.tsx";
 import { isDefaultSetting, weightShares } from "./params.ts";
@@ -19,6 +19,8 @@ interface Props {
   readonly onCheckpoint: () => void;
   /** Back to the module default (drops value, variation and lock). */
   readonly onReset: () => void;
+  /** Show the help text under the label (the panel's Help toggle). */
+  readonly showHelp?: boolean;
 }
 
 
@@ -51,7 +53,10 @@ function defaultVary(spec: ParamSpec, value: ParamValue): Variation | null {
   }
 }
 
-export function ParamRow({ name, spec, setting, resolved, swatches, onChange, onCheckpoint, onReset }: Props) {
+export function ParamRow({ name, spec, setting, resolved, swatches, onChange, onCheckpoint, onReset, showHelp = false }: Props) {
+  const [helpOpen, setHelpOpen] = useState(false);
+  const helpId = useId();
+  const helpShown = !!spec.help && (showHelp || helpOpen);
   const value = setting?.value ?? spec.default;
   const vary = setting?.vary;
   const locked = setting?.locked === true;
@@ -97,8 +102,20 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
   return (
     <div ref={rowRef} className="border-b border-zinc-800/80 py-2" data-param={name}>
       <div className="mb-1 flex items-center gap-2">
-        <span className="flex-1 truncate text-xs text-zinc-300" title={spec.help ?? spec.label}>
-          {spec.label}
+        <span className="flex min-w-0 flex-1 items-center gap-1">
+          <span className="truncate text-xs text-zinc-300">{spec.label}</span>
+          {spec.help && (
+            <button
+              type="button"
+              className={`grid size-3.5 shrink-0 place-items-center rounded-full text-[9px] font-semibold ring-1 focus-visible:outline-none focus-visible:ring-sky-500 ${helpShown ? "bg-zinc-600 text-white ring-zinc-500" : "text-zinc-500 ring-zinc-700 hover:text-zinc-200"}`}
+              aria-label={`About ${spec.label}`}
+              aria-expanded={helpShown}
+              aria-controls={helpId}
+              onClick={() => setHelpOpen((o) => !o)}
+            >
+              i
+            </button>
+          )}
         </span>
         {varying && (
           <span className="font-mono text-[11px] text-sky-400" title="This seed's value">
@@ -128,6 +145,11 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
           </button>
         )}
       </div>
+      {helpShown && (
+        <p id={helpId} className="mb-1.5 text-[11px] leading-snug text-zinc-500">
+          {spec.help}
+        </p>
+      )}
 
       {isNumeric && varying && vary.kind === "range" && (
         <>

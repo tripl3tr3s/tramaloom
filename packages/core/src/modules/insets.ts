@@ -1,6 +1,6 @@
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 export const insetsModule = defineModule({
@@ -8,7 +8,7 @@ export const insetsModule = defineModule({
   label: "Insets",
   description: "Nests concentric squares or circles inside grid cells.",
   params: {
-    chance: { kind: "number", group: "Placement", label: "Chance", min: 0, max: 1, step: 0.01, default: 0.35 },
+    chance: { kind: "number", group: "Placement", label: "Chance", help: "Chance that a cell gets insets", min: 0, max: 1, step: 0.01, default: 0.35 },
     cells: {
       kind: "enum",
       group: "Placement",
@@ -17,7 +17,7 @@ export const insetsModule = defineModule({
       default: "all",
       help: "large: unsplit cells only; small: subdivided cells only (needs grid subdivision)",
     },
-    shape: { kind: "enum", group: "Shape", label: "Shape", options: ["square", "circle", "mixed"], default: "square" },
+    shape: { kind: "enum", group: "Shape", label: "Shape", help: "Shape of the nested insets; mixed picks per cell", options: ["square", "circle", "mixed"], default: "square" },
     style: {
       kind: "enum",
       group: "Shape",
@@ -26,13 +26,13 @@ export const insetsModule = defineModule({
       default: "fill",
       help: "fill alternates the picked color with the color underneath",
     },
-    rings: { kind: "int", group: "Shape", label: "Rings", min: 1, max: 8, default: 3 },
-    offset: { kind: "number", group: "Shape", label: "First inset", min: 0, max: 0.45, step: 0.01, default: 0.12 },
-    spacing: { kind: "number", group: "Shape", label: "Spacing", min: 0.02, max: 0.3, step: 0.01, default: 0.1 },
-    roundness: { kind: "number", group: "Shape", label: "Roundness", min: 0, max: 0.5, step: 0.01, default: 0 },
+    rings: { kind: "int", group: "Shape", label: "Rings", help: "How many nested shapes per cell", min: 1, max: 8, default: 3 },
+    offset: { kind: "number", group: "Shape", label: "First inset", help: "Distance of the first inset from the cell edge, as a share of the cell", min: 0, max: 0.45, step: 0.01, default: 0.12 },
+    spacing: { kind: "number", group: "Shape", label: "Spacing", help: "Distance between nested shapes, as a share of the cell", min: 0.02, max: 0.3, step: 0.01, default: 0.1 },
+    roundness: { kind: "number", group: "Shape", label: "Roundness", showIf: { param: "shape", not: ["circle"] }, help: "Corner rounding of square insets", min: 0, max: 0.5, step: 0.01, default: 0 },
     lineWidth: { kind: "number", group: "Shape", label: "Line width", min: 0.01, max: 0.2, step: 0.005, default: 0.04, help: "stroke style" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     // Exactly three draws per cell (chance, color, shape) so no setting reshuffles other cells.

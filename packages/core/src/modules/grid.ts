@@ -18,8 +18,8 @@ export const gridModule = defineModule({
   label: "Grid",
   description: "Lays out cells inside the frame, with optional recursive subdivision and masking.",
   params: {
-    cols: { kind: "int", group: "Layout", label: "Columns", min: 1, max: 64, default: 12 },
-    rows: { kind: "int", group: "Layout", label: "Rows", min: 1, max: 64, default: 16 },
+    cols: { kind: "int", group: "Layout", label: "Columns", help: "Cells across", min: 1, max: 64, default: 12 },
+    rows: { kind: "int", group: "Layout", label: "Rows", showIf: { param: "fit", not: ["auto"] }, help: "Cells down", min: 1, max: 64, default: 16 },
     fit: {
       kind: "enum",
       group: "Layout",
@@ -28,11 +28,11 @@ export const gridModule = defineModule({
       default: "auto",
       help: "auto: square cells, rows derived from columns to fill the frame",
     },
-    subdivDepth: { kind: "int", group: "Subdivision", label: "Subdivision depth", min: 0, max: 4, default: 0 },
-    splitChance: { kind: "number", group: "Subdivision", label: "Split chance", min: 0, max: 1, step: 0.01, default: 0.25 },
-    gap: { kind: "number", group: "Layout", label: "Gap", min: 0, max: 0.02, step: 0.0005, default: 0 },
-    mask: { kind: "enum", group: "Mask", label: "Mask", options: ["none", "circle", "diamond", "noise"], default: "none" },
-    maskAmount: { kind: "number", group: "Mask", label: "Mask amount", min: 0, max: 1, step: 0.01, default: 0.5 },
+    subdivDepth: { kind: "int", group: "Subdivision", label: "Subdivision depth", help: "How many times a cell may split into four smaller ones", min: 0, max: 4, default: 0 },
+    splitChance: { kind: "number", group: "Subdivision", label: "Split chance", showIf: { param: "subdivDepth", not: [0] }, help: "Chance that a cell splits, at every depth", min: 0, max: 1, step: 0.01, default: 0.25 },
+    gap: { kind: "number", group: "Layout", label: "Gap", help: "Space between cells, as a share of the short side", min: 0, max: 0.02, step: 0.0005, default: 0 },
+    mask: { kind: "enum", group: "Mask", label: "Mask", help: "Removes cells outside a shape; drawing layers skip removed cells", options: ["none", "circle", "diamond", "noise"], default: "none" },
+    maskAmount: { kind: "number", group: "Mask", label: "Mask amount", showIf: { param: "mask", not: ["none"] }, help: "Size of the mask shape, or how much the noise mask removes", min: 0, max: 1, step: 0.01, default: 0.5 },
   },
   apply(scene, v, ctx) {
     const { frame } = scene;

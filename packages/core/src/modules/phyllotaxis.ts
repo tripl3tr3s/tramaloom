@@ -1,7 +1,7 @@
 import { dcos, dsin, TAU } from "../math/trig.ts";
 import type { Box, Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor, rampColors } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor, rampColors } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 /** Most cells a spiral is allowed, so a fine grid in cell mode stays drawable. */
@@ -24,8 +24,8 @@ export const phyllotaxisModule = defineModule({
     fill: { kind: "number", group: "Spiral", label: "Fill", min: 0.2, max: 1, step: 0.01, default: 0.9, help: "How much of its region a spiral covers" },
     size: { kind: "number", group: "Seeds", label: "Seed size", min: 0.1, max: 1.2, step: 0.01, default: 0.8, help: "Relative to the spacing between seeds" },
     taper: { kind: "bool", group: "Seeds", label: "Grow outwards", default: true, help: "Small seeds in the middle, larger at the rim" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: [...COLOR_RULES, "ramp"], default: "ramp", help: "ramp: walk the palette from centre to rim" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", options: [...COLOR_RULES, "ramp"], default: "ramp", help: colorHelp({ ramp: true }) },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const regions: readonly Box[] = v.placement === "cells" && scene.cells.length ? scene.cells : [scene.frame];

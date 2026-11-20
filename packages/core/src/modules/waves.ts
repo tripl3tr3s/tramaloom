@@ -1,7 +1,7 @@
 import { dcos, dsin, TAU } from "../math/trig.ts";
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor, rampColors } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor, rampColors } from "./color.ts";
 import { sampleField } from "./trace.ts";
 import { defineModule } from "./types.ts";
 
@@ -17,18 +17,18 @@ export const wavesModule = defineModule({
   label: "Waves",
   description: "Chladni plate figures, or rings of interfering waves from several sources, drawn as clean contour lines.",
   params: {
-    mode: { kind: "enum", group: "Waves", label: "Kind", options: ["chladni", "interference"], default: "chladni" },
-    n: { kind: "int", group: "Chladni", label: "Mode n", min: 1, max: 14, default: 3 },
-    m: { kind: "int", group: "Chladni", label: "Mode m", min: 1, max: 14, default: 5 },
-    symmetric: { kind: "bool", group: "Chladni", label: "Symmetric", default: false, help: "Add the two modes instead of subtracting" },
-    sources: { kind: "int", group: "Interference", label: "Sources", min: 1, max: 8, default: 3 },
-    wavelength: { kind: "number", group: "Interference", label: "Wavelength", min: 0.01, max: 0.4, step: 0.005, default: 0.08 },
+    mode: { kind: "enum", group: "Waves", label: "Kind", help: "chladni: the patterns of a vibrating plate; interference: overlapping rings from several sources", options: ["chladni", "interference"], default: "chladni" },
+    n: { kind: "int", group: "Chladni", label: "Mode n", showIf: { param: "mode", is: ["chladni"] }, help: "Vibration across the plate; with Mode m it picks the figure", min: 1, max: 14, default: 3 },
+    m: { kind: "int", group: "Chladni", label: "Mode m", showIf: { param: "mode", is: ["chladni"] }, help: "Vibration down the plate; with Mode n it picks the figure", min: 1, max: 14, default: 5 },
+    symmetric: { kind: "bool", group: "Chladni", label: "Symmetric", showIf: { param: "mode", is: ["chladni"] }, default: false, help: "Add the two modes instead of subtracting" },
+    sources: { kind: "int", group: "Interference", label: "Sources", showIf: { param: "mode", is: ["interference"] }, help: "Number of wave sources", min: 1, max: 8, default: 3 },
+    wavelength: { kind: "number", group: "Interference", label: "Wavelength", showIf: { param: "mode", is: ["interference"] }, help: "Distance between wave crests, as a share of the short side", min: 0.01, max: 0.4, step: 0.005, default: 0.08 },
     lines: { kind: "int", group: "Lines", label: "Lines", min: 1, max: 8, default: 3, help: "1 draws only the nodal lines; more adds lines on both sides of them" },
-    resolution: { kind: "int", group: "Lines", label: "Resolution", min: 30, max: 220, default: 140 },
-    lineWidth: { kind: "number", group: "Lines", label: "Line width", min: 0.0005, max: 0.012, step: 0.0005, default: 0.002 },
-    followMask: { kind: "bool", group: "Lines", label: "Stay in mask", default: false },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: [...COLOR_RULES, "ramp"], default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    resolution: { kind: "int", group: "Lines", label: "Resolution", help: "Samples across the canvas; higher is smoother and slower", min: 30, max: 220, default: 140 },
+    lineWidth: { kind: "number", group: "Lines", label: "Line width", help: "Line thickness, as a share of the short side", min: 0.0005, max: 0.012, step: 0.0005, default: 0.002 },
+    followMask: { kind: "bool", group: "Lines", label: "Stay in mask", help: "Only draw over cells the grid mask kept", default: false },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp({ ramp: true }), options: [...COLOR_RULES, "ramp"], default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const f = scene.frame;

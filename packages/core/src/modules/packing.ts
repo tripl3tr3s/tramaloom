@@ -1,6 +1,6 @@
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 interface Disc {
@@ -21,14 +21,14 @@ export const packingModule = defineModule({
   params: {
     attempts: { kind: "int", group: "Packing", label: "Attempts", min: 20, max: 6000, default: 1500, help: "More attempts, a denser fill" },
     maxSize: { kind: "number", group: "Packing", label: "Largest", min: 0.01, max: 0.45, step: 0.005, default: 0.12, help: "Radius, as a share of the short side" },
-    minSize: { kind: "number", group: "Packing", label: "Smallest", min: 0.002, max: 0.1, step: 0.001, default: 0.008 },
-    gap: { kind: "number", group: "Packing", label: "Gap", min: 0, max: 0.03, step: 0.0005, default: 0.004 },
+    minSize: { kind: "number", group: "Packing", label: "Smallest", help: "Smallest circle allowed, as a share of the short side", min: 0.002, max: 0.1, step: 0.001, default: 0.008 },
+    gap: { kind: "number", group: "Packing", label: "Gap", help: "Space kept between circles", min: 0, max: 0.03, step: 0.0005, default: 0.004 },
     followMask: { kind: "bool", group: "Packing", label: "Stay in mask", default: true, help: "Only over cells the grid mask kept" },
     style: { kind: "enum", group: "Look", label: "Style", options: ["fill", "ring", "ripples"], default: "fill", help: "ripples: concentric rings in every circle" },
-    rings: { kind: "int", group: "Look", label: "Ripples", min: 2, max: 10, default: 4 },
-    lineWidth: { kind: "number", group: "Look", label: "Line width", min: 0.0005, max: 0.012, step: 0.0005, default: 0.0025 },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    rings: { kind: "int", group: "Look", label: "Ripples", showIf: { param: "style", is: ["ripples"] }, help: "Rings per circle in the ripples style", min: 2, max: 10, default: 4 },
+    lineWidth: { kind: "number", group: "Look", label: "Line width", showIf: { param: "style", not: ["fill"] }, help: "Ring thickness, as a share of the short side", min: 0.0005, max: 0.012, step: 0.0005, default: 0.0025 },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const f = scene.frame;

@@ -1,7 +1,7 @@
 import { makeNoise2D } from "../prng/noise.ts";
 import type { Cell, Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -53,13 +53,13 @@ export const hatchModule = defineModule({
       default: "random",
       help: "noise: neighbouring cells tend to agree; cross: both diagonals",
     },
-    chance: { kind: "number", group: "Lines", label: "Chance", min: 0, max: 1, step: 0.01, default: 1 },
+    chance: { kind: "number", group: "Lines", label: "Chance", help: "Chance that a cell is shaded", min: 0, max: 1, step: 0.01, default: 1 },
     lines: { kind: "int", group: "Lines", label: "Lines", min: 1, max: 24, default: 6, help: "Lines per cell" },
     lineWidth: { kind: "number", group: "Lines", label: "Line width", min: 0.002, max: 0.2, step: 0.002, default: 0.03, help: "Share of the cell size" },
-    inset: { kind: "number", group: "Lines", label: "Inset", min: 0, max: 0.4, step: 0.01, default: 0.08 },
-    noiseScale: { kind: "number", group: "Lines", label: "Noise scale", min: 0.5, max: 10, step: 0.1, default: 3, help: "Features per canvas width" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#111111" },
+    inset: { kind: "number", group: "Lines", label: "Inset", help: "Margin inside each cell, as a share of the cell", min: 0, max: 0.4, step: 0.01, default: 0.08 },
+    noiseScale: { kind: "number", group: "Lines", label: "Noise scale", showIf: { param: "direction", is: ["noise"] }, min: 0.5, max: 10, step: 0.1, default: 3, help: "Features per canvas width" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#111111" },
   },
   apply(scene, v, ctx) {
     // Exactly three draws per cell (chance, direction, color).

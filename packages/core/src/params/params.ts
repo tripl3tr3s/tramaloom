@@ -11,6 +11,12 @@ interface Base {
   readonly help?: string;
   /** Section heading in the studio's param panel. Display only: never read by generation. */
   readonly group?: string;
+  /**
+   * When this setting matters: the studio hides it unless another param of the same
+   * module has (or, while that one varies, may have) one of `is`, or none of `not`.
+   * Display only: generation reads every param regardless.
+   */
+  readonly showIf?: { readonly param: string; readonly is?: readonly ParamValue[]; readonly not?: readonly ParamValue[] };
 }
 export interface NumberSpec extends Base {
   readonly kind: "number";

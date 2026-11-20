@@ -2,7 +2,7 @@ import type { Layer, ParamSetting, ResolvedLayer } from "@gridloom/core";
 import { defaultRegistry, getModule } from "@gridloom/core";
 import { useState } from "react";
 import { ChevronIcon } from "./icons.tsx";
-import { groupParams, isDefaultSetting } from "./params.ts";
+import { groupParams, isDefaultSetting, isRelevant } from "./params.ts";
 import { ParamRow } from "./ParamRow.tsx";
 import { swatchesFor } from "./Swatches.tsx";
 
@@ -43,8 +43,32 @@ function useCollapsed(): readonly [ReadonlySet<string>, (key: string) => void] {
   return [collapsed, toggle];
 }
 
+const HELP_KEY = "gridloom.showHelp";
+
+/** The panel's Help toggle, remembered per browser (a convenience; storage failures are ignored). */
+function useShowHelp(): readonly [boolean, () => void] {
+  const [on, setOn] = useState(() => {
+    try {
+      return localStorage.getItem(HELP_KEY) === "1";
+    } catch {
+      return false;
+    }
+  });
+  const toggle = () =>
+    setOn((v) => {
+      try {
+        localStorage.setItem(HELP_KEY, v ? "0" : "1");
+      } catch {
+        // Blocked storage: the toggle still works for this session.
+      }
+      return !v;
+    });
+  return [on, toggle];
+}
+
 export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer, problem }: Props) {
   const [collapsed, toggle] = useCollapsed();
+  const [showHelp, toggleHelp] = useShowHelp();
   if (!layer) return <p className="p-3 text-xs text-zinc-500">Select a layer.</p>;
   const def = getModule(defaultRegistry, layer.module);
   if (!def) return <p className="p-3 text-xs text-red-400">Unknown module {layer.module}</p>;
@@ -53,6 +77,16 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
     <div className="pb-24 pl-4 pr-3">
       <div className="flex items-baseline justify-between gap-2 pt-3">
         <h2 className="text-sm font-semibold text-zinc-100">{def.label}</h2>
+        <span className="flex-1" />
+        <button
+          type="button"
+          className={`rounded px-1.5 py-0.5 text-[11px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 ${showHelp ? "bg-zinc-700 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}
+          aria-pressed={showHelp}
+          onClick={toggleHelp}
+          title="Show what every setting does"
+        >
+          Help
+        </button>
         {/* aria-disabled, not disabled: the button would drop focus to <body> the moment it disabled itself. */}
         <button
           type="button"
@@ -73,7 +107,13 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
           </button>
         </div>
       )}
-      {groupParams(def.params).map(({ title, names }) => {
+      {groupParams(def.params).flatMap(({ title, names: all }) => {
+        // Settings that do nothing in the current mode stay out of the way.
+        const names = all.filter((n) => {
+          const spec = def.params[n];
+          return spec !== undefined && isRelevant(spec, def.params, layer.params);
+        });
+        if (!names.length) return [];
         const rows = names.map((name) => {
           const spec = def.params[name];
           return (
@@ -88,6 +128,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
                 onChange={(s, record) => onChange(layer.id, name, s, record)}
                 onCheckpoint={onCheckpoint}
                 onReset={() => onResetParam(layer.id, name)}
+                showHelp={showHelp}
               />
             )
           );

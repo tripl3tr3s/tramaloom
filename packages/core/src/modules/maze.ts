@@ -1,6 +1,6 @@
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -17,10 +17,10 @@ export const mazeModule = defineModule({
   params: {
     style: { kind: "enum", group: "Maze", label: "Draw", options: ["walls", "paths"], default: "walls", help: "walls: the maze's walls; paths: lines through the corridors" },
     braid: { kind: "number", group: "Maze", label: "Braid", min: 0, max: 1, step: 0.01, default: 0, help: "Share of dead ends opened into loops" },
-    border: { kind: "bool", group: "Maze", label: "Outer wall", default: true, help: "Walls only: draw the boundary too" },
+    border: { kind: "bool", group: "Maze", label: "Outer wall", showIf: { param: "style", is: ["walls"] }, default: true, help: "Walls only: draw the boundary too" },
     lineWidth: { kind: "number", group: "Maze", label: "Line width", min: 0.02, max: 0.6, step: 0.01, default: 0.14, help: "Share of the cell size" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const L = scene.lattice;

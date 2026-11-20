@@ -2,7 +2,7 @@ import { int } from "../prng/distributions.ts";
 import type { Rng } from "../prng/prng.ts";
 import type { Item, Lattice, Scene } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -340,21 +340,21 @@ export const circuitsModule = defineModule({
       help: "centers: through cell middles; corners: along cell edges",
     },
     resolution: { kind: "int", group: "Routing", label: "Resolution", min: 1, max: 4, default: 1, help: "Routing steps per cell" },
-    wires: { kind: "int", group: "Routing", label: "Wires / roots", min: 1, max: 200, default: 24 },
-    minLength: { kind: "int", group: "Wire shape", label: "Min length", min: 1, max: 40, default: 2 },
-    maxLength: { kind: "int", group: "Wire shape", label: "Max length", min: 1, max: 80, default: 12 },
-    turnChance: { kind: "number", group: "Wire shape", label: "Turn chance", min: 0, max: 1, step: 0.01, default: 0.3 },
+    wires: { kind: "int", group: "Routing", label: "Wires / roots", help: "Separate wires (walk) or branching roots (tree)", min: 1, max: 200, default: 24 },
+    minLength: { kind: "int", group: "Wire shape", label: "Min length", help: "Shortest wire, in routing steps", min: 1, max: 40, default: 2 },
+    maxLength: { kind: "int", group: "Wire shape", label: "Max length", help: "Longest wire, in routing steps", min: 1, max: 80, default: 12 },
+    turnChance: { kind: "number", group: "Wire shape", label: "Turn chance", help: "Chance of turning at each step; low gives long straight runs", min: 0, max: 1, step: 0.01, default: 0.3 },
     maxTurns: { kind: "int", group: "Wire shape", label: "Max turns", min: 0, max: 20, default: 6, help: "walk only" },
     coverage: { kind: "number", group: "Routing", label: "Coverage", min: 0.05, max: 1, step: 0.01, default: 0.5, help: "tree only" },
-    corner: { kind: "enum", group: "Wire shape", label: "Corners", options: ["sharp", "chamfer", "round"], default: "chamfer" },
-    cornerSize: { kind: "number", group: "Wire shape", label: "Corner size", min: 0, max: 0.5, step: 0.01, default: 0.35 },
-    wireWidth: { kind: "number", group: "Wire shape", label: "Wire width", min: 0.02, max: 0.5, step: 0.01, default: 0.12 },
-    startTerminal: { kind: "enum", group: "Terminals", label: "Start terminal", options: TERMINALS, default: "dot" },
-    endTerminal: { kind: "enum", group: "Terminals", label: "End terminal", options: TERMINALS, default: "ring" },
-    terminalSize: { kind: "number", group: "Terminals", label: "Terminal size", min: 0.05, max: 0.45, step: 0.01, default: 0.25 },
+    corner: { kind: "enum", group: "Wire shape", label: "Corners", help: "How a wire takes its turns", options: ["sharp", "chamfer", "round"], default: "chamfer" },
+    cornerSize: { kind: "number", group: "Wire shape", label: "Corner size", showIf: { param: "corner", not: ["sharp"] }, help: "Size of chamfered and rounded corners", min: 0, max: 0.5, step: 0.01, default: 0.35 },
+    wireWidth: { kind: "number", group: "Wire shape", label: "Wire width", help: "Wire thickness", min: 0.02, max: 0.5, step: 0.01, default: 0.12 },
+    startTerminal: { kind: "enum", group: "Terminals", label: "Start terminal", help: "Cap at the start of each wire; mixed picks per wire", options: TERMINALS, default: "dot" },
+    endTerminal: { kind: "enum", group: "Terminals", label: "End terminal", help: "Cap at the end of each wire; mixed picks per wire", options: TERMINALS, default: "ring" },
+    terminalSize: { kind: "number", group: "Terminals", label: "Terminal size", help: "Size of the caps", min: 0.05, max: 0.45, step: 0.01, default: 0.25 },
     junctions: { kind: "bool", group: "Terminals", label: "Junction dots", default: false, help: "tree only" },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    wireColor: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    wireColor: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const g = buildGraph(scene.lattice ?? fallbackLattice(scene), v.nodes, v.resolution);

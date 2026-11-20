@@ -1,7 +1,7 @@
 import { dcos, dsin, TAU } from "../math/trig.ts";
 import type { Box, Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -31,20 +31,20 @@ export const spiroModule = defineModule({
   label: "Spirograph",
   description: "Gear-wheel curves that close on themselves, or harmonograph pendulum traces. One large figure or one in every cell.",
   params: {
-    mode: { kind: "enum", group: "Figure", label: "Toy", options: ["spirograph", "harmonograph"], default: "spirograph" },
+    mode: { kind: "enum", group: "Figure", label: "Toy", help: "spirograph: a wheel rolling inside a ring; harmonograph: swinging pendulums", options: ["spirograph", "harmonograph"], default: "spirograph" },
     placement: { kind: "enum", group: "Figure", label: "Placement", options: ["frame", "cells"], default: "frame", help: "cells: a small figure in every grid cell" },
-    ring: { kind: "int", group: "Spirograph", label: "Ring teeth", min: 20, max: 150, default: 96 },
-    wheel: { kind: "int", group: "Spirograph", label: "Wheel teeth", min: 5, max: 90, default: 52 },
-    pen: { kind: "number", group: "Spirograph", label: "Pen hole", min: 0.1, max: 1.5, step: 0.01, default: 0.8, help: "Distance of the pen from the wheel's centre, as a share of its radius" },
-    variety: { kind: "number", group: "Spirograph", label: "Variety", min: 0, max: 1, step: 0.01, default: 0.4, help: "cells: how much each cell's wheel differs" },
-    ratio: { kind: "enum", group: "Harmonograph", label: "Ratio", options: Object.keys(RATIOS), default: "2:3", help: "Frequency ratio of the two axes" },
-    detune: { kind: "number", group: "Harmonograph", label: "Detune", min: 0, max: 0.05, step: 0.001, default: 0.01 },
-    damping: { kind: "number", group: "Harmonograph", label: "Damping", min: 0, max: 0.03, step: 0.0005, default: 0.004 },
-    cycles: { kind: "int", group: "Harmonograph", label: "Swings", min: 5, max: 300, default: 80 },
-    fill: { kind: "number", group: "Look", label: "Fill", min: 0.2, max: 1, step: 0.01, default: 0.9 },
-    lineWidth: { kind: "number", group: "Look", label: "Line width", min: 0.0003, max: 0.01, step: 0.0001, default: 0.0012 },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: COLOR_RULES, default: "contrast" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    ring: { kind: "int", group: "Spirograph", label: "Ring teeth", showIf: { param: "mode", is: ["spirograph"] }, help: "Teeth on the outer ring", min: 20, max: 150, default: 96 },
+    wheel: { kind: "int", group: "Spirograph", label: "Wheel teeth", showIf: { param: "mode", is: ["spirograph"] }, help: "Teeth on the rolling wheel; when ring and wheel share few factors the figure is denser", min: 5, max: 90, default: 52 },
+    pen: { kind: "number", group: "Spirograph", label: "Pen hole", showIf: { param: "mode", is: ["spirograph"] }, min: 0.1, max: 1.5, step: 0.01, default: 0.8, help: "Distance of the pen from the wheel's centre, as a share of its radius" },
+    variety: { kind: "number", group: "Spirograph", label: "Variety", showIf: { param: "mode", is: ["spirograph"] }, min: 0, max: 1, step: 0.01, default: 0.4, help: "cells: how much each cell's wheel differs" },
+    ratio: { kind: "enum", group: "Harmonograph", label: "Ratio", showIf: { param: "mode", is: ["harmonograph"] }, options: Object.keys(RATIOS), default: "2:3", help: "Frequency ratio of the two axes" },
+    detune: { kind: "number", group: "Harmonograph", label: "Detune", showIf: { param: "mode", is: ["harmonograph"] }, help: "A slight mismatch between swings that makes the trace drift and fill out", min: 0, max: 0.05, step: 0.001, default: 0.01 },
+    damping: { kind: "number", group: "Harmonograph", label: "Damping", showIf: { param: "mode", is: ["harmonograph"] }, help: "How fast the swings die down", min: 0, max: 0.03, step: 0.0005, default: 0.004 },
+    cycles: { kind: "int", group: "Harmonograph", label: "Swings", showIf: { param: "mode", is: ["harmonograph"] }, help: "Length of the trace, in swings", min: 5, max: 300, default: 80 },
+    fill: { kind: "number", group: "Look", label: "Fill", help: "How much of its region a figure covers", min: 0.2, max: 1, step: 0.01, default: 0.9 },
+    lineWidth: { kind: "number", group: "Look", label: "Line width", help: "Line thickness, as a share of the short side", min: 0.0003, max: 0.01, step: 0.0001, default: 0.0012 },
+    colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const regions: readonly Box[] = v.placement === "cells" && scene.cells.length ? scene.cells : [scene.frame];

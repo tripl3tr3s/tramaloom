@@ -1,7 +1,7 @@
 import { dcos, dsin } from "../math/trig.ts";
 import type { Item } from "../scene.ts";
 import { addItems } from "../scene.ts";
-import { COLOR_RULES, colorLookup, pickColor, rampColors } from "./color.ts";
+import { COLOR_RULES, colorHelp, colorLookup, pickColor, rampColors } from "./color.ts";
 import { defineModule } from "./types.ts";
 
 type Pt = readonly [number, number];
@@ -18,17 +18,17 @@ export const attractorModule = defineModule({
   label: "Attractor",
   description: "A strange attractor: one point hopping by a fixed rule, thousands of times, fitted to the frame as a cloud of dots.",
   params: {
-    kind: { kind: "enum", group: "Rule", label: "Rule", options: ["clifford", "dejong"], default: "clifford" },
-    a: { kind: "number", group: "Rule", label: "a", min: -3, max: 3, step: 0.01, default: -1.4 },
-    b: { kind: "number", group: "Rule", label: "b", min: -3, max: 3, step: 0.01, default: 1.6 },
-    c: { kind: "number", group: "Rule", label: "c", min: -3, max: 3, step: 0.01, default: 1 },
-    d: { kind: "number", group: "Rule", label: "d", min: -3, max: 3, step: 0.01, default: 0.7 },
-    points: { kind: "int", group: "Dots", label: "Points", min: 1000, max: 120000, default: 30000 },
-    dotSize: { kind: "number", group: "Dots", label: "Dot size", min: 0.0002, max: 0.004, step: 0.0001, default: 0.0009 },
-    opacity: { kind: "number", group: "Dots", label: "Opacity", min: 0.05, max: 1, step: 0.01, default: 0.7 },
-    fill: { kind: "number", group: "Dots", label: "Fill", min: 0.3, max: 1, step: 0.01, default: 0.9 },
-    colorRule: { kind: "enum", group: "Color", label: "Color", options: [...COLOR_RULES, "ramp"], default: "ramp", help: "ramp: palette bands from the centre out" },
-    color: { kind: "color", group: "Color", label: "Single color", default: "#f4f1ea" },
+    kind: { kind: "enum", group: "Rule", label: "Rule", help: "The hopping rule; each gives a different family of shapes", options: ["clifford", "dejong"], default: "clifford" },
+    a: { kind: "number", group: "Rule", label: "a", help: "Rule constant; small changes reshape the cloud, and some values collapse it to a point", min: -3, max: 3, step: 0.01, default: -1.4 },
+    b: { kind: "number", group: "Rule", label: "b", help: "Rule constant; small changes reshape the cloud, and some values collapse it to a point", min: -3, max: 3, step: 0.01, default: 1.6 },
+    c: { kind: "number", group: "Rule", label: "c", help: "Rule constant; small changes reshape the cloud, and some values collapse it to a point", min: -3, max: 3, step: 0.01, default: 1 },
+    d: { kind: "number", group: "Rule", label: "d", help: "Rule constant; small changes reshape the cloud, and some values collapse it to a point", min: -3, max: 3, step: 0.01, default: 0.7 },
+    points: { kind: "int", group: "Dots", label: "Points", help: "Number of hops plotted; more is denser and slower", min: 1000, max: 120000, default: 30000 },
+    dotSize: { kind: "number", group: "Dots", label: "Dot size", help: "Radius of each dot, as a share of the short side", min: 0.0002, max: 0.004, step: 0.0001, default: 0.0009 },
+    opacity: { kind: "number", group: "Dots", label: "Opacity", help: "Dot opacity; low values let busy parts of the cloud build up", min: 0.05, max: 1, step: 0.01, default: 0.7 },
+    fill: { kind: "number", group: "Dots", label: "Fill", help: "How much of the frame the cloud covers", min: 0.3, max: 1, step: 0.01, default: 0.9 },
+    colorRule: { kind: "enum", group: "Color", label: "Color", options: [...COLOR_RULES, "ramp"], default: "ramp", help: colorHelp({ ramp: true }) },
+    color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
   },
   apply(scene, v, ctx) {
     const f = scene.frame;

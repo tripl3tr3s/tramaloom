@@ -27,16 +27,25 @@ export function breedDocuments(
   registry: Registry = defaultRegistry,
 ): ArtDocument {
   const share = Math.min(1, Math.max(0, opts.share ?? 0.5));
-  const used = new Set<string>();
-  const partnerOf = (l: Layer): Layer | undefined => {
-    const exact = b.layers.find((x) => x.id === l.id && x.module === l.module && !used.has(x.id));
-    const found = exact ?? b.layers.find((x) => x.module === l.module && !used.has(x.id));
-    if (found) used.add(found.id);
-    return found;
-  };
+  // Pairing: exact id + module matches first, for every layer, so a fallback never takes
+  // a layer that another layer matches exactly; then same-module fallbacks in stack order.
+  const exact = new Map(a.layers.flatMap((l) => {
+    const m = b.layers.find((x) => x.id === l.id && x.module === l.module);
+    return m ? [[l.id, m] as const] : [];
+  }));
+  const used = new Set<string>([...exact.values()].map((x) => x.id));
+  const pairs = new Map(exact);
+  for (const l of a.layers) {
+    if (pairs.has(l.id)) continue;
+    const m = b.layers.find((x) => x.module === l.module && !used.has(x.id));
+    if (m) {
+      pairs.set(l.id, m);
+      used.add(m.id);
+    }
+  }
 
   const crossed = a.layers.map((layer): Layer => {
-    const partner = partnerOf(layer);
+    const partner = pairs.get(layer.id);
     const def = getModule(registry, layer.module);
     if (!partner || !def) return layer;
     const names = Object.keys(def.params);

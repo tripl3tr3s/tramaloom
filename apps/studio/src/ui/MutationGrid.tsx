@@ -134,13 +134,12 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
       aria-label="Mutation grid"
     >
       <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-300">
-        <div role="radiogroup" aria-label="Mode" className="flex rounded bg-zinc-900 p-0.5">
+        <div role="group" aria-label="Mode" className="flex rounded bg-zinc-900 p-0.5">
           {(["mutate", "breed"] as const).map((m) => (
             <button
               key={m}
               type="button"
-              role="radio"
-              aria-checked={mode === m}
+              aria-pressed={mode === m}
               onClick={(e) => {
                 setMode(m);
                 blur(e);

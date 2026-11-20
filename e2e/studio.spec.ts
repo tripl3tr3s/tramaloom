@@ -57,7 +57,7 @@ test.describe("after the welcome", () => {
 
   test("breeding with a preset offers children and adopting one changes the piece", async ({ page }) => {
     await page.keyboard.press("m");
-    await page.getByRole("radio", { name: "breed" }).click();
+    await page.getByRole("button", { name: "breed", exact: true }).click();
     await page.getByRole("combobox", { name: "Partner" }).selectOption({ label: "Labyrinth" });
     // Wait for the children themselves: until they render, the old batch shows and picks are ignored.
     const ready = page.getByRole("dialog", { name: "Mutation grid" }).locator('button[aria-disabled="false"]');

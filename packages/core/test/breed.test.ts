@@ -38,4 +38,13 @@ describe("breedDocuments", () => {
     const child = breedDocuments(locked, weave, rng("x"), { share: 1 });
     expect(child.layers.find((l) => l.id === "fill")?.params["inset"]).toEqual({ value: 0.33, locked: true });
   });
+
+  it("pairs exact id matches before same-module fallbacks", () => {
+    const maze = (id: string, style: string): ArtDocument["layers"][number] => ({ id, module: "maze", enabled: true, params: { style: { value: style } } });
+    const a: ArtDocument = { version: 1, name: "a", layers: [maze("x1", "walls"), maze("x2", "walls")] };
+    const b: ArtDocument = { version: 1, name: "b", layers: [maze("x2", "paths"), maze("x9", "walls")] };
+    const child = breedDocuments(a, b, rng("p"), { share: 1 });
+    // x2 takes b's x2 (paths); x1 falls back to the remaining x9 (walls).
+    expect(child.layers.map((l) => [l.id, l.params["style"]?.value])).toEqual([["x1", "walls"], ["x2", "paths"]]);
+  });
 });

@@ -20,13 +20,15 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
   const [opts, setOpts] = useState<PlotterOptions>(DEFAULT_PLOTTER);
   const set = <K extends keyof PlotterOptions>(k: K, v: PlotterOptions[K]) => setOpts((o) => ({ ...o, [k]: v }));
 
-  const out = useMemo(() => {
+  // The scene only depends on the piece; paper and pen edits re-run the cheap conversion alone.
+  const scene = useMemo(() => {
     try {
-      return toPlotterSVG(generate(doc, hash).scene, opts);
+      return generate(doc, hash).scene;
     } catch (e) {
       return e instanceof Error ? e : new Error(String(e));
     }
-  }, [doc, hash, opts]);
+  }, [doc, hash]);
+  const out = useMemo(() => (scene instanceof Error ? scene : toPlotterSVG(scene, opts)), [scene, opts]);
 
   // Preview: the plot itself on white paper, as an image (never injected as markup).
   const [preview, setPreview] = useState<string | null>(null);
@@ -34,7 +36,10 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
     if (out instanceof Error) return setPreview(null);
     const url = URL.createObjectURL(new Blob([out.svg], { type: "image/svg+xml" }));
     setPreview(url);
-    return () => URL.revokeObjectURL(url);
+    // Revoke a little later: the <img> may still be loading this URL when the next one arrives.
+    return () => {
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
   }, [out]);
 
   const base = `${slug(doc.name)}-${hash.slice(0, 8)}-${opts.paper}`;
@@ -86,11 +91,11 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
         </label>
         <label className="flex items-center justify-between gap-2">
           Margin (mm)
-          <input type="number" className={`${field} w-20`} min={0} max={80} step={1} value={opts.marginMm} onChange={(e) => e.target.value !== "" && set("marginMm", Math.max(0, Number(e.target.value)))} />
+          <input type="number" className={`${field} w-20`} min={0} max={80} step={1} value={opts.marginMm} onChange={(e) => e.target.value !== "" && set("marginMm", Number(e.target.value))} />
         </label>
         <label className="flex items-center justify-between gap-2" title="Preview stroke only; the plotter draws with the pen you load">
           Pen width (mm)
-          <input type="number" className={`${field} w-20`} min={0.05} max={3} step={0.05} value={opts.penMm} onChange={(e) => e.target.value !== "" && set("penMm", Math.max(0.05, Number(e.target.value)))} />
+          <input type="number" className={`${field} w-20`} min={0.05} max={3} step={0.05} value={opts.penMm} onChange={(e) => e.target.value !== "" && set("penMm", Number(e.target.value))} />
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" className="accent-sky-500" checked={opts.includeTexture} onChange={(e) => set("includeTexture", e.target.checked)} />

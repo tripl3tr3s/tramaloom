@@ -82,7 +82,7 @@ export function toPlotterSVG(scene: Scene, opts: PlotterOptions = DEFAULT_PLOTTE
   const landscape = opts.orientation === "landscape" || (opts.orientation === "auto" && scene.width > scene.height);
   const W = landscape ? Math.max(pw, ph) : Math.min(pw, ph);
   const H = landscape ? Math.min(pw, ph) : Math.max(pw, ph);
-  const margin = Math.max(0, Math.min(opts.marginMm, Math.min(W, H) / 2 - 1));
+  const margin = Math.max(0, Math.min(Number.isFinite(opts.marginMm) ? opts.marginMm : DEFAULT_PLOTTER.marginMm, Math.min(W, H) / 2 - 1));
   const k = Math.min((W - 2 * margin) / scene.width, (H - 2 * margin) / scene.height);
   const ox = (W - scene.width * k) / 2;
   const oy = (H - scene.height * k) / 2;
@@ -105,7 +105,8 @@ export function toPlotterSVG(scene: Scene, opts: PlotterOptions = DEFAULT_PLOTTE
     g.length += shape.length;
   }
 
-  const stroke = n(opts.penMm / k);
+  // Inputs may be mid-edit (a field holding "0" on the way to "0.4"): keep the nib sane here.
+  const stroke = n(Math.max(0.05, Number.isFinite(opts.penMm) ? opts.penMm : DEFAULT_PLOTTER.penMm) / k);
   const layers: PenLayer[] = order.map((color) => {
     const g = groups.get(color) as { svg: string[]; length: number };
     return { color, paths: g.svg.length, lengthMm: g.length * k };

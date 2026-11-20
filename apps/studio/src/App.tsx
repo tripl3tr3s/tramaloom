@@ -5,6 +5,7 @@ import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";
 import { exportJSON, exportPNG, exportSVG } from "./render/export.ts";
 import { useRenderer } from "./render/useRenderer.ts";
+import { loadFavorites, saveFavorites, toggleFavorite } from "./state/favorites.ts";
 import { parseDocument } from "./state/schema.ts";
 import { initialState, randomHash, reducer } from "./state/store.ts";
 import { DebugPanel } from "./ui/DebugPanel.tsx";
@@ -12,6 +13,7 @@ import { LayerStack } from "./ui/LayerStack.tsx";
 import { Library } from "./ui/Library.tsx";
 import { MutationGrid } from "./ui/MutationGrid.tsx";
 import { EditionPanel } from "./ui/edition/EditionPanel.tsx";
+import { FavoritesStrip } from "./ui/FavoritesStrip.tsx";
 import { ParamPanel } from "./ui/ParamPanel.tsx";
 import { ShortcutsHelp } from "./ui/ShortcutsHelp.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
@@ -21,6 +23,7 @@ export function App() {
   const [debug, setDebug] = useState(false);
   const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts">("none");
   const [toast, setToast] = useState<string | null>(null);
+  const [favorites, setFavorites] = useState<readonly string[]>(loadFavorites);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -79,6 +82,12 @@ export function App() {
     }
   };
 
+  const toggleFav = (h: string) => {
+    const next = toggleFavorite(favorites, h);
+    setFavorites(next);
+    saveFavorites(next);
+  };
+
   // Overlays handle their own keys; the studio's shortcuts pause while one is open.
   useShortcuts(overlay !== "none" ? {} : {
     m: () => setOverlay("mutate"),
@@ -91,6 +100,7 @@ export function App() {
     ArrowLeft: () => dispatch({ type: "seedPrev" }),
     ArrowRight: () => dispatch({ type: "seedNext" }),
     c: () => copy(state.hash, "Hash copied"),
+    b: () => toggleFav(state.hash),
     s: () => png(2000),
     "shift+s": () => png(4000),
     g: () => setDebug((d) => !d),
@@ -118,6 +128,8 @@ export function App() {
       <Toolbar
         name={state.doc.name}
         unsaved={state.doc !== state.savedDoc}
+        favorite={favorites.includes(state.hash)}
+        onFavorite={() => toggleFav(state.hash)}
         hash={state.hash}
         canUndo={state.past.length > 0}
         canRedo={state.future.length > 0}
@@ -154,9 +166,10 @@ export function App() {
         <aside inert={behind} className="order-2 max-h-48 overflow-y-auto border-zinc-800 bg-zinc-900/60 md:order-1 md:max-h-none md:w-60 md:border-r">
           <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} />
         </aside>
+        <div className="order-1 flex min-h-[50vh] min-w-0 flex-1 flex-col md:order-2 md:min-h-0">
         <main
           ref={viewportRef}
-          className="relative order-1 flex min-h-[50vh] flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,#27272a_0,#09090b_70%)] md:order-2 md:min-h-0"
+          className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,#27272a_0,#09090b_70%)]"
         >
           <canvas ref={canvasRef} className="rounded shadow-2xl shadow-black/60" />
           {debug && <DebugPanel hash={state.hash} info={info} />}
@@ -195,6 +208,18 @@ export function App() {
             <div className="absolute top-3 z-40 rounded-full bg-zinc-800/95 px-3 py-1 text-xs text-zinc-200 shadow">{toast}</div>
           )}
         </main>
+        {favorites.length > 0 && (
+          <div inert={behind}>
+            <FavoritesStrip
+              doc={state.doc}
+              hash={state.hash}
+              favorites={favorites}
+              onPick={(h) => dispatch({ type: "setHash", hash: h })}
+              onRemove={toggleFav}
+            />
+          </div>
+        )}
+        </div>
         <aside inert={behind} className="order-3 max-h-[40vh] overflow-y-auto border-zinc-800 bg-zinc-900/60 md:max-h-none md:w-72 md:border-l">
           <ParamPanel
             layer={selected}

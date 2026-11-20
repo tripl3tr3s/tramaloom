@@ -18,6 +18,7 @@ export const SHORTCUT_GROUPS: readonly ShortcutGroup[] = [
       { combos: [["R"]], does: "New random seed" },
       { combos: [["Left"], ["Right"]], does: "Previous / next seed (the trail is remembered)" },
       { combos: [["C"]], does: "Copy the hash" },
+      { combos: [["B"]], does: "Star or unstar this seed" },
     ],
   },
   {

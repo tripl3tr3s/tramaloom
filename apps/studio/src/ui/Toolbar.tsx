@@ -1,12 +1,15 @@
 import { normaliseHash } from "@gridloom/core";
 import { useEffect, useState } from "react";
-import { ChevronIcon } from "./icons.tsx";
+import { ChevronIcon, StarIcon } from "./icons.tsx";
 import { Menu } from "./Menu.tsx";
 
 interface Props {
   readonly name: string;
   /** The doc differs from the last save, open or shared link. */
   readonly unsaved: boolean;
+  /** The current seed is starred. */
+  readonly favorite: boolean;
+  readonly onFavorite: () => void;
   readonly hash: string;
   readonly canUndo: boolean;
   readonly canRedo: boolean;
@@ -79,6 +82,16 @@ export function Toolbar(p: Props) {
         spellCheck={false}
         aria-label="Hash"
       />
+      <button
+        type="button"
+        className={`${btn} ${p.favorite ? "text-amber-300 hover:text-amber-200" : ""}`}
+        onClick={p.onFavorite}
+        aria-pressed={p.favorite}
+        aria-label="Favourite this seed"
+        title={p.favorite ? "Remove this seed from favourites (B)" : "Add this seed to favourites (B)"}
+      >
+        <StarIcon filled={p.favorite} />
+      </button>
       {sep}
       <button type="button" className={btn} onClick={p.onUndo} disabled={!p.canUndo} title="Undo (Ctrl+Z)">
         Undo

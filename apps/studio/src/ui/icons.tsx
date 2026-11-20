@@ -88,3 +88,15 @@ export const ResetIcon = () => (
     <path d="M3.5 2.5v2.8h2.8" />
   </Icon>
 );
+
+export const StarIcon = ({ filled = false }: { readonly filled?: boolean }) => (
+  <svg width={14} height={14} viewBox="0 0 16 16" fill={filled ? "currentColor" : "none"} stroke="currentColor" strokeWidth={1.4} strokeLinejoin="round" aria-hidden="true" focusable="false">
+    <path d="M8 1.8l1.9 3.9 4.3.6-3.1 3 .7 4.3L8 11.6l-3.8 2 .7-4.3-3.1-3 4.3-.6z" />
+  </svg>
+);
+
+export const CloseIcon = () => (
+  <Icon size={10}>
+    <path d="M4 4l8 8M12 4l-8 8" />
+  </Icon>
+);

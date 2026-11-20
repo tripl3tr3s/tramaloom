@@ -1,6 +1,7 @@
 import { starterDocument } from "@gridloom/core";
 import { describe, expect, it } from "vitest";
 import type { ParamSpec } from "@gridloom/core";
+import { MAX_FAVORITES, parseFavorites, toggleFavorite } from "../src/state/favorites.ts";
 import { initialState, reducer } from "../src/state/store.ts";
 import { groupParams, isDefaultSetting } from "../src/ui/params.ts";
 import { SHORTCUT_GROUPS } from "../src/ui/shortcuts.ts";
@@ -146,5 +147,31 @@ describe("unsaved changes", () => {
 
   it("treats a rename as a change", () => {
     expect(dirty(reducer(s0, { type: "rename", name: "Other" }))).toBe(true);
+  });
+});
+
+describe("favorites", () => {
+  const a = "a".repeat(64);
+  const b = "b".repeat(64);
+
+  it("stars newest first and unstars", () => {
+    const one = toggleFavorite([], a);
+    const two = toggleFavorite(one, b);
+    expect(two).toEqual([b, a]);
+    expect(toggleFavorite(two, a)).toEqual([b]);
+  });
+
+  it("caps the list, dropping the oldest", () => {
+    const full = Array.from({ length: MAX_FAVORITES }, (_, i) => i.toString(16).padStart(64, "0"));
+    const next = toggleFavorite(full, a);
+    expect(next.length).toBe(MAX_FAVORITES);
+    expect(next[0]).toBe(a);
+    expect(next).not.toContain(full[full.length - 1]);
+  });
+
+  it("keeps only valid, distinct hashes from storage", () => {
+    expect(parseFavorites([a, a, b])).toEqual([a, b]);
+    expect(parseFavorites([a, "nope"])).toEqual([]);
+    expect(parseFavorites({ a })).toEqual([]);
   });
 });

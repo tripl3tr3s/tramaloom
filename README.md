@@ -20,6 +20,7 @@ MIT licensed. Static web app, no backend.
 | `R` | new random seed |
 | Left / Right | previous / next seed (the trail is remembered) |
 | `C` | copy hash |
+| `B` | star the seed; favourites show as a strip under the canvas, drawn with the current document |
 | `S` / `Shift+S` | PNG at 2000 / 4000 px (re-rendered, never upscaled) |
 | `G` | debug panel (hash, timing, resolved values) |
 | `F` | fullscreen viewport |

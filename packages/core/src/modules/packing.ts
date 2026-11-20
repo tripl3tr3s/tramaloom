@@ -69,8 +69,27 @@ export const packingModule = defineModule({
         }
       }
       if (r < lo) continue;
-      // Keep the whole circle over kept cells: test its four extreme points.
-      if (!inMask(x + r, y) || !inMask(x - r, y) || !inMask(x, y + r) || !inMask(x, y - r)) continue;
+      // Keep the whole circle over kept cells: every removed cell (or the area beyond the
+      // grid) under its bounding box caps the radius at the distance to that cell's nearest point.
+      if (v.followMask && L) {
+        const c0 = Math.floor((x - r - L.x) / L.cw);
+        const c1 = Math.floor((x + r - L.x) / L.cw);
+        const r0 = Math.floor((y - r - L.y) / L.ch);
+        const r1 = Math.floor((y + r - L.y) / L.ch);
+        for (let rr = r0; rr <= r1 && r >= lo; rr++) {
+          for (let cc = c0; cc <= c1 && r >= lo; cc++) {
+            const kept = cc >= 0 && rr >= 0 && cc < L.cols && rr < L.rows && L.present[rr * L.cols + cc] === true;
+            if (kept) continue;
+            const cx0 = L.x + cc * L.cw;
+            const cy0 = L.y + rr * L.ch;
+            const dx = Math.max(cx0 - x, 0, x - (cx0 + L.cw));
+            const dy = Math.max(cy0 - y, 0, y - (cy0 + L.ch));
+            const room = Math.sqrt(dx * dx + dy * dy);
+            if (room < r) r = room;
+          }
+        }
+        if (r < lo) continue;
+      }
       const disc = { x, y, r };
       discs.push(disc);
       colors.push(u);

@@ -73,6 +73,28 @@ describe("packing", () => {
   });
 });
 
+describe("packing with a mask", () => {
+  it("never covers a cell the mask removed, even diagonally or across a small hole", () => {
+    const d = doc({ id: "c", module: "packing", enabled: true, params: { maxSize: { value: 0.12 }, attempts: { value: 2500 } } }, { cols: { value: 14 }, rows: { value: 18 }, mask: { value: "noise" } });
+    const L = scene(d).lattice;
+    if (!L) throw new Error("no lattice");
+    const cs = own(d) as CircleItem[];
+    expect(cs.length).toBeGreaterThan(10);
+    for (const c of cs) {
+      for (let r = 0; r < L.rows; r++) {
+        for (let k = 0; k < L.cols; k++) {
+          if (L.present[r * L.cols + k]) continue;
+          const x0 = L.x + k * L.cw;
+          const y0 = L.y + r * L.ch;
+          const dx = Math.max(x0 - c.cx, 0, c.cx - (x0 + L.cw));
+          const dy = Math.max(y0 - c.cy, 0, c.cy - (y0 + L.ch));
+          expect(Math.sqrt(dx * dx + dy * dy)).toBeGreaterThanOrEqual(c.r - 1e-9);
+        }
+      }
+    }
+  });
+});
+
 describe("contour and threads", () => {
   it("keeps contour lines inside the frame", () => {
     const d = doc({ id: "c", module: "contour", enabled: true, params: { faults: { value: 2 } } });

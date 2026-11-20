@@ -1,6 +1,6 @@
 import type { ArtDocument, Layer, ParamSetting, TraitDef } from "@gridloom/core";
 import { stepHash } from "@gridloom/core";
-import { insertIndex } from "./layerOrder.ts";
+import { insertIndex, promoteIndex, zones } from "./layerOrder.ts";
 import { MAX_LAYERS } from "./limits.ts";
 
 const HISTORY_LIMIT = 100;
@@ -41,6 +41,8 @@ export type Action =
   /** Drag reorder: put the layer at `index` in the final order (canvas stays at 0). */
   | { readonly type: "moveLayerTo"; readonly layerId: string; readonly index: number }
   | { readonly type: "addLayer"; readonly module: string }
+  /** Make a free Palette or Grid the pinned one, when the head has none. */
+  | { readonly type: "promoteLayer"; readonly layerId: string }
   | { readonly type: "removeLayer"; readonly layerId: string }
   | { readonly type: "duplicateLayer"; readonly layerId: string }
   | { readonly type: "select"; readonly layerId: string }
@@ -128,21 +130,25 @@ export function reducer(s: StudioState, a: Action): StudioState {
     case "checkpoint":
       return { ...s, pendingCheckpoint: s.doc };
     case "toggleLayer": {
-      const target = s.doc.layers.find((l) => l.id === a.layerId);
-      if (!target || target.module === "canvas") return s;
+      const i = s.doc.layers.findIndex((l) => l.id === a.layerId);
+      const target = s.doc.layers[i];
+      // Pinned head layers can be shown (an old document may have hidden one) but never hidden.
+      if (!target || target.module === "canvas" || (i < zones(s.doc.layers).head && target.enabled)) return s;
       return commit(s, mapLayers(s.doc, (l) => (l.id === a.layerId ? { ...l, enabled: !l.enabled } : l)));
     }
     case "moveLayer": {
       const i = s.doc.layers.findIndex((l) => l.id === a.layerId);
       const j = i + a.dir;
-      if (i < 1 || j < 1 || j >= s.doc.layers.length) return s; // canvas stays first
+      const z = zones(s.doc.layers);
+      // Only free layers move, and only among themselves: the head and tail stay pinned.
+      if (i < z.head || i >= z.tail || j < z.head || j >= z.tail) return s;
       const layers = s.doc.layers.map((l, k) => (k === i ? s.doc.layers[j] : k === j ? s.doc.layers[i] : l) as Layer);
       return commit(s, { ...s.doc, layers });
     }
     case "moveLayerTo": {
       const i = s.doc.layers.findIndex((l) => l.id === a.layerId);
-      const n = s.doc.layers.length;
-      if (i < 1 || a.index < 1 || a.index >= n || a.index === i) return s;
+      const z = zones(s.doc.layers);
+      if (i < z.head || i >= z.tail || a.index < z.head || a.index >= z.tail || a.index === i) return s;
       const rest = s.doc.layers.filter((_, k) => k !== i);
       const layers = [...rest.slice(0, a.index), s.doc.layers[i] as Layer, ...rest.slice(a.index)];
       return commit(s, { ...s.doc, layers });
@@ -155,9 +161,17 @@ export function reducer(s: StudioState, a: Action): StudioState {
       const layers = [...s.doc.layers.slice(0, at), layer, ...s.doc.layers.slice(at)];
       return { ...commit(s, { ...s.doc, layers }), selectedId: layer.id };
     }
+    case "promoteLayer": {
+      const to = promoteIndex(s.doc.layers, a.layerId);
+      const i = s.doc.layers.findIndex((l) => l.id === a.layerId);
+      if (to === null || i < 0) return s;
+      const rest = s.doc.layers.filter((_, k) => k !== i);
+      return commit(s, { ...s.doc, layers: [...rest.slice(0, to), s.doc.layers[i] as Layer, ...rest.slice(to)] });
+    }
     case "removeLayer": {
-      const target = s.doc.layers.find((l) => l.id === a.layerId);
-      if (!target || target.module === "canvas") return s;
+      const i = s.doc.layers.findIndex((l) => l.id === a.layerId);
+      const target = s.doc.layers[i];
+      if (!target || i < zones(s.doc.layers).head) return s;
       const layers = s.doc.layers.filter((l) => l.id !== a.layerId);
       const selectedId = s.selectedId === a.layerId ? (layers[layers.length - 1]?.id ?? null) : s.selectedId;
       return { ...commit(s, { ...s.doc, layers }), selectedId };
@@ -165,7 +179,8 @@ export function reducer(s: StudioState, a: Action): StudioState {
     case "duplicateLayer": {
       const i = s.doc.layers.findIndex((l) => l.id === a.layerId);
       const src = s.doc.layers[i];
-      if (!src || src.module === "canvas" || s.doc.layers.length >= MAX_LAYERS) return s;
+      const z = zones(s.doc.layers);
+      if (!src || i < z.head || i >= z.tail || s.doc.layers.length >= MAX_LAYERS) return s;
       const copy: Layer = { ...src, id: freshId(s.doc, src.module) };
       const layers = [...s.doc.layers.slice(0, i + 1), copy, ...s.doc.layers.slice(i + 1)];
       return { ...commit(s, { ...s.doc, layers }), selectedId: copy.id };

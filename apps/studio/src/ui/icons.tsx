@@ -100,3 +100,9 @@ export const CloseIcon = () => (
     <path d="M4 4l8 8M12 4l-8 8" />
   </Icon>
 );
+
+export const PinIcon = () => (
+  <Icon size={11}>
+    <path d="M6 2h4M7 2v4L4.5 9h7L9 6V2M8 9v5" />
+  </Icon>
+);

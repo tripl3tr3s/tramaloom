@@ -2,7 +2,7 @@ import { starterDocument } from "@gridloom/core";
 import { describe, expect, it } from "vitest";
 import type { ParamSpec } from "@gridloom/core";
 import { MAX_FAVORITES, parseFavorites, toggleFavorite } from "../src/state/favorites.ts";
-import { insertIndex, needsGrid } from "../src/state/layerOrder.ts";
+import { insertIndex, needsGrid, zones } from "../src/state/layerOrder.ts";
 import { initialState, reducer } from "../src/state/store.ts";
 import { groupParams, isDefaultSetting, weightShares } from "../src/ui/params.ts";
 import { SHORTCUT_GROUPS } from "../src/ui/shortcuts.ts";
@@ -12,26 +12,54 @@ const H = "a".repeat(64);
 const ids = (s: ReturnType<typeof initialState>): string[] => s.doc.layers.map((l) => l.id);
 
 describe("moveLayerTo (drag reorder)", () => {
-  const s0 = initialState(starterDocument, H);
+  const Ly = (id: string, module: string, enabled = true) => ({ id, module, enabled, params: {} });
+  // Head: canvas, palette, grid. Middle: fill, tiles, maze. Tail: post.
+  const doc = {
+    version: 1 as const,
+    name: "t",
+    layers: [Ly("canvas", "canvas"), Ly("palette", "palette"), Ly("grid", "grid"), Ly("fill", "cellFill"), Ly("tiles", "tiles"), Ly("maze", "maze"), Ly("post", "post")],
+  };
+  const s0 = initialState(doc, H);
 
-  it("moves a layer to a new index as one undo step", () => {
-    const s = reducer(s0, { type: "moveLayerTo", layerId: "fill", index: 1 });
-    expect(ids(s)).toEqual(["canvas", "fill", "palette", "grid"]);
+  it("moves a free layer to a new index as one undo step", () => {
+    const s = reducer(s0, { type: "moveLayerTo", layerId: "maze", index: 3 });
+    expect(ids(s)).toEqual(["canvas", "palette", "grid", "maze", "fill", "tiles", "post"]);
     expect(s.past.length).toBe(1);
-    expect(reducer(s, { type: "undo" }).doc).toBe(starterDocument);
+    expect(reducer(s, { type: "undo" }).doc).toBe(doc);
   });
 
   it("moves down as well as up", () => {
-    const s = reducer(s0, { type: "moveLayerTo", layerId: "palette", index: 3 });
-    expect(ids(s)).toEqual(["canvas", "grid", "fill", "palette"]);
+    expect(ids(reducer(s0, { type: "moveLayerTo", layerId: "fill", index: 5 }))).toEqual(["canvas", "palette", "grid", "tiles", "maze", "fill", "post"]);
   });
 
-  it("keeps the canvas first and ignores out-of-range or no-op moves", () => {
-    expect(reducer(s0, { type: "moveLayerTo", layerId: "fill", index: 0 })).toBe(s0);
-    expect(reducer(s0, { type: "moveLayerTo", layerId: "canvas", index: 2 })).toBe(s0);
-    expect(reducer(s0, { type: "moveLayerTo", layerId: "fill", index: 9 })).toBe(s0);
-    expect(reducer(s0, { type: "moveLayerTo", layerId: "fill", index: 3 })).toBe(s0);
-    expect(reducer(s0, { type: "moveLayerTo", layerId: "nope", index: 1 })).toBe(s0);
+  it("never moves into or out of the pinned head and tail", () => {
+    expect(reducer(s0, { type: "moveLayerTo", layerId: "fill", index: 1 })).toBe(s0);
+    expect(reducer(s0, { type: "moveLayerTo", layerId: "fill", index: 6 })).toBe(s0);
+    expect(reducer(s0, { type: "moveLayerTo", layerId: "palette", index: 4 })).toBe(s0);
+    expect(reducer(s0, { type: "moveLayerTo", layerId: "post", index: 4 })).toBe(s0);
+    expect(reducer(s0, { type: "moveLayer", layerId: "fill", dir: -1 })).toBe(s0);
+    expect(reducer(s0, { type: "moveLayer", layerId: "maze", dir: 1 })).toBe(s0);
+    expect(reducer(s0, { type: "moveLayerTo", layerId: "nope", index: 4 })).toBe(s0);
+  });
+
+  it("never removes, hides or duplicates the pinned head; the tail can go", () => {
+    expect(reducer(s0, { type: "removeLayer", layerId: "grid" })).toBe(s0);
+    expect(reducer(s0, { type: "toggleLayer", layerId: "palette" })).toBe(s0);
+    expect(reducer(s0, { type: "duplicateLayer", layerId: "grid" })).toBe(s0);
+    expect(ids(reducer(s0, { type: "removeLayer", layerId: "post" }))).not.toContain("post");
+  });
+
+  it("adds a second grid as a free Re-grid at the end of the middle", () => {
+    const s = reducer(s0, { type: "addLayer", module: "grid" });
+    expect(s.doc.layers.map((l) => l.module)).toEqual(["canvas", "palette", "grid", "cellFill", "tiles", "maze", "grid", "post"]);
+    expect(zones(s.doc.layers)).toEqual({ head: 3, tail: 7 });
+  });
+
+  it("promotes a stranded grid into the empty head slot", () => {
+    const broken = initialState({ version: 1, name: "b", layers: [Ly("canvas", "canvas"), Ly("palette", "palette"), Ly("tiles", "tiles"), Ly("grid", "grid")] }, H);
+    const s = reducer(broken, { type: "promoteLayer", layerId: "grid" });
+    expect(ids(s)).toEqual(["canvas", "palette", "grid", "tiles"]);
+    expect(reducer(s0, { type: "promoteLayer", layerId: "fill" })).toBe(s0);
   });
 });
 
@@ -204,7 +232,9 @@ describe("layer order help", () => {
     expect(insertIndex(d.layers, "palette")).toBe(1);
     expect(insertIndex(d.layers, "maze")).toBe(2);
     expect(insertIndex(d.layers, "symmetry")).toBe(2);
-    expect(insertIndex(d.layers, "post")).toBe(3);
+    // Post already fills its tail slot, so a second one is a free layer at the middle's end.
+    expect(insertIndex(d.layers, "post")).toBe(2);
+    expect(insertIndex(doc(L("canvas", "canvas"), L("tiles", "tiles")).layers, "post")).toBe(2);
   });
 
   it("flags drawing layers with no enabled grid above them", () => {

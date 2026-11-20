@@ -32,6 +32,16 @@ MIT licensed. Static web app, no backend.
 | `E` | edition: traits and rarity, census, contact sheet, batch export, plotter SVG, mint export |
 | `?` | every shortcut, in one list |
 
+## The layer stack
+
+Layers run top to bottom, in three parts:
+
+- **Pinned at the top:** Canvas, Palette and Grid. Every drawing layer depends on them, so they cannot be moved, removed or hidden.
+- **Free in the middle:** the drawing layers, in any order. A second Grid, Palette or Symmetry here becomes a **Re-grid** (the layers below draw on its cells), **Re-palette** (new colors below) or **Mirror** (mirrors only what is above it).
+- **Pinned at the end:** Symmetry, then Post. Optional, but always last when present.
+
+Saved pieces and share links keep their exact order. If an older piece has a drawing layer above its grid, the layer is marked and its panel offers the fix.
+
 ## Where your work lives
 
 There is no server. A piece is saved in three ways, and only two of them last:

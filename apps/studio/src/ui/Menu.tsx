@@ -8,6 +8,8 @@ export interface MenuItem {
   /** Right-aligned hint, usually the keyboard shortcut. */
   readonly hint?: string;
   readonly separatorBefore?: boolean;
+  /** Shown and focusable, so its description can say why, but does nothing. */
+  readonly disabled?: boolean;
   readonly onSelect: () => void;
 }
 
@@ -113,7 +115,7 @@ export function Menu({ label, trigger, triggerClass, items, align = "left", disa
           role="menu"
           aria-label={label}
           onKeyDown={onMenuKey}
-          className={`absolute top-full z-50 mt-1 ${width} ${align === "right" ? "right-0" : "left-0"} rounded-md border border-zinc-700 bg-zinc-900 p-1 shadow-xl shadow-black/50`}
+          className={`panel-scroll absolute top-full z-50 mt-1 max-h-[calc(100dvh-7rem)] overflow-y-auto ${width} ${align === "right" ? "right-0" : "left-0"} rounded-md border border-zinc-700 bg-zinc-900 p-1 shadow-xl shadow-black/50`}
         >
           {items.map((item, i) => (
             <div key={item.label} role="none">
@@ -125,8 +127,10 @@ export function Menu({ label, trigger, triggerClass, items, align = "left", disa
                 type="button"
                 role="menuitem"
                 tabIndex={-1}
-                className="flex w-full items-start gap-3 rounded px-2 py-1.5 text-left text-xs text-zinc-200 outline-none hover:bg-zinc-800 focus:bg-sky-900/60"
+                aria-disabled={item.disabled || undefined}
+                className={`flex w-full items-start gap-3 rounded px-2 py-1.5 text-left text-xs outline-none focus:bg-sky-900/60 ${item.disabled ? "cursor-default text-zinc-500" : "text-zinc-200 hover:bg-zinc-800"}`}
                 onClick={() => {
+                  if (item.disabled) return;
                   close(true);
                   item.onSelect();
                 }}

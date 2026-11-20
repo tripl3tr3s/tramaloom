@@ -6,7 +6,7 @@ import { useUrlSync } from "./hooks/useUrlSync.ts";
 import { exportJSON, exportPNG, exportSVG } from "./render/export.ts";
 import { useRenderer } from "./render/useRenderer.ts";
 import { loadFavorites, MAX_FAVORITES, saveFavorites, toggleFavorite } from "./state/favorites.ts";
-import { insertIndex, needsGrid } from "./state/layerOrder.ts";
+import { needsGrid, promoteIndex } from "./state/layerOrder.ts";
 import { parseDocument } from "./state/schema.ts";
 import { encodeState } from "./state/url.ts";
 import { initialState, randomHash, reducer } from "./state/store.ts";
@@ -141,16 +141,15 @@ export function App() {
     const i = state.doc.layers.findIndex((l) => l.id === state.selectedId);
     if (i < 0 || !needsGrid(state.doc.layers, i)) return null;
     const grids = state.doc.layers.filter((l) => l.module === "grid");
-    const below = grids.find((g) => g.enabled);
-    if (below) {
-      const rest = state.doc.layers.filter((l) => l.id !== below.id);
+    const hidden = grids.find((g) => !g.enabled);
+    const stranded = grids.find((g) => g.enabled && promoteIndex(state.doc.layers, g.id) !== null);
+    if (stranded) {
       return {
         message: "This layer draws into the grid's cells, but the Grid layer runs after it, so there is nothing to draw on yet.",
-        fix: "Move Grid above",
-        onFix: () => dispatch({ type: "moveLayerTo", layerId: below.id, index: insertIndex(rest, "grid") }),
+        fix: "Use it as the main grid",
+        onFix: () => dispatch({ type: "promoteLayer", layerId: stranded.id }),
       };
     }
-    const hidden = grids[0];
     if (hidden) {
       return {
         message: "This layer draws into the grid's cells, but the Grid layer is hidden.",

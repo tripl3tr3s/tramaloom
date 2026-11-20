@@ -5,7 +5,7 @@ import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";
 import { exportJSON, exportPNG, exportSVG } from "./render/export.ts";
 import { useRenderer } from "./render/useRenderer.ts";
-import { loadFavorites, saveFavorites, toggleFavorite } from "./state/favorites.ts";
+import { loadFavorites, MAX_FAVORITES, saveFavorites, toggleFavorite } from "./state/favorites.ts";
 import { parseDocument } from "./state/schema.ts";
 import { initialState, randomHash, reducer } from "./state/store.ts";
 import { DebugPanel } from "./ui/DebugPanel.tsx";
@@ -87,6 +87,9 @@ export function App() {
 
   const toggleFav = (h: string) => {
     const next = toggleFavorite(favorites, h);
+    if (!favorites.includes(h) && favorites.length >= MAX_FAVORITES) {
+      notify(`Favourites keep the newest ${MAX_FAVORITES} seeds; the oldest one was dropped`, 3000);
+    }
     setFavorites(next);
     saveFavorites(next);
   };

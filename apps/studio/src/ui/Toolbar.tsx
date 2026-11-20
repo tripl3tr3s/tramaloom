@@ -88,7 +88,7 @@ export function Toolbar(p: Props) {
         onClick={p.onFavorite}
         aria-pressed={p.favorite}
         aria-label="Favourite this seed"
-        title={p.favorite ? "Remove this seed from favourites (B)" : "Add this seed to favourites (B)"}
+        title={p.favorite ? "Remove this seed from favourites (B)" : "Star this seed (B). Stars keep the seed only; save to the Library to keep the whole piece"}
       >
         <StarIcon filled={p.favorite} />
       </button>

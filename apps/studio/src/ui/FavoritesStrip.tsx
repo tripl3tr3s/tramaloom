@@ -23,9 +23,12 @@ export function FavoritesStrip({ doc, hash, favorites, onPick, onRemove }: Props
   const { urls } = useThumbnails(jobs, THUMB, favorites);
   return (
     <section aria-label="Favourite seeds" className="flex items-center gap-2 border-t border-zinc-800 bg-zinc-900/80 px-3 py-2">
-      <h2 className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
-        Favourites <span className="font-normal text-zinc-600">{favorites.length}</span>
-      </h2>
+      <div className="shrink-0">
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">
+          Favourites <span className="font-normal text-zinc-600">{favorites.length}</span>
+        </h2>
+        <p className="mt-0.5 max-w-36 text-[10px] leading-snug text-zinc-600">Seeds only, drawn with the current settings. Keep a finished piece in the Library.</p>
+      </div>
       <ol className="flex min-w-0 flex-1 gap-2 overflow-x-auto pb-0.5">
         {favorites.map((h, i) => (
           <li key={h} className="group relative shrink-0">

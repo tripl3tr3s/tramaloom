@@ -101,7 +101,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
           return spec && !isDefaultSetting(spec, layer.params[n]);
         }).length;
         return (
-          <section key={title} className="mt-1">
+          <section key={title} className="mt-1 scroll-mt-2" data-section={title}>
             <button
               type="button"
               className="flex w-full items-center gap-1.5 rounded py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"

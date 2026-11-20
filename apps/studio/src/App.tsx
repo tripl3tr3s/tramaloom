@@ -17,6 +17,7 @@ import { MutationGrid } from "./ui/MutationGrid.tsx";
 import { EditionPanel } from "./ui/edition/EditionPanel.tsx";
 import { FavoritesStrip } from "./ui/FavoritesStrip.tsx";
 import { ParamPanel } from "./ui/ParamPanel.tsx";
+import { ScrollHints } from "./ui/ScrollHints.tsx";
 import { ShortcutsHelp } from "./ui/ShortcutsHelp.tsx";
 import { TilePreview } from "./ui/TilePreview.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
@@ -315,6 +316,7 @@ export function App() {
             onResetLayer={(layerId) => dispatch({ type: "resetLayer", layerId })}
             problem={problem}
           />
+          <ScrollHints />
         </aside>
         <nav inert={behind} aria-label="Panels" className="order-4 flex shrink-0 border-t border-zinc-800 bg-zinc-900 md:hidden">
           {(

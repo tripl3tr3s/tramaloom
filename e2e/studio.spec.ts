@@ -67,4 +67,13 @@ test.describe("after the welcome", () => {
     await expect(page.getByRole("dialog", { name: "Mutation grid" })).toBeVisible();
     await expect.poll(() => page.evaluate(() => location.hash)).not.toBe(before);
   });
+
+  test("a long params panel says what is below and scrolls to it", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.getByRole("button", { name: "Palette", exact: true }).click();
+    const more = page.locator("#sheet-params").getByRole("button", { name: /^More/ });
+    await expect(more).toHaveText(/More: Zones/);
+    await more.click();
+    await expect(page.locator('#sheet-params [data-section="Zones"]')).toBeInViewport();
+  });
 });

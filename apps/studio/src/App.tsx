@@ -1,5 +1,5 @@
 import type { ArtDocument, ParamSetting } from "@gridloom/core";
-import { ENGINE_VERSION, starterDocument } from "@gridloom/core";
+import { defaultRegistry, ENGINE_VERSION, getModule, starterDocument } from "@gridloom/core";
 import { useCallback, useEffect, useReducer, useRef, useState } from "react";
 import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";
@@ -25,6 +25,8 @@ export function App() {
   const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome">(() => (isFirstVisit() ? "welcome" : "none"));
   const [toast, setToast] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<readonly string[]>(loadFavorites);
+  // Phones: which panel is open as a bottom sheet (null shows the art alone). Ignored from md up.
+  const [sheet, setSheet] = useState<"layers" | "params" | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -164,10 +166,14 @@ export function App() {
       />
       </div>
       <div className="flex min-h-0 flex-1 flex-col md:flex-row">
-        <aside inert={behind} className="order-2 max-h-48 overflow-y-auto border-zinc-800 bg-zinc-900/60 md:order-1 md:max-h-none md:w-60 md:border-r">
+        <aside
+          id="sheet-layers"
+          inert={behind}
+          className={`order-2 h-[45dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:order-1 md:block md:h-auto md:w-60 md:border-r md:border-t-0 md:bg-zinc-900/60 ${sheet === "layers" ? "block" : "hidden"}`}
+        >
           <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} />
         </aside>
-        <div className="order-1 flex min-h-[50vh] min-w-0 flex-1 flex-col md:order-2 md:min-h-0">
+        <div className="order-1 flex min-h-0 min-w-0 flex-1 flex-col md:order-2">
         <main
           ref={viewportRef}
           className="relative flex min-h-0 flex-1 items-center justify-center overflow-hidden bg-[radial-gradient(circle_at_center,#27272a_0,#09090b_70%)]"
@@ -222,7 +228,11 @@ export function App() {
           </div>
         )}
         </div>
-        <aside inert={behind} className="order-3 max-h-[40vh] overflow-y-auto border-zinc-800 bg-zinc-900/60 md:max-h-none md:w-72 md:border-l">
+        <aside
+          id="sheet-params"
+          inert={behind}
+          className={`order-3 h-[45dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:block md:h-auto md:w-72 md:border-l md:border-t-0 md:bg-zinc-900/60 ${sheet === "params" ? "block" : "hidden"}`}
+        >
           <ParamPanel
             layer={selected}
             resolved={info.resolved.find((r) => r.id === state.selectedId)}
@@ -232,6 +242,25 @@ export function App() {
             onResetLayer={(layerId) => dispatch({ type: "resetLayer", layerId })}
           />
         </aside>
+        <nav inert={behind} aria-label="Panels" className="order-4 flex shrink-0 border-t border-zinc-800 bg-zinc-900 md:hidden">
+          {(
+            [
+              ["layers", "Layers", "sheet-layers"],
+              ["params", selected ? (getModule(defaultRegistry, selected.module)?.label ?? selected.module) : "Params", "sheet-params"],
+            ] as const
+          ).map(([id, label, controls]) => (
+            <button
+              key={id}
+              type="button"
+              className={`flex-1 truncate px-3 py-2.5 text-xs ${sheet === id ? "bg-zinc-800 text-white" : "text-zinc-400"}`}
+              aria-expanded={sheet === id}
+              aria-controls={controls}
+              onClick={() => setSheet((s) => (s === id ? null : id))}
+            >
+              {label}
+            </button>
+          ))}
+        </nav>
       </div>
     </div>
   );

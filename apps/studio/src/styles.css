@@ -53,3 +53,15 @@ body {
 .dual-range:focus-visible::-moz-range-thumb {
   box-shadow: 0 0 0 3px rgb(56 189 248 / 0.5);
 }
+
+/* Fingers need a bigger target than a mouse pointer. */
+@media (pointer: coarse) {
+  .dual-range::-webkit-slider-thumb {
+    width: 22px;
+    height: 22px;
+  }
+  .dual-range::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+  }
+}

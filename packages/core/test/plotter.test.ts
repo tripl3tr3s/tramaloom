@@ -24,7 +24,7 @@ describe("toPlotterSVG", () => {
   it("drops shapes in the background color and texture dots unless asked", () => {
     const items: Scene["items"] = [
       { type: "rect", x: 0, y: 0, w: 1, h: 1, fill: "#FFFFFF" },
-      { type: "dots", points: [[0.5, 0.5]], r: 0.001, fill: "#000000" },
+      { type: "dots", points: [[0.5, 0.5]], r: 0.001, fill: "#000000", texture: true },
     ];
     expect(toPlotterSVG(scene(items)).layers).toEqual([]);
     expect(toPlotterSVG(scene(items), { ...DEFAULT_PLOTTER, includeTexture: true }).layers.length).toBe(1);
@@ -36,5 +36,11 @@ describe("toPlotterSVG", () => {
     expect(wide.svg).toContain('width="297mm"');
     // Fit by width: (297 - 30) mm across 1.5 units, so the line is 267 mm long.
     expect(wide.layers[0]?.lengthMm).toBeCloseTo(267, 5);
+  });
+
+  it("keeps dots that are the drawing as one pen tap each, and counts the lifts", () => {
+    const out = toPlotterSVG(scene([{ type: "dots", points: [[0.2, 0.2], [0.4, 0.4], [0.6, 0.6]], r: 0.001, fill: "#123456" }]));
+    expect(out.layers).toEqual([{ color: "#123456", paths: 1, lifts: 3, lengthMm: 0 }]);
+    expect(out.svg).toMatch(/<path d="M[^"]*h0M[^"]*h0M[^"]*h0"\/>/);
   });
 });

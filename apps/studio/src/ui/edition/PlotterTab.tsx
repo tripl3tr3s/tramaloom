@@ -7,11 +7,13 @@ import { entryFromBytes, zip } from "../../render/zip.ts";
 const field = "rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-sky-500";
 /** Pen-down speed for the time estimate; typical for an AxiDraw-class plotter at default settings. */
 const MM_PER_SECOND = 25;
+/** Pen down, pen up: what a dot costs, and what dominates the time of a stipple. */
+const SECONDS_PER_LIFT = 0.25;
 const PAPER_LABEL: Record<Paper, string> = { a5: "A5", a4: "A4", a3: "A3", letter: "US Letter" };
 
 const metres = (mm: number) => (mm >= 1000 ? `${(mm / 1000).toFixed(1)} m` : `${Math.round(mm)} mm`);
-const minutes = (mm: number) => {
-  const m = mm / MM_PER_SECOND / 60;
+const minutes = (mm: number, lifts: number) => {
+  const m = (mm / MM_PER_SECOND + lifts * SECONDS_PER_LIFT) / 60;
   return m < 1 ? "under a minute" : `about ${Math.round(m)} min`;
 };
 
@@ -44,6 +46,7 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
 
   const base = `${slug(doc.name)}-${hash.slice(0, 8)}-${opts.paper}`;
   const total = out instanceof Error ? 0 : out.layers.reduce((s, l) => s + l.lengthMm, 0);
+  const lifts = out instanceof Error ? 0 : out.layers.reduce((s, l) => s + l.lifts, 0);
 
   const saveOne = () => {
     if (out instanceof Error) return;
@@ -69,7 +72,7 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
       </div>
       <div className="space-y-3">
         <p className="leading-relaxed text-zinc-400">
-          Every shape becomes its outline, one layer per color. Fills are not hatched: add a Hatching layer for shading. Shapes in the background color are left out.
+          Every shape becomes its outline, one layer per color. Fills are not hatched: add a Hatching layer for shading. Shapes in the background color are left out, and so is grain unless you ask for it.
         </p>
         <label className="flex items-center justify-between gap-2">
           Paper
@@ -99,7 +102,7 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
         </label>
         <label className="flex items-center gap-2">
           <input type="checkbox" className="accent-sky-500" checked={opts.includeTexture} onChange={(e) => set("includeTexture", e.target.checked)} />
-          Include grain dots (slow to plot)
+          Include grain texture (slow to plot)
         </label>
 
         {!(out instanceof Error) && (
@@ -121,13 +124,17 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
                       {i + 1} <span className="font-mono text-zinc-500">{l.color}</span>
                     </td>
                     <td className="text-right font-mono">{l.paths}</td>
-                    <td className="text-right font-mono">{metres(l.lengthMm)}</td>
+                    <td className="text-right font-mono" title={l.lifts > l.paths ? `${l.lifts} pen taps` : undefined}>
+                      {l.lifts > l.paths ? `${l.lifts} dots` : metres(l.lengthMm)}
+                    </td>
                   </tr>
                 ))}
               </tbody>
             </table>
             <p className="text-zinc-500">
-              {out.layers.length} {out.layers.length === 1 ? "pen" : "pens"}, {metres(total)} of drawing, {minutes(total)} at {MM_PER_SECOND} mm/s.
+              {out.layers.length} {out.layers.length === 1 ? "pen" : "pens"}, {total >= 1 ? `${metres(total)} of drawing, ` : ""}
+              {lifts > 1000 ? `${lifts} pen lifts, ` : ""}
+              {minutes(total, lifts)} at {MM_PER_SECOND} mm/s.
             </p>
             <div className="flex flex-wrap gap-2">
               <button type="button" className="rounded bg-sky-700 px-2.5 py-1 text-white hover:bg-sky-600 disabled:opacity-40" disabled={!out.layers.length} onClick={saveOne}>

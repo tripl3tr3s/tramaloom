@@ -36,6 +36,8 @@ export interface DotsItem extends Paint {
   readonly type: "dots";
   readonly points: readonly (readonly [number, number])[];
   readonly r: number;
+  /** Surface texture (grain), not part of the drawing: plotter export leaves it out by default. Renderers ignore it. */
+  readonly texture?: boolean;
 }
 
 export type Item = RectItem | CircleItem | PolylineItem | DotsItem;

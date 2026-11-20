@@ -95,7 +95,7 @@ export const postModule = defineModule({
       const light = i >= LEVELS;
       const level = i % LEVELS;
       const opacity = 0.04 + ((level + 0.5) / LEVELS) * 0.14;
-      return [{ type: "dots", points, r: v.grainSize / 2, fill: light ? "#ffffff" : "#000000", opacity }];
+      return [{ type: "dots", points, r: v.grainSize / 2, fill: light ? "#ffffff" : "#000000", opacity, texture: true }];
     });
 
     return addItems({ ...scene, items: moved }, [...border, ...specks]);

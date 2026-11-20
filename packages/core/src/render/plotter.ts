@@ -16,7 +16,7 @@ export interface PlotterOptions {
   readonly marginMm: number;
   /** Nib width, used for the preview stroke only; plotters draw with whatever pen is loaded. */
   readonly penMm: number;
-  /** Grain and stipple dots; off by default, since thousands of tiny circles take ages to plot. */
+  /** Grain texture; off by default, since thousands of tiny circles take ages to plot. Dots that are the drawing (an attractor) are always kept. */
   readonly includeTexture: boolean;
 }
 
@@ -25,6 +25,8 @@ export const DEFAULT_PLOTTER: PlotterOptions = { paper: "a4", orientation: "auto
 export interface PenLayer {
   readonly color: string;
   readonly paths: number;
+  /** Times the pen goes down: one per path, one per dot. Dominates plotting time for stipples. */
+  readonly lifts: number;
   /** Pen-down distance in millimetres. */
   readonly lengthMm: number;
 }
@@ -45,8 +47,8 @@ const dist = (a: Pt, b: Pt): number => Math.sqrt((a[0] - b[0]) * (a[0] - b[0]) +
 const polyLength = (pts: readonly Pt[], closed: boolean): number =>
   pts.reduce((sum, p, i) => sum + (i ? dist(pts[i - 1] as Pt, p) : 0), 0) + (closed && pts.length > 2 ? dist(pts[pts.length - 1] as Pt, pts[0] as Pt) : 0);
 
-/** One item as outline geometry: its SVG element (no paint) and its length in scene units. */
-function outline(it: Item, includeTexture: boolean): { readonly svg: string; readonly length: number } | null {
+/** One item as outline geometry: its SVG element (no paint), its length in scene units and its pen-downs. */
+function outline(it: Item, includeTexture: boolean): { readonly svg: string; readonly length: number; readonly lifts?: number } | null {
   switch (it.type) {
     case "rect": {
       const r = it.r ? ` rx="${n(it.r)}"` : "";
@@ -62,11 +64,17 @@ function outline(it: Item, includeTexture: boolean): { readonly svg: string; rea
       return { svg: `<${tag} points="${pts}"/>`, length: polyLength(it.points, it.closed === true) };
     }
     case "dots":
-      if (!includeTexture) return null;
-      return {
-        svg: it.points.map(([x, y]) => `<circle cx="${n(x)}" cy="${n(y)}" r="${n(it.r)}"/>`).join(""),
-        length: it.points.length * 2 * Math.PI * it.r,
-      };
+      if (it.texture) {
+        if (!includeTexture) return null;
+        return {
+          svg: it.points.map(([x, y]) => `<circle cx="${n(x)}" cy="${n(y)}" r="${n(it.r)}"/>`).join(""),
+          length: it.points.length * 2 * Math.PI * it.r,
+          lifts: it.points.length,
+        };
+      }
+      // Dots that are the drawing: one pen tap each, a zero-length stroke that round caps show as a dot.
+      if (!it.points.length) return null;
+      return { svg: `<path d="${it.points.map(([x, y]) => `M${n(x)} ${n(y)}h0`).join("")}"/>`, length: 0, lifts: it.points.length };
   }
 }
 
@@ -90,29 +98,30 @@ export function toPlotterSVG(scene: Scene, opts: PlotterOptions = DEFAULT_PLOTTE
 
   // Colors in order of first appearance; each collects its shapes.
   const order: string[] = [];
-  const groups = new Map<string, { svg: string[]; length: number }>();
+  const groups = new Map<string, { svg: string[]; length: number; lifts: number }>();
   for (const it of scene.items) {
     const color = (it.stroke ?? it.fill ?? "").toLowerCase();
     if (!color || color === bg) continue;
     const shape = outline(it, opts.includeTexture);
     if (!shape) continue;
-    const g = groups.get(color) ?? { svg: [], length: 0 };
+    const g = groups.get(color) ?? { svg: [], length: 0, lifts: 0 };
     if (!groups.has(color)) {
       groups.set(color, g);
       order.push(color);
     }
     g.svg.push(shape.svg);
     g.length += shape.length;
+    g.lifts += shape.lifts ?? 1;
   }
 
   // Inputs may be mid-edit (a field holding "0" on the way to "0.4"): keep the nib sane here.
   const stroke = n(Math.max(0.05, Number.isFinite(opts.penMm) ? opts.penMm : DEFAULT_PLOTTER.penMm) / k);
   const layers: PenLayer[] = order.map((color) => {
-    const g = groups.get(color) as { svg: string[]; length: number };
-    return { color, paths: g.svg.length, lengthMm: g.length * k };
+    const g = groups.get(color) as { svg: string[]; length: number; lifts: number };
+    return { color, paths: g.svg.length, lifts: g.lifts, lengthMm: g.length * k };
   });
   const body = order.map((color, i) => {
-    const g = groups.get(color) as { svg: string[]; length: number };
+    const g = groups.get(color) as { svg: string[]; length: number; lifts: number };
     return `<g inkscape:groupmode="layer" inkscape:label="${i + 1} ${esc(color)}" id="pen${i + 1}" fill="none" stroke="${esc(color)}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round">\n${g.svg.join("\n")}\n</g>`;
   });
   const page = (groups: readonly string[]): string =>

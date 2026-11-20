@@ -47,4 +47,22 @@ describe("breedDocuments", () => {
     // x2 takes b's x2 (paths); x1 falls back to the remaining x9 (walls).
     expect(child.layers.map((l) => [l.id, l.params["style"]?.value])).toEqual([["x1", "walls"], ["x2", "paths"]]);
   });
+
+  it("adds the partner's extra layers before Symmetry and Post, which stay last", () => {
+    const quilt = builtinPresets.find((p) => p.id === "quilt")?.doc as ArtDocument; // ends with symmetry, post
+    const labyrinth = builtinPresets.find((p) => p.id === "labyrinth")?.doc as ArtDocument; // has halftone, maze
+    const child = breedDocuments(quilt, labyrinth, rng("t"), { share: 1 });
+    const modules = child.layers.map((l) => l.module);
+    expect(modules.slice(-2)).toEqual(["symmetry", "post"]);
+    expect(modules).toContain("maze");
+    expect(modules.indexOf("maze")).toBeLessThan(modules.indexOf("symmetry"));
+  });
+
+  it("gives a partner's Post the end slot when the piece has none", () => {
+    const L = (id: string, module: string) => ({ id, module, enabled: true, params: {} });
+    const a: ArtDocument = { version: 1, name: "a", layers: [L("canvas", "canvas"), L("grid", "grid"), L("fill", "cellFill")] };
+    const b: ArtDocument = { version: 1, name: "b", layers: [L("canvas", "canvas"), L("grid", "grid"), L("post", "post"), L("t", "tiles")] };
+    const child = breedDocuments(a, b, rng("u"), { share: 1 });
+    expect(child.layers.map((l) => l.module)).toEqual(["canvas", "grid", "cellFill", "tiles", "post"]);
+  });
 });

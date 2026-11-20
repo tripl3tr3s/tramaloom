@@ -16,9 +16,28 @@ export interface BreedOptions {
  * module first, else the first unused layer of the same module), and every
  * param of a pair comes from `b` with probability `share`, a missing setting
  * meaning the module default; settings locked in `a` always stay. Layers of `b` with no pair join at the end with
- * the same probability. Pure: one draw per param and per unpaired layer, each
+ * the same probability, placed before the child's Symmetry and Post. Pure: one draw per param and per unpaired layer, each
  * from its own labelled stream, so a gene's fate never depends on the others.
  */
+/**
+ * Symmetry and Post finish the picture, so they stay last: new drawing layers go
+ * in before the child's trailing Symmetry and Post. A partner's Symmetry or Post
+ * takes that end slot only when it is empty; otherwise it joins the drawing layers.
+ */
+function place(crossed: readonly Layer[], extras: readonly Layer[]): readonly Layer[] {
+  let t = crossed.length;
+  if (crossed[t - 1]?.module === "post") t--;
+  if (crossed[t - 1]?.module === "symmetry") t--;
+  const tail = crossed.slice(t);
+  const hasTail = (m: string) => tail.some((l) => l.module === m);
+  const sym = hasTail("symmetry") ? undefined : extras.find((l) => l.module === "symmetry");
+  const post = hasTail("post") ? undefined : extras.find((l) => l.module === "post");
+  const middle = extras.filter((l) => l !== sym && l !== post);
+  const ownSym = tail.filter((l) => l.module === "symmetry");
+  const ownPost = tail.filter((l) => l.module === "post");
+  return [...crossed.slice(0, t), ...middle, ...ownSym, ...(sym ? [sym] : []), ...ownPost, ...(post ? [post] : [])];
+}
+
 export function breedDocuments(
   a: ArtDocument,
   b: ArtDocument,
@@ -78,5 +97,5 @@ export function breedDocuments(
       return [{ ...l, id }];
     });
   const room = Math.max(0, (opts.maxLayers ?? Infinity) - crossed.length);
-  return { ...a, layers: [...crossed, ...extras.slice(0, room)] };
+  return { ...a, layers: place(crossed, extras.slice(0, room)) };
 }

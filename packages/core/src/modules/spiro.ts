@@ -7,6 +7,9 @@ import { defineModule } from "./types.ts";
 type Pt = readonly [number, number];
 const RATIOS: Readonly<Record<string, readonly [number, number]>> = { "1:1": [1, 1], "1:2": [1, 2], "2:3": [2, 3], "3:4": [3, 4], "3:5": [3, 5] };
 const gcd = (a: number, b: number): number => (b === 0 ? a : gcd(b, a % b));
+/** Fewest samples a lap or a swing may get: below this a curve turns into a jagged polygon. */
+const PER_LAP = 60;
+const PER_SWING = 60;
 
 /** Fit points into a box (centred, uniform scale), then rotate by `turn`. */
 function fit(pts: readonly Pt[], extent: number, b: Box, fill: number, turn: number): Pt[] {
@@ -45,8 +48,9 @@ export const spiroModule = defineModule({
   },
   apply(scene, v, ctx) {
     const regions: readonly Box[] = v.placement === "cells" && scene.cells.length ? scene.cells : [scene.frame];
-    // Bound the total work so a fine grid in cell mode stays drawable.
-    const budget = Math.max(200, Math.floor(160000 / regions.length));
+    // Bound the total work so a fine grid in cell mode stays drawable. A tight budget
+    // simplifies each figure (fewer laps or swings); it never samples one too coarsely.
+    const budget = Math.max(6 * PER_LAP, Math.floor(160000 / regions.length));
     const rng = ctx.rng("figure");
     const under = colorLookup(scene);
     const items: Item[] = regions.flatMap((b): Item[] => {
@@ -60,10 +64,21 @@ export const spiroModule = defineModule({
       let extent: number;
       if (v.mode === "spirograph") {
         const R = v.ring;
-        const r = Math.max(2, Math.min(R - 1, Math.round(v.wheel * (1 - v.variety * uVar * 0.8))));
+        const want = Math.max(2, Math.min(R - 1, Math.round(v.wheel * (1 - v.variety * uVar * 0.8))));
+        const lapsOf = (w: number): number => w / gcd(R, w);
+        const maxLaps = Math.floor(budget / PER_LAP);
+        // Too many laps for the budget: take the nearest wheel that closes sooner. The search
+        // always ends: a wheel of 2 closes within 2 laps, and the budget allows at least 6.
+        let r = want;
+        for (let dist = 1; lapsOf(r) > maxLaps && dist < R; dist++) {
+          const lower = want - dist;
+          const upper = want + dist;
+          if (lower >= 2 && lapsOf(lower) <= maxLaps) r = lower;
+          else if (upper <= R - 1 && lapsOf(upper) <= maxLaps) r = upper;
+        }
         const d = v.pen * r;
-        const laps = r / gcd(R, r);
-        const steps = Math.min(budget, Math.max(120, laps * 90));
+        const laps = lapsOf(r);
+        const steps = Math.max(120, laps * (laps * 90 <= budget ? 90 : PER_LAP));
         const k = (R - r) / r;
         pts = Array.from({ length: steps + 1 }, (_, s): Pt => {
           const t = (s / steps) * laps * TAU;
@@ -72,8 +87,10 @@ export const spiroModule = defineModule({
         extent = R - r + d;
       } else {
         const [fx, fy] = RATIOS[v.ratio] ?? [2, 3];
-        const steps = Math.min(budget, v.cycles * 60);
-        const dt = (v.cycles * TAU) / steps;
+        // A fixed time step, so damping looks the same in every cell; a tight budget means fewer swings.
+        const swings = Math.max(1, Math.min(v.cycles, Math.floor(budget / PER_SWING)));
+        const steps = swings * PER_SWING;
+        const dt = TAU / PER_SWING;
         const q = 1 - v.damping * dt;
         let decay = 1;
         const det = v.detune * (uVar - 0.5) * 2;

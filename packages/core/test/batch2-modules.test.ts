@@ -34,6 +34,45 @@ describe("spirograph", () => {
   });
 });
 
+describe("spirograph budget", () => {
+  const seg = (pts: readonly (readonly [number, number])[]) => {
+    let max = 0;
+    for (let i = 1; i < pts.length; i++) {
+      const a = pts[i - 1] as readonly [number, number];
+      const b = pts[i] as readonly [number, number];
+      max = Math.max(max, Math.sqrt((a[0] - b[0]) ** 2 + (a[1] - b[1]) ** 2));
+    }
+    return max;
+  };
+  const many = { cols: { value: 30 }, rows: { value: 40 } };
+
+  it("keeps every figure smooth and closed even with a thousand cells", () => {
+    const { scene, own } = run(doc({ id: "s", module: "spiro", enabled: true, params: { placement: { value: "cells" }, ring: { value: 149 }, wheel: { value: 89 }, variety: { value: 0 } } }, many));
+    expect(own.length).toBe(1200);
+    const cell = Math.min(scene.cells[0]?.w ?? 1, scene.cells[0]?.h ?? 1);
+    for (const it of own as PolylineItem[]) {
+      const pts = it.points;
+      const [a, b] = [pts[0] as readonly [number, number], pts[pts.length - 1] as readonly [number, number]];
+      expect(Math.abs(a[0] - b[0]) + Math.abs(a[1] - b[1])).toBeLessThan(1e-9);
+      expect(seg(pts)).toBeLessThan(cell * 0.2);
+    }
+  });
+
+  it("samples a harmonograph finely however many cells share the budget", () => {
+    const { scene, own } = run(doc({ id: "s", module: "spiro", enabled: true, params: { placement: { value: "cells" }, mode: { value: "harmonograph" }, cycles: { value: 300 } } }, many));
+    const cell = Math.min(scene.cells[0]?.w ?? 1, scene.cells[0]?.h ?? 1);
+    for (const it of own as PolylineItem[]) expect(seg(it.points)).toBeLessThan(cell * 0.2);
+  });
+});
+
+describe("attractor collapse", () => {
+  it("draws a single dot when the orbit collapses to a point", () => {
+    const { own } = run(doc({ id: "a", module: "attractor", enabled: true, params: { a: { value: 0 }, c: { value: 0 }, points: { value: 4000 } } }));
+    const pts = own.flatMap((it) => (it.type === "dots" ? it.points : []));
+    expect(pts.length).toBe(1);
+  });
+});
+
 describe("phyllotaxis", () => {
   it("places the requested seeds in every cell", () => {
     const { own } = run(doc({ id: "p", module: "phyllotaxis", enabled: true, params: { placement: { value: "cells" }, seeds: { value: 30 } } }));

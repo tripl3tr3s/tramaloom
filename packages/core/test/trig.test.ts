@@ -16,4 +16,11 @@ describe("deterministic trig", () => {
     expect(Math.abs(dsin(TAU / 4) - 1)).toBeLessThan(1e-15);
     expect(Math.abs(dsin(123.4) - dsin(123.4 + TAU * 5))).toBeLessThan(1e-11);
   });
+
+  it("stays in range for huge inputs instead of blowing up", () => {
+    for (const x of [1e15, -3.3e16, 9e17]) {
+      expect(Math.abs(dsin(x))).toBeLessThanOrEqual(1);
+      expect(Math.abs(dcos(x))).toBeLessThanOrEqual(1);
+    }
+  });
 });

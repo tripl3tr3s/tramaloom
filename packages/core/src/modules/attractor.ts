@@ -52,6 +52,11 @@ export const attractorModule = defineModule({
       if (p[0] > x1) x1 = p[0];
       if (p[1] > y1) y1 = p[1];
     }
+    if (x1 - x0 < 1e-9 && y1 - y0 < 1e-9) {
+      // The orbit collapsed onto a fixed point: one dot says so honestly.
+      const fill = pickColor(scene, v.colorRule === "ramp" ? "palette" : v.colorRule, ctx.rng("color")(), [f.x + f.w / 2, f.y + f.h / 2], v.color, colorLookup(scene));
+      return addItems(scene, [{ type: "dots", points: [[f.x + f.w / 2, f.y + f.h / 2]], r: v.dotSize * 3, fill, opacity: v.opacity }]);
+    }
     const w = x1 - x0 || 1;
     const h = y1 - y0 || 1;
     const k = Math.min((f.w * v.fill) / w, (f.h * v.fill) / h);

@@ -54,4 +54,17 @@ test.describe("after the welcome", () => {
     await page.keyboard.press("t");
     await expect(page.getByRole("img", { name: "The piece repeated three by three" })).toBeHidden();
   });
+
+  test("breeding with a preset offers children and adopting one changes the piece", async ({ page }) => {
+    await page.keyboard.press("m");
+    await page.getByRole("radio", { name: "breed" }).click();
+    await page.getByRole("combobox", { name: "Partner" }).selectOption({ label: "Labyrinth" });
+    // Wait for the children themselves: until they render, the old batch shows and picks are ignored.
+    const ready = page.getByRole("dialog", { name: "Mutation grid" }).locator('button[aria-disabled="false"]');
+    await expect(ready).toHaveCount(9, { timeout: 15_000 });
+    const before = await page.evaluate(() => location.hash);
+    await page.keyboard.press("6");
+    await expect(page.getByRole("dialog", { name: "Mutation grid" })).toBeVisible();
+    await expect.poll(() => page.evaluate(() => location.hash)).not.toBe(before);
+  });
 });

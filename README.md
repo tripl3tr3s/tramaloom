@@ -27,7 +27,7 @@ MIT licensed. Static web app, no backend.
 | `F` | fullscreen viewport |
 | `T` | tile preview: the piece repeated 3x3 to check that edges join |
 | `Ctrl+Z` / `Ctrl+Shift+Z` | undo / redo |
-| `M` | mutation grid (1-9 adopt, `R` shuffle, `Esc` close) |
+| `M` | mutation grid (1-9 adopt, `R` shuffle, `Esc` close); its Breed mode crosses the piece with a preset |
 | `L` | preset library |
 | `E` | edition: traits and rarity, census, contact sheet, batch export, plotter SVG, mint export |
 | `?` | every shortcut, in one list |

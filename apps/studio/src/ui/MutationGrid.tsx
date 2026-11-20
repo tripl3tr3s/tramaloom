@@ -1,8 +1,10 @@
 import type { ArtDocument } from "@gridloom/core";
-import { mutateDocument, stepHash, stream } from "@gridloom/core";
+import { breedDocuments, builtinPresets, mutateDocument, stepHash, stream } from "@gridloom/core";
 import { useEffect, useMemo, useState } from "react";
 import { isTypingTarget, useDialog } from "../hooks/useDialog.ts";
 import type { ThumbJob } from "../render/protocol.ts";
+import { listPresets } from "../state/library.ts";
+import { MAX_LAYERS } from "../state/limits.ts";
 import { useThumbnails } from "../render/useThumbnails.ts";
 import { randomHash } from "../state/store.ts";
 
@@ -15,6 +17,15 @@ interface Props {
 }
 
 const CENTER = 4;
+
+interface Partner {
+  readonly key: string;
+  readonly name: string;
+  readonly doc: ArtDocument;
+  readonly hash: string;
+}
+
+const BUILTIN_PARTNERS: readonly Partner[] = builtinPresets.map((p) => ({ key: `builtin:${p.id}`, name: p.doc.name, doc: p.doc, hash: p.hash }));
 const THUMB = 360;
 
 /** Names of the settings that differ, as "layer.param", for the tile tooltip. */
@@ -41,10 +52,40 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
     return () => clearTimeout(t);
   }, [amount]);
   const [scope, setScope] = useState<"all" | "layer">("all");
+  // Breed: cross the piece with a partner preset instead of nudging it.
+  const [mode, setMode] = useState<"mutate" | "breed">("mutate");
+  const [share, setShare] = useState(0.5);
+  const [settledShare, setSettledShare] = useState(share);
+  useEffect(() => {
+    const t = setTimeout(() => setSettledShare(share), 120);
+    return () => clearTimeout(t);
+  }, [share]);
+  const [userPartners, setUserPartners] = useState<readonly Partner[]>([]);
+  useEffect(() => {
+    let live = true;
+    listPresets().then(
+      (ps) => live && setUserPartners(ps.map((p) => ({ key: `user:${p.id}`, name: p.name, doc: p.doc, hash: p.hash }))),
+      () => undefined, // No library in this browser: the built-ins are enough.
+    );
+    return () => {
+      live = false;
+    };
+  }, []);
+  const partners = useMemo(() => [...userPartners, ...BUILTIN_PARTNERS], [userPartners]);
+  const [partnerKey, setPartnerKey] = useState<string>(BUILTIN_PARTNERS[1]?.key ?? BUILTIN_PARTNERS[0]?.key ?? "");
+  const partner = partners.find((p) => p.key === partnerKey) ?? partners[0];
   const [reseed, setReseed] = useState(false);
   const [seed, setSeed] = useState(randomHash);
 
   const tiles = useMemo((): readonly ThumbJob[] => {
+    if (mode === "breed" && partner) {
+      const children = Array.from({ length: 8 }, (_, i): ThumbJob => ({
+        doc: breedDocuments(doc, partner.doc, (label) => stream(seed, `b${i}/${label}`), { share: settledShare, maxLayers: MAX_LAYERS }),
+        // The seed is a gene too: inherited from the partner as often as its settings are.
+        hash: reseed ? stepHash(seed, i + 1) : stream(seed, `b${i}/hash`)() < settledShare ? partner.hash : hash,
+      }));
+      return [...children.slice(0, CENTER), { doc, hash }, ...children.slice(CENTER)];
+    }
     const layerScope = scope === "layer" && selectedId ? [selectedId] : undefined;
     const variants = Array.from({ length: 8 }, (_, i): ThumbJob => ({
       doc: mutateDocument(doc, (label) => stream(seed, `m${i}/${label}`), {
@@ -54,13 +95,13 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
       hash: reseed ? stepHash(seed, i + 1) : hash,
     }));
     return [...variants.slice(0, CENTER), { doc, hash }, ...variants.slice(CENTER)];
-  }, [doc, hash, seed, settled, scope, selectedId, reseed]);
+  }, [doc, hash, seed, settled, scope, selectedId, reseed, mode, partner, settledShare]);
   const { urls, fresh, busy, error } = useThumbnails(tiles, THUMB);
 
   const pick = (i: number) => {
     const t = tiles[i];
     // Only adopt what is on screen: while a new batch renders the old images are stale.
-    if (!t || !fresh || amount !== settled) return;
+    if (!t || !fresh || amount !== settled || share !== settledShare) return;
     if (i === CENTER) return onClose();
     onAdopt(t.doc, t.hash);
     setSeed(randomHash());
@@ -93,8 +134,59 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
       aria-label="Mutation grid"
     >
       <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-300">
-        <span className="font-semibold text-white">Mutate</span>
-        <label className="flex items-center gap-2">
+        <div role="radiogroup" aria-label="Mode" className="flex rounded bg-zinc-900 p-0.5">
+          {(["mutate", "breed"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              role="radio"
+              aria-checked={mode === m}
+              onClick={(e) => {
+                setMode(m);
+                blur(e);
+              }}
+              className={`rounded px-2 py-0.5 capitalize ${mode === m ? "bg-zinc-200 font-semibold text-zinc-900" : "text-zinc-400 hover:text-zinc-100"}`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+        {mode === "breed" && (
+          <>
+            <select
+              className="max-w-44 rounded bg-zinc-800 px-1 py-0.5"
+              value={partner?.key ?? ""}
+              onChange={(e) => {
+                setPartnerKey(e.target.value);
+                e.currentTarget.blur();
+              }}
+              aria-label="Partner"
+            >
+              {userPartners.length > 0 && (
+                <optgroup label="Yours">
+                  {userPartners.map((p) => (
+                    <option key={p.key} value={p.key}>
+                      {p.name}
+                    </option>
+                  ))}
+                </optgroup>
+              )}
+              <optgroup label="Built in">
+                {BUILTIN_PARTNERS.map((p) => (
+                  <option key={p.key} value={p.key}>
+                    {p.name}
+                  </option>
+                ))}
+              </optgroup>
+            </select>
+            <label className="flex items-center gap-2" title="Chance that each setting comes from the partner">
+              Partner share
+              <input type="range" min={0.05} max={0.95} step={0.05} value={share} onChange={(e) => setShare(Number(e.target.value))} onPointerUp={blur} aria-label="Partner share" />
+              <span className="w-8 tabular-nums">{share.toFixed(2)}</span>
+            </label>
+          </>
+        )}
+        <label className={`flex items-center gap-2 ${mode === "breed" ? "hidden" : ""}`}>
           Amount
           <input
             type="range"
@@ -109,7 +201,7 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
           <span className="w-8 tabular-nums">{amount.toFixed(2)}</span>
         </label>
         <select
-          className="rounded bg-zinc-800 px-1 py-0.5"
+          className={`rounded bg-zinc-800 px-1 py-0.5 ${mode === "breed" ? "hidden" : ""}`}
           value={scope}
           onChange={(e) => {
             setScope(e.target.value === "layer" ? "layer" : "all");
@@ -174,7 +266,9 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
         })}
       </div>
       <p className="text-[11px] text-zinc-500">
-        Click or press 1-9 to adopt a variation; it becomes the new centre. Locked settings never change.
+        {mode === "breed"
+          ? `Each tile is a child of this piece and ${partner?.name ?? "the partner"}: every setting comes from one parent. Adopt one to keep breeding.`
+          : "Click or press 1-9 to adopt a variation; it becomes the new centre. Locked settings never change."}
       </p>
     </div>
   );

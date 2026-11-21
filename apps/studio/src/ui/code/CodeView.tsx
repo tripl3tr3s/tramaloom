@@ -1,12 +1,11 @@
 import { javascript } from "@codemirror/lang-javascript";
-import { HighlightStyle, syntaxHighlighting } from "@codemirror/language";
 import { EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
-import { tags as t } from "@lezer/highlight";
 import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { useDialog } from "../../hooks/useDialog.ts";
 import { loadModuleSource } from "./moduleSource.ts";
+import { codeLook } from "./theme.ts";
 
 interface Props {
   readonly moduleId: string;
@@ -15,31 +14,6 @@ interface Props {
   readonly onClose: () => void;
   readonly notify: (msg: string) => void;
 }
-
-// Colors picked for at least 4.5:1 on the zinc-900 card. Types are muted: readers can skip them.
-const highlight = HighlightStyle.define([
-  { tag: [t.keyword, t.controlKeyword, t.definitionKeyword, t.moduleKeyword, t.operatorKeyword], color: "#7dd3fc" },
-  { tag: [t.string, t.special(t.string)], color: "#fde68a" },
-  { tag: [t.number, t.bool, t.null], color: "#86efac" },
-  { tag: [t.lineComment, t.blockComment], color: "#a1a1aa", fontStyle: "italic" },
-  { tag: [t.function(t.variableName), t.function(t.propertyName)], color: "#c4b5fd" },
-  { tag: [t.typeName, t.namespace], color: "#71a5a0" },
-  { tag: [t.propertyName, t.definition(t.propertyName)], color: "#e4e4e7" },
-  { tag: [t.variableName, t.definition(t.variableName)], color: "#f4f4f5" },
-  { tag: [t.operator, t.punctuation, t.bracket, t.separator], color: "#a1a1aa" },
-]);
-
-const theme = EditorView.theme(
-  {
-    "&": { height: "100%", fontSize: "12px", backgroundColor: "transparent", color: "#e4e4e7" },
-    "&.cm-focused": { outline: "none" },
-    ".cm-scroller": { fontFamily: "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", lineHeight: "1.6" },
-    ".cm-gutters": { backgroundColor: "transparent", color: "#71717a", border: "none" },
-    ".cm-content": { caretColor: "#7dd3fc" },
-    ".cm-selectionBackground, &.cm-focused .cm-selectionBackground": { backgroundColor: "#0c4a6e !important" },
-  },
-  { dark: true },
-);
 
 /**
  * Read-only source of the module behind a layer, with a short guide to reading it.
@@ -80,8 +54,7 @@ export function CodeView({ moduleId, label, onClose, notify }: Props) {
           EditorView.lineWrapping,
           EditorView.contentAttributes.of({ "aria-label": `Source code of ${label}` }),
           javascript({ typescript: true }),
-          syntaxHighlighting(highlight),
-          theme,
+          ...codeLook,
         ],
       }),
     });

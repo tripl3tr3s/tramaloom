@@ -1,5 +1,5 @@
-import type { ArtDocument, ParamSetting } from "@gridloom/core";
-import { defaultRegistry, ENGINE_VERSION, getModule, starterDocument } from "@gridloom/core";
+import type { ArtDocument, LayerScript, ParamSetting } from "@gridloom/core";
+import { defaultRegistry, ENGINE_VERSION, layerDef, starterDocument } from "@gridloom/core";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";
@@ -26,13 +26,15 @@ const loadEdition = () => import("./ui/edition/EditionPanel.tsx");
 const loadLibrary = () => import("./ui/Library.tsx");
 const loadShortcuts = () => import("./ui/ShortcutsHelp.tsx");
 const loadCode = () => import("./ui/code/CodeView.tsx");
+const loadScriptEditor = () => import("./ui/code/ScriptEditor.tsx");
 const MutationGrid = lazy(() => loadMutation().then((m) => ({ default: m.MutationGrid })));
 const EditionPanel = lazy(() => loadEdition().then((m) => ({ default: m.EditionPanel })));
 const Library = lazy(() => loadLibrary().then((m) => ({ default: m.Library })));
 const ShortcutsHelp = lazy(() => loadShortcuts().then((m) => ({ default: m.ShortcutsHelp })));
 const CodeView = lazy(() => loadCode().then((m) => ({ default: m.CodeView })));
+const ScriptEditor = lazy(() => loadScriptEditor().then((m) => ({ default: m.ScriptEditor })));
 const preloadOverlays = () => {
-  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts, loadCode]) load().catch(() => undefined);
+  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts, loadCode, loadScriptEditor]) load().catch(() => undefined);
 };
 
 export function App() {
@@ -46,6 +48,9 @@ export function App() {
   const [tiled, setTiled] = useState(false);
   // The module whose source the Code overlay shows.
   const [codeOf, setCodeOf] = useState<{ readonly id: string; readonly label: string } | null>(null);
+  // The script layer whose code is open in the editor under the canvas.
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const applyScript = useCallback((layerId: string, script: LayerScript) => dispatch({ type: "setScript", layerId, script }), []);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -104,6 +109,8 @@ export function App() {
       () => notify("Clipboard unavailable"),
     );
   const importFile = async (file: File) => {
+    // Documents are small; a script layer adds at most 20,000 characters.
+    if (file.size > 2_000_000) return notify("That file is too large to be a Gridloom document");
     try {
       const doc = parseDocument(JSON.parse(await file.text()));
       if (!doc) return notify("Not a valid Gridloom document");
@@ -153,6 +160,7 @@ export function App() {
 
   // While a dialog is open, everything behind it is inert: no stray clicks or tab stops.
   const behind = overlay !== "none";
+  const editingLayer = state.doc.layers.find((l) => l.id === editingId && l.module === "script" && l.script);
 
   // Reference first (cheap, and what undo restores); content second, so typing a name back or
   // dragging a slider back to where it was also reads as saved.
@@ -215,7 +223,7 @@ export function App() {
         onExportPNG={png}
         onExportSVG={() => {
           try {
-            exportSVG(state.doc, state.hash);
+            exportSVG(state.doc, state.hash).catch((e: unknown) => notify(`Export failed: ${e instanceof Error ? e.message : String(e)}`));
           } catch (e) {
             notify(`Export failed: ${String(e)}`);
           }
@@ -317,6 +325,13 @@ export function App() {
             <div className="absolute top-3 z-40 rounded-full bg-zinc-800/95 px-3 py-1 text-xs text-zinc-200 shadow">{toast}</div>
           )}
         </main>
+        {editingLayer && (
+          <div inert={behind} className="contents">
+            <Suspense fallback={null}>
+              <ScriptEditor key={editingLayer.id} layer={editingLayer} renderError={info.error} onApply={applyScript} onClose={() => setEditingId(null)} />
+            </Suspense>
+          </div>
+        )}
         {favorites.length > 0 && (
           <div inert={behind} className={sheet ? "hidden md:block" : undefined}>
             <FavoritesStrip
@@ -341,6 +356,7 @@ export function App() {
             onCheckpoint={() => dispatch({ type: "checkpoint" })}
             onResetParam={(layerId, name) => dispatch({ type: "resetParam", layerId, name })}
             onResetLayer={(layerId) => dispatch({ type: "resetLayer", layerId })}
+            onEditScript={setEditingId}
             onViewCode={(id, label) => {
               setCodeOf({ id, label });
               setOverlay("code");
@@ -353,7 +369,7 @@ export function App() {
           {(
             [
               ["layers", "Layers", "sheet-layers"],
-              ["params", selected ? (getModule(defaultRegistry, selected.module)?.label ?? selected.module) : "Params", "sheet-params"],
+              ["params", selected ? (layerDef(defaultRegistry, selected)?.label ?? selected.module) : "Params", "sheet-params"],
             ] as const
           ).map(([id, label, controls]) => (
             <button

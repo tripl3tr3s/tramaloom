@@ -1,5 +1,5 @@
 import type { Layer, ParamSetting, ResolvedLayer } from "@gridloom/core";
-import { defaultRegistry, getModule } from "@gridloom/core";
+import { defaultRegistry, layerDef, SCRIPT_MODULE } from "@gridloom/core";
 import { useState } from "react";
 import { ChevronIcon } from "./icons.tsx";
 import { groupParams, isDefaultSetting, isRelevant } from "./params.ts";
@@ -15,6 +15,8 @@ interface Props {
   readonly onResetLayer: (layerId: string) => void;
   /** Opens the source of the module behind this layer. */
   readonly onViewCode: (moduleId: string, label: string) => void;
+  /** Opens the code editor of a script layer. */
+  readonly onEditScript: (layerId: string) => void;
   /** Shown above the params when this layer cannot draw as it stands, with a one-click fix. */
   readonly problem?: { readonly message: string; readonly fix: string; readonly onFix: () => void } | null;
 }
@@ -68,11 +70,11 @@ function useShowHelp(): readonly [boolean, () => void] {
   return [on, toggle];
 }
 
-export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer, onViewCode, problem }: Props) {
+export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer, onViewCode, onEditScript, problem }: Props) {
   const [collapsed, toggle] = useCollapsed();
   const [showHelp, toggleHelp] = useShowHelp();
   if (!layer) return <p className="p-3 text-xs text-zinc-500">Select a layer.</p>;
-  const def = getModule(defaultRegistry, layer.module);
+  const def = layerDef(defaultRegistry, layer);
   if (!def) return <p className="p-3 text-xs text-red-400">Unknown module {layer.module}</p>;
   const changed = Object.entries(def.params).some(([name, spec]) => !isDefaultSetting(spec, layer.params[name]));
   return (
@@ -92,10 +94,10 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
         <button
           type="button"
           className="rounded px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
-          onClick={() => onViewCode(def.id, def.label)}
-          title="See the code that draws this layer"
+          onClick={() => (layer.module === SCRIPT_MODULE ? onEditScript(layer.id) : onViewCode(def.id, def.label))}
+          title={layer.module === SCRIPT_MODULE ? "Edit this layer's code" : "See the code that draws this layer"}
         >
-          Code
+          {layer.module === SCRIPT_MODULE ? "Edit code" : "Code"}
         </button>
         {/* aria-disabled, not disabled: the button would drop focus to <body> the moment it disabled itself. */}
         <button

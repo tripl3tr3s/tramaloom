@@ -1,5 +1,6 @@
-import type { ArtDocument, Paper, PlotterOptions } from "@gridloom/core";
-import { DEFAULT_PLOTTER, generate, PAPERS, toPlotterSVG } from "@gridloom/core";
+import type { ArtDocument, Drawing, Paper, PlotterOptions } from "@gridloom/core";
+import { DEFAULT_PLOTTER, generate, hasScripts, PAPERS, toPlotterSVG } from "@gridloom/core";
+import { drawInSandbox } from "../../sandbox/host.ts";
 import { useEffect, useMemo, useState } from "react";
 import { download, slug } from "../../render/export.ts";
 import { entryFromBytes, zip } from "../../render/zip.ts";
@@ -23,14 +24,30 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
   const set = <K extends keyof PlotterOptions>(k: K, v: PlotterOptions[K]) => setOpts((o) => ({ ...o, [k]: v }));
 
   // The scene only depends on the piece; paper and pen edits re-run the cheap conversion alone.
-  const scene = useMemo(() => {
+  // Script layers are drawn in the sandbox, so that drawing arrives a moment later.
+  const local = useMemo(() => {
+    if (hasScripts(doc)) return null;
     try {
-      return generate(doc, hash).scene;
+      return generate(doc, hash).scene as Drawing;
     } catch (e) {
       return e instanceof Error ? e : new Error(String(e));
     }
   }, [doc, hash]);
-  const out = useMemo(() => (scene instanceof Error ? scene : toPlotterSVG(scene, opts)), [scene, opts]);
+  const [remote, setRemote] = useState<{ readonly doc: ArtDocument; readonly hash: string; readonly value: Drawing | Error } | null>(null);
+  useEffect(() => {
+    if (!hasScripts(doc)) return;
+    let live = true;
+    drawInSandbox(doc, hash).then(
+      (value) => live && setRemote({ doc, hash, value }),
+      (e: unknown) => live && setRemote({ doc, hash, value: e instanceof Error ? e : new Error(String(e)) }),
+    );
+    return () => {
+      live = false;
+    };
+  }, [doc, hash]);
+  const scene = local ?? (remote?.doc === doc && remote.hash === hash ? remote.value : null);
+  const loading = scene === null;
+  const out = useMemo(() => (scene === null ? new Error("still drawing") : scene instanceof Error ? scene : toPlotterSVG(scene, opts)), [scene, opts]);
 
   // Preview: the plot itself on white paper, as an image (never injected as markup).
   const [preview, setPreview] = useState<string | null>(null);
@@ -56,7 +73,7 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
   const savePens = () => {
     if (out instanceof Error) return;
     const enc = new TextEncoder();
-    const entries = out.penSvgs.map((svg, i) => entryFromBytes(`${base}-pen${i + 1}-${(out.layers[i]?.color ?? "").replace("#", "")}.svg`, enc.encode(svg)));
+    const entries = out.penSvgs.map((svg, i) => entryFromBytes(`${base}-pen${i + 1}-${(out.layers[i]?.color ?? "").replace(/[^A-Za-z0-9]/g, "").slice(0, 24)}.svg`, enc.encode(svg)));
     download(zip(entries), `${base}-pens.zip`);
     notify(`Exported ${entries.length} pen files`);
   };
@@ -64,7 +81,9 @@ export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; r
   return (
     <div className="grid gap-4 text-xs text-zinc-300 md:grid-cols-[minmax(0,1fr)_16rem]">
       <div className="grid place-items-center rounded-lg bg-zinc-900 p-4">
-        {out instanceof Error ? (
+        {loading ? (
+          <p className="text-zinc-400">Drawing the script layers...</p>
+        ) : out instanceof Error ? (
           <p className="text-red-400">Could not build the plot: {out.message}</p>
         ) : preview ? (
           <img src={preview} alt={`Plot preview on ${PAPER_LABEL[opts.paper]}`} className="max-h-[60vh] w-auto bg-white shadow-lg" />

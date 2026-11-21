@@ -13,7 +13,7 @@ let newest = 0;
 
 async function render(job: ThumbJob, size: number): Promise<Blob | null> {
   try {
-    const { scene } = generate(job.doc, job.hash);
+    const scene = job.drawing ?? generate(job.doc, job.hash).scene;
     const { width, height } = pixelSize(scene, size);
     const canvas = new OffscreenCanvas(width, height);
     const ctx = canvas.getContext("2d");

@@ -1,5 +1,10 @@
-import type { ArtDocument } from "@gridloom/core";
-import { drawScene, generate, pixelSize, toSVG } from "@gridloom/core";
+import type { ArtDocument, Drawing } from "@gridloom/core";
+import { drawScene, generate, hasScripts, pixelSize, toSVG } from "@gridloom/core";
+import { drawInSandbox } from "../sandbox/host.ts";
+
+/** The piece's drawing: from the script sandbox when it has script layers, else generated here. */
+export const drawingFor = (doc: ArtDocument, hash: string): Promise<Drawing> =>
+  hasScripts(doc) ? drawInSandbox(doc, hash) : Promise.resolve(generate(doc, hash).scene);
 
 export const slug = (s: string): string =>
   s.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "") || "gridloom";
@@ -16,7 +21,7 @@ export function download(blob: Blob, filename: string): void {
 
 /** Re-render at the requested size from the seed. Never upscales a screen buffer. */
 export async function exportPNG(doc: ArtDocument, hash: string, longSide: number): Promise<void> {
-  const { scene } = generate(doc, hash);
+  const scene = await drawingFor(doc, hash);
   const { width, height } = pixelSize(scene, longSide);
   const canvas = new OffscreenCanvas(width, height);
   const ctx = canvas.getContext("2d");
@@ -25,8 +30,8 @@ export async function exportPNG(doc: ArtDocument, hash: string, longSide: number
   download(await canvas.convertToBlob({ type: "image/png" }), `${fileBase(doc, hash)}_${longSide}.png`);
 }
 
-export function exportSVG(doc: ArtDocument, hash: string): void {
-  const { scene } = generate(doc, hash);
+export async function exportSVG(doc: ArtDocument, hash: string): Promise<void> {
+  const scene = await drawingFor(doc, hash);
   download(new Blob([toSVG(scene, { size: 2000 })], { type: "image/svg+xml" }), `${fileBase(doc, hash)}.svg`);
 }
 

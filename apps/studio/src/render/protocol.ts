@@ -1,4 +1,4 @@
-import type { ArtDocument, CensusResult, ResolvedLayer } from "@gridloom/core";
+import type { ArtDocument, CensusResult, Drawing, ResolvedLayer } from "@gridloom/core";
 
 export interface RenderRequest {
   readonly id: number;
@@ -7,6 +7,8 @@ export interface RenderRequest {
   /** Available box in device pixels; the scene is fitted inside it. */
   readonly boxWidth: number;
   readonly boxHeight: number;
+  /** Already drawn by the script sandbox (documents with script layers): draw this, do not generate. */
+  readonly drawing?: Drawing;
 }
 
 export type RenderResponse =
@@ -26,6 +28,8 @@ export type RenderResponse =
 export interface ThumbJob {
   readonly doc: ArtDocument;
   readonly hash: string;
+  /** Already drawn by the script sandbox: draw this, do not generate. */
+  readonly drawing?: Drawing;
 }
 
 export interface ThumbRequest {

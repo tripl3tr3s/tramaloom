@@ -1,5 +1,5 @@
 import type { ArtDocument, Layer } from "@gridloom/core";
-import { defaultRegistry, getModule } from "@gridloom/core";
+import { defaultRegistry, layerDef } from "@gridloom/core";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useState } from "react";
 import type { Zones } from "../state/layerOrder.ts";
@@ -20,7 +20,7 @@ const iconBtn =
 const ADDABLE = Object.values(defaultRegistry).filter((m) => m.id !== "canvas");
 const DRAG_TYPE = "application/x-gridloom-layer";
 
-const labelOf = (module: string): string => getModule(defaultRegistry, module)?.label ?? module;
+const labelOf = (layer: Layer): string => layerDef(defaultRegistry, layer)?.label ?? layer.module;
 
 /** Free copies of the setup modules do a different job mid-stack, so they get their own names. */
 const FREE_ROLE: Readonly<Record<string, { readonly label: string; readonly description: string }>> = {
@@ -31,7 +31,7 @@ const FREE_ROLE: Readonly<Record<string, { readonly label: string; readonly desc
 
 const roleLabel = (l: Layer, i: number, z: Zones): string => {
   const free = i >= z.head && i < z.tail ? FREE_ROLE[l.module] : undefined;
-  return free?.label ?? labelOf(l.module);
+  return free?.label ?? labelOf(l);
 };
 
 /** "Cell fill", or "Cell fill 2" when more than one layer shares that name. */

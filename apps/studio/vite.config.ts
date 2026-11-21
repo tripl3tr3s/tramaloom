@@ -40,8 +40,8 @@ export default defineConfig({
       },
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg}"],
-        // The determinism check page must load itself, never the studio shell.
-        navigateFallbackDenylist: [/check\.html$/],
+        // The determinism check page and the script sandbox must load themselves, never the studio shell.
+        navigateFallbackDenylist: [/check\.html$/, /sandbox\.html$/],
       },
     }),
   ],

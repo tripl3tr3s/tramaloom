@@ -1,4 +1,6 @@
+import { hasScripts } from "@gridloom/core";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { drawInSandbox } from "../sandbox/host.ts";
 import type { ThumbJob, ThumbRequest, ThumbResponse } from "./protocol.ts";
 
 export interface Thumbnails {
@@ -75,7 +77,24 @@ export function useThumbnails(jobs: readonly ThumbJob[], size: number, keys?: re
     [...batches.current.keys()].filter((old) => old < id).forEach((old) => batches.current.delete(old));
     batches.current.set(id, { jobs, keys: k });
     setState((s) => ({ ...s, busy: true }));
-    workerRef.current?.postMessage({ id, jobs, size: Math.round(size * (window.devicePixelRatio || 1)) } satisfies ThumbRequest);
+    const px = Math.round(size * (window.devicePixelRatio || 1));
+    if (!jobs.some((j) => hasScripts(j.doc))) {
+      workerRef.current?.postMessage({ id, jobs, size: px } satisfies ThumbRequest);
+      return;
+    }
+    // Script layers are drawn in the sandbox first, one job at a time.
+    void (async () => {
+      const drawn: ThumbJob[] = [];
+      for (const job of jobs) {
+        if (latest.current !== id) return; // superseded
+        if (!hasScripts(job.doc)) drawn.push(job);
+        else {
+          const drawing = await drawInSandbox(job.doc, job.hash).catch(() => null);
+          drawn.push(drawing ? { ...job, drawing } : job); // without a drawing the worker cannot draw it: null
+        }
+      }
+      if (latest.current === id) workerRef.current?.postMessage({ id, jobs: drawn, size: px } satisfies ThumbRequest);
+    })();
   }, [jobs, size]);
 
   const fresh = state.jobs === jobs;

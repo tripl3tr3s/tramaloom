@@ -1,5 +1,6 @@
-import type { ArtDocument, Layer, ParamSetting, TraitDef } from "@gridloom/core";
-import { stepHash } from "@gridloom/core";
+import type { ArtDocument, Layer, LayerScript, ParamSetting, TraitDef } from "@gridloom/core";
+import { SCRIPT_MODULE, stepHash } from "@gridloom/core";
+import { STARTER_SCRIPT } from "../ui/code/starter.ts";
 import { insertIndex, promoteIndex, zones } from "./layerOrder.ts";
 import { MAX_LAYERS } from "./limits.ts";
 
@@ -41,6 +42,8 @@ export type Action =
   /** Drag reorder: put the layer at `index` in the final order (canvas stays at 0). */
   | { readonly type: "moveLayerTo"; readonly layerId: string; readonly index: number }
   | { readonly type: "addLayer"; readonly module: string }
+  /** A script layer's new code, label and params (after the sandbox compiled them). */
+  | { readonly type: "setScript"; readonly layerId: string; readonly script: LayerScript }
   /** Make a free Palette or Grid the pinned one, when the head has none. */
   | { readonly type: "promoteLayer"; readonly layerId: string }
   | { readonly type: "removeLayer"; readonly layerId: string }
@@ -155,11 +158,20 @@ export function reducer(s: StudioState, a: Action): StudioState {
     }
     case "addLayer": {
       if (s.doc.layers.length >= MAX_LAYERS) return s;
-      const layer: Layer = { id: freshId(s.doc, a.module), module: a.module, enabled: true, params: {} };
+      const base: Layer = { id: freshId(s.doc, a.module), module: a.module, enabled: true, params: {} };
+      // A new script layer starts with working, commented code.
+      const layer: Layer = a.module === SCRIPT_MODULE ? { ...base, script: STARTER_SCRIPT } : base;
       // Where it belongs, not simply last: a grid added after its drawing layers would leave them blank.
       const at = insertIndex(s.doc.layers, a.module);
       const layers = [...s.doc.layers.slice(0, at), layer, ...s.doc.layers.slice(at)];
       return { ...commit(s, { ...s.doc, layers }), selectedId: layer.id };
+    }
+    case "setScript": {
+      const target = s.doc.layers.find((l) => l.id === a.layerId);
+      if (!target || target.module !== SCRIPT_MODULE) return s;
+      // Settings for params the code no longer declares are dropped with them.
+      const params = Object.fromEntries(Object.entries(target.params).filter(([name]) => Object.hasOwn(a.script.params, name)));
+      return commit(s, mapLayers(s.doc, (l) => (l.id === a.layerId ? { ...l, params, script: a.script } : l)));
     }
     case "promoteLayer": {
       const to = promoteIndex(s.doc.layers, a.layerId);

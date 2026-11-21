@@ -1,0 +1,77 @@
+<!doctype html>
+<!--
+  Gridloom's script sandbox. The studio loads this page in an iframe with sandbox="allow-scripts"
+  (no allow-same-origin), so it has an opaque origin: code running here cannot read the studio's
+  storage. The CSP below blocks every network request. Script layers run in a Worker made from
+  the engine the studio sends; this page only relays one answer per request and restarts the
+  worker when asked or when it misbehaves.
+-->
+<meta charset="utf-8" />
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob:; worker-src blob:" />
+<title>Gridloom script sandbox</title>
+<script>
+  "use strict";
+  // Only ever work with an opaque origin. Anyone can embed this file; embedded without
+  // sandbox="allow-scripts" it would run with the studio's own origin and could reach its
+  // storage, so in that case it does nothing at all.
+  if (self.origin !== "null") throw new Error("The script sandbox only runs in a sandboxed iframe");
+
+  // An answer is one JSON string. Anything larger is refused before it reaches the studio.
+  const MAX_ANSWER = 64 * 1024 * 1024;
+  let worker = null;
+  let url = null;
+  // The request the worker is working on; null when it owes no answer.
+  let active = null;
+  const send = (msg) => parent.postMessage(msg, "*");
+  const crash = (error) => {
+    const id = active;
+    active = null;
+    fresh();
+    if (id !== null) send({ kind: "crash", id, error: String(error).slice(0, 500) });
+  };
+  const fresh = () => {
+    if (worker) worker.terminate();
+    worker = new Worker(url);
+    const mine = worker;
+    mine.onmessage = (e) => {
+      if (mine !== worker) return;
+      // Exactly one string answer per request. Anything else (an extra message, a flood,
+      // something that is not a string, or too big) means the script is misbehaving.
+      if (active === null || typeof e.data !== "string" || e.data.length > MAX_ANSWER) {
+        crash(typeof e.data === "string" && e.data.length > MAX_ANSWER ? "The script's result is too large" : "The script sent unexpected messages and was stopped");
+        return;
+      }
+      const id = active;
+      active = null;
+      send({ kind: "result", id, data: e.data });
+    };
+    mine.onmessageerror = () => {
+      if (mine === worker) crash("The script sent back something that cannot be read");
+    };
+    mine.onerror = (e) => {
+      e.preventDefault();
+      if (mine === worker) crash(e.message || "The script sandbox stopped");
+    };
+  };
+  addEventListener("message", (e) => {
+    if (e.source !== parent) return;
+    const msg = e.data;
+    if (!msg || typeof msg !== "object") return;
+    if (msg.kind === "init" && typeof msg.source === "string" && !url) {
+      try {
+        url = URL.createObjectURL(new Blob([msg.source], { type: "text/javascript" }));
+        fresh();
+        send({ kind: "ready" });
+      } catch (err) {
+        send({ kind: "failed", error: String((err && err.message) || err).slice(0, 500) });
+      }
+    } else if (msg.kind === "run" && worker && msg.req && typeof msg.req.id === "number") {
+      active = msg.req.id;
+      worker.postMessage(msg.req);
+    } else if (msg.kind === "reset" && url) {
+      active = null;
+      fresh();
+    }
+  });
+  send({ kind: "loaded" });
+</script>

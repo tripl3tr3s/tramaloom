@@ -1,4 +1,6 @@
 import type { ArtDocument, ResolvedLayer } from "@gridloom/core";
+import { hasScripts } from "@gridloom/core";
+import { drawInSandbox, SandboxError } from "../sandbox/host.ts";
 import { useEffect, useRef, useState } from "react";
 import type { RenderRequest, RenderResponse } from "./protocol.ts";
 
@@ -9,6 +11,9 @@ export interface RenderInfo {
   readonly items: number;
   readonly error: string | null;
 }
+
+/** Longest a single paint may take before the render worker is replaced. */
+const RENDER_TIMEOUT_MS = 15_000;
 
 const EMPTY: RenderInfo = { resolved: [], ms: 0, cells: 0, items: 0, error: null };
 
@@ -31,6 +36,25 @@ export function useRenderer(
   const pending = useRef<Job | null>(null);
   const latest = useRef<Job | null>(null);
   const nextId = useRef(0);
+  // A drawing that never finishes painting (too heavy) must not freeze the view for good:
+  // the worker is replaced, and the job that hung is not sent again on its own.
+  const [generation, setGeneration] = useState(0);
+  const watchdog = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const hung = useRef<Job | null>(null);
+  const disarm = () => {
+    if (watchdog.current) clearTimeout(watchdog.current);
+    watchdog.current = null;
+  };
+  const post = (worker: Worker, job: Job, req: RenderRequest) => {
+    disarm();
+    watchdog.current = setTimeout(() => {
+      if (workerRef.current !== worker) return;
+      hung.current = job;
+      setInfo((prev) => ({ ...prev, error: "Drawing this piece took too long and was stopped. Change a setting or the seed to try again." }));
+      setGeneration((g) => g + 1);
+    }, RENDER_TIMEOUT_MS);
+    worker.postMessage(req);
+  };
 
   const send = (job: Job) => {
     const worker = workerRef.current;
@@ -40,8 +64,23 @@ export function useRenderer(
       return;
     }
     busy.current = true;
-    worker.postMessage({ ...job, id: nextId.current++ } satisfies RenderRequest);
+    const id = nextId.current++;
+    if (!hasScripts(job.doc)) {
+      post(worker, job, { ...job, id } satisfies RenderRequest);
+      return;
+    }
+    // Script layers are drawn in the sandbox; the render worker only paints the result.
+    drawInSandbox(job.doc, job.hash).then(
+      (drawing) => {
+        if (workerRef.current === worker) post(worker, job, { ...job, id, drawing } satisfies RenderRequest);
+      },
+      (err: unknown) => {
+        if (workerRef.current !== worker) return;
+        failRef.current(scriptErrorText(err));
+      },
+    );
   };
+  const failRef = useRef<(msg: string) => void>(() => undefined);
   const sendRef = useRef(send);
   sendRef.current = send;
 
@@ -52,6 +91,7 @@ export function useRenderer(
     pending.current = null;
 
     const drainPending = () => {
+      disarm();
       busy.current = false;
       const next = pending.current;
       pending.current = null;
@@ -83,22 +123,25 @@ export function useRenderer(
       setInfo((prev) => ({ ...prev, error: msg }));
       drainPending();
     };
+    failRef.current = fail;
     worker.onerror = (e) => {
       e.preventDefault();
       fail(`Render worker failed: ${e.message || "could not load"}. Try reloading the page.`);
     };
     worker.onmessageerror = () => fail("Render worker sent an unreadable message");
 
-    // Re-issue the newest job on a fresh worker (StrictMode remount, hot reload).
-    if (latest.current) sendRef.current(latest.current);
+    // Re-issue the newest job on a fresh worker (StrictMode remount, hot reload), unless it is the one that hung.
+    if (latest.current && latest.current !== hung.current) sendRef.current(latest.current);
 
     return () => {
+      disarm();
       worker.terminate();
       workerRef.current = null;
       busy.current = false;
       pending.current = null;
     };
-  }, [canvasRef]);
+    // disarm only touches refs; `generation` changes when the watchdog replaces the worker.
+  }, [canvasRef, generation]);
 
   useEffect(() => {
     if (box.width < 1 || box.height < 1) return;
@@ -115,3 +158,9 @@ export function useRenderer(
 
   return info;
 }
+
+/** "Script, line 5: x is not defined" for the error banner. */
+export const scriptErrorText = (err: unknown): string => {
+  if (err instanceof SandboxError) return `Script${err.line ? `, line ${err.line}` : ""}: ${err.message}`;
+  return `Script: ${err instanceof Error ? err.message : String(err)}`;
+};

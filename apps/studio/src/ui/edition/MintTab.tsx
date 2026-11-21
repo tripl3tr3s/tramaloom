@@ -1,5 +1,5 @@
 import type { ArtDocument } from "@gridloom/core";
-import { generate, pixelSize } from "@gridloom/core";
+import { generate, hasScripts, pixelSize, SCRIPT_MODULE } from "@gridloom/core";
 import { assembleMint } from "@gridloom/runtime/assemble";
 import modulesSource from "@gridloom/runtime/modules.json?raw";
 import runtimeSource from "@gridloom/runtime/runtime.js?raw";
@@ -27,14 +27,17 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
   const [artist, setArtist] = useState("");
   const [licence, setLicence] = useState<string>(LICENCES[0]);
 
-  const capture = useMemo(() => pixelSize(generate(doc, hash).scene, 2000), [doc, hash]);
+  // The size comes from the Canvas layer alone, so script layers (drawn only in the sandbox) are left out.
+  const capture = useMemo(() => pixelSize(generate({ ...doc, layers: doc.layers.filter((l) => l.module !== SCRIPT_MODULE) }, hash).scene, 2000), [doc, hash]);
+  const scripted = hasScripts(doc);
   const html = useMemo(() => {
+    if (scripted) return new Error("pieces with script layers cannot be exported here yet. Hide the script layers to export the rest.");
     try {
       return assembleMint(PLAYER, doc, { title, artist, licence, captureWidth: capture.width, captureHeight: capture.height });
     } catch (e) {
       return e instanceof Error ? e : new Error(String(e));
     }
-  }, [doc, title, artist, licence, capture]);
+  }, [doc, title, artist, licence, capture, scripted]);
   const bytes = typeof html === "string" ? new Blob([html]).size : 0;
 
   const blob = () => (typeof html === "string" ? new Blob([html], { type: "text/html;charset=utf-8" }) : null);

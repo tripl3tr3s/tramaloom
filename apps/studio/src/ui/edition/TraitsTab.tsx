@@ -1,5 +1,5 @@
 import type { ArtDocument, ParamSetting, TraitBin, TraitDef } from "@gridloom/core";
-import { computeTraits, defaultRegistry, expectedDistribution, getModule, traitLabel } from "@gridloom/core";
+import { computeTraits, defaultRegistry, expectedDistribution, layerDef, traitLabel } from "@gridloom/core";
 import { useEffect, useMemo, useState } from "react";
 import { MAX_WEIGHT } from "../../state/limits.ts";
 import { MAX_BINS, MAX_TRAITS } from "../../state/schema.ts";
@@ -26,7 +26,7 @@ interface Source {
 
 function sources(doc: ArtDocument): Source[] {
   return doc.layers.flatMap((l) => {
-    const def = getModule(defaultRegistry, l.module);
+    const def = layerDef(defaultRegistry, l);
     if (!def || l.module === "canvas") return [];
     return Object.entries(def.params)
       .filter(([, spec]) => spec.kind !== "color")
@@ -45,7 +45,7 @@ function sources(doc: ArtDocument): Source[] {
 /** Default bins for a numeric source: thirds of its varying range. */
 function defaultBins(doc: ArtDocument, layerId: string, param: string): TraitBin[] {
   const layer = doc.layers.find((l) => l.id === layerId);
-  const spec = layer ? getModule(defaultRegistry, layer.module)?.params[param] : undefined;
+  const spec = layer ? layerDef(defaultRegistry, layer)?.params[param] : undefined;
   if (!spec || (spec.kind !== "number" && spec.kind !== "int")) return [];
   const vary = layer?.params[param]?.vary;
   const lo = vary?.kind === "range" ? Math.min(vary.min, vary.max) : spec.min;

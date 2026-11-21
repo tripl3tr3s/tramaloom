@@ -1,4 +1,5 @@
 import type { ArtDocument } from "@gridloom/core";
+import { hasScripts } from "@gridloom/core";
 import { useEffect, useRef, useState } from "react";
 import { download, slug } from "../../render/export.ts";
 import type { ToolRun } from "../../render/runTool.ts";
@@ -51,6 +52,13 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
   };
 
   const running = progress !== null;
+  if (hasScripts(doc)) {
+    return (
+      <p className="text-xs text-zinc-400">
+        Batch export does not handle script layers yet. Export pieces one at a time with Export, or hide the script layers to batch the rest.
+      </p>
+    );
+  }
   return (
     <div className="space-y-3 text-xs text-zinc-300">
       <div className="flex flex-wrap items-center gap-2">

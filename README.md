@@ -107,9 +107,39 @@ Add layers with **+ Add**. Settings for each module are grouped, explained by th
 - **Undo and redo (`Ctrl+Z`, `Ctrl+Shift+Z`).** Every edit, including resets. A dot next to the name means there are changes you have not saved.
 - **Reset.** The circular arrow on a setting returns it to the default; **Reset all** does the whole layer.
 - **Code.** In the settings panel, **Code** shows the source that draws the selected layer, with a short guide to reading it. Every look in Gridloom is a small, commented file: a first step into generative art coding.
+- **Script layers.** **Add > Script** makes a layer drawn by your own code. See [Write your own layer](#write-your-own-layer).
 - **Export.** PNG at 2000 or 4000 px (re-rendered, never upscaled), SVG, the document as a `.gridloom.json` file, and a share link.
 - **Edition (`E`).** Tools for long-form editions: traits and rarity, a census over many seeds, a contact sheet, batch export, pen plotter export and a self-hosted mint export. See [Long-form workflow](#long-form-workflow).
 - **Plotter export (Edition > Plotter).** An SVG for pen plotters on A5, A4, A3 or Letter: every shape becomes its outline, one layer per color (one pen each), with the drawing distance and an estimated plotting time. Filled shapes are outlined, not shaded: add a Hatching layer for shading. Grain is left out unless you ask for it, and dot drawings (Attractor) plot as one pen tap per dot, which can take hours.
+
+## Write your own layer
+
+**Add > Script** adds a layer drawn by your own JavaScript, then **Edit code** opens it under the canvas. It starts with a commented example (rings in every grid cell) that you can change line by line; the picture redraws about half a second after you stop typing.
+
+```js
+layer({
+  label: "Rings",
+  params: {
+    rings: { kind: "int", label: "Rings", help: "How many rings in each cell", min: 1, max: 12, default: 4 },
+  },
+  apply(scene, v, ctx) {
+    const rng = ctx.rng("rings");
+    const items = [];
+    for (const cell of scene.cells) {
+      // ... push { type: "circle", cx, cy, r, stroke: "#1d3557" } and friends
+    }
+    return addItems(scene, items);
+  },
+});
+```
+
+- **params** become settings in the panel, with vary, lock, traits and the mutation grid, exactly like the built-in layers. The kinds are `number`, `int`, `enum`, `bool` and `color`.
+- **apply(scene, v, ctx)** runs once per picture. `v` holds this seed's settings, `ctx.rng("name")` gives numbers the seed decides, and `Math.random` follows the seed too.
+- **Shapes** are `rect`, `circle`, `polyline` and `dots`, measured so that the short side of the canvas is 1. Exports, plotter SVG and share links work as for any layer.
+- **Helpers** are the ones the built-in layers use: `addItems`, `dsin`, `dcos`, `TAU`, `makeNoise2D`, `chance`, `int`, `shuffled`, `pickColor` and more. The editor lists them. Use `dsin` and `dcos` rather than `Math.sin` and `Math.cos`: the editor warns about math that can differ slightly between browsers.
+- **Mistakes are safe.** An error shows its line, and the last working version keeps drawing until the code works again.
+- **Isolated.** Scripts run in a sandbox: a separate, locked-down page with no network access and no way to see your Library or other saved data. A script that runs too long is stopped. This also covers scripts inside share links and files from other people.
+- **Not yet:** batch export and mint export of pieces with script layers. Hide the script layers to use them on the rest.
 
 ## Shortcuts
 

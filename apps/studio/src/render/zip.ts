@@ -26,11 +26,17 @@ export interface ZipEntry {
   readonly size: number;
 }
 
-export const entryFromBytes = (name: string, data: Uint8Array): ZipEntry => ({ name, data, crc: crc32(data), size: data.length });
+/** A flat file name: no folders, no "..", no control characters, so unzipping writes only where asked. */
+export function safeEntryName(name: string): string {
+  if (!name || /[/\\\x00-\x1f\x7f]|^\.\.?$|\.\./.test(name) || name.length > 200) throw new Error(`Unsafe file name in zip: ${JSON.stringify(name.slice(0, 40))}`);
+  return name;
+}
+
+export const entryFromBytes = (name: string, data: Uint8Array): ZipEntry => ({ name: safeEntryName(name), data, crc: crc32(data), size: data.length });
 
 /** Reads the blob once to checksum it, then keeps only the Blob. */
 export async function entryFromBlob(name: string, data: Blob): Promise<ZipEntry> {
-  return { name, data, crc: crc32(new Uint8Array(await data.arrayBuffer())), size: data.size };
+  return { name: safeEntryName(name), data, crc: crc32(new Uint8Array(await data.arrayBuffer())), size: data.size };
 }
 
 const MAX_ENTRIES = 0xffff;

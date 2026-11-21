@@ -139,3 +139,37 @@ describe.skipIf(!existsSync(built) && !process.env["CI"])("built player", () => 
     for (const code of Object.values(modules)) expect(() => scriptSafeCode(code)).not.toThrow();
   });
 });
+
+describe("assembleMint with script layers", () => {
+  const scriptDoc: ArtDocument = {
+    ...starterDocument,
+    layers: [...starterDocument.layers, { id: "mine", module: "script", enabled: true, params: {}, script: { api: 1, label: "Mine", code: "layer({ apply(s) { return s; } })", params: {} } }],
+  };
+  const withCompiler: Player = { ...RUNTIME, scripts: "/*compiler*/" };
+
+  it("adds the compiler and allows compiling code, only for pieces that draw code", () => {
+    const html = assembleMint(withCompiler, scriptDoc, meta);
+    expect(html).toContain("<script>/*compiler*/</script>");
+    expect(html).toContain("script-src 'unsafe-inline' 'unsafe-eval'");
+    expect(html.indexOf("/*compiler*/")).toBeLessThan(html.indexOf("GridloomRuntime.start()"));
+    expect(html).toContain("includes its artist's own script layers");
+
+    const plain = assembleMint(withCompiler, starterDocument, meta);
+    expect(plain).not.toContain("/*compiler*/");
+    expect(plain).not.toContain("unsafe-eval");
+    // Pieces without scripts are byte for byte what they were.
+    expect(plain).toBe(assembleMint(RUNTIME, starterDocument, meta));
+    const hidden = { ...scriptDoc, layers: scriptDoc.layers.map((l) => ({ ...l, enabled: l.module !== "script" ? l.enabled : false })) };
+    expect(assembleMint(withCompiler, hidden, meta)).not.toContain("unsafe-eval");
+  });
+
+  it("refuses a script piece when the player has no compiler", () => {
+    expect(() => assembleMint(RUNTIME, scriptDoc, meta)).toThrow(/script compiler/);
+  });
+
+  it("the built compiler is safe inside a script element", () => {
+    const built = join(import.meta.dirname, "../dist/scripts.js");
+    if (!existsSync(built)) return;
+    expect(() => scriptSafeCode(readFileSync(built, "utf8"))).not.toThrow();
+  });
+});

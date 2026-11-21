@@ -153,5 +153,40 @@ try {
 }
 writeFileSync(join(dist, "modules.json"), JSON.stringify(out));
 
+// 3. The script compiler for minted pieces with script layers. Core files come from the engine's
+// global, as for modules; the compiler itself is bundled.
+const installer = normalizePath(join(root, "src/installScripts.ts"));
+const scriptsResult = await build({
+  configFile: false,
+  root,
+  logLevel: "warn",
+  plugins: [
+    {
+      name: "gridloom-scripts-from-engine",
+      enforce: "pre",
+      resolveId(spec, importer) {
+        if (!importer || !spec.startsWith(".")) return null;
+        const target = normalizePath(resolve(dirname(clean(importer)), spec));
+        if (!target.includes("/packages/core/src/")) return null;
+        if (!sharedFiles.has(target)) fail(`the script compiler imports ${spec}, which the engine does not provide; re-export it from src/runtime.ts`);
+        return { id: target, external: true };
+      },
+    },
+  ],
+  build: {
+    outDir: dist,
+    emptyOutDir: false,
+    target: "es2020",
+    minify: true,
+    write: false,
+    lib: lib(installer, "GridloomScripts", "scripts.js"),
+    rollupOptions: { output: { globals: () => "GridloomRuntime" } },
+  },
+});
+const scriptsChunk = (Array.isArray(scriptsResult) ? scriptsResult[0] : scriptsResult) as { output: readonly { type: string; code?: string }[] };
+const scriptsCode = scriptsChunk.output.find((o) => o.type === "chunk")?.code ?? fail("no output for the script compiler");
+if (!scriptsCode.includes("layer(...)")) fail("the script compiler build lost its messages");
+writeFileSync(join(dist, "scripts.js"), scriptsCode);
+
 const sizes = Object.entries(out).map(([id, c]) => `${id} ${(c.length / 1024).toFixed(1)}`);
-console.log(`engine ${(engineCode.length / 1024).toFixed(1)} KB; sandbox ${(sandboxCode.length / 1024).toFixed(1)} KB; modules (KB): ${sizes.join(", ")}`);
+console.log(`engine ${(engineCode.length / 1024).toFixed(1)} KB; sandbox ${(sandboxCode.length / 1024).toFixed(1)} KB; scripts ${(scriptsCode.length / 1024).toFixed(1)} KB; modules (KB): ${sizes.join(", ")}`);

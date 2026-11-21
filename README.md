@@ -141,8 +141,7 @@ layer({
 - **Mistakes are safe.** An error shows its line, and the last working version keeps drawing until the code works again.
 - **Isolated.** Scripts run in a sandbox: a separate, locked-down page with no network access and no way to see your Library or other saved data. A script that runs too long is stopped.
 - **Code from other people waits for a yes.** When a share link, an opened file or an imported Library entry brings script code you have not run before, the picture leaves those layers out and a notice offers **Run the code**, **Show the code** (to read it first) or **Keep hidden**. Code you write or remix, and code you have approved, runs without asking in this browser.
-- **Batch export** works with script layers: each piece is drawn in the sandbox, one at a time.
-- **Not yet:** mint export of pieces with script layers. Hide the script layers to mint the rest.
+- **Batch and mint export** work with script layers. Batch draws each piece in the sandbox, one at a time. A minted `index.html` carries the code and a 3 KB compiler, and runs it in its own page like any generative piece; its content security policy then allows compiling code (`'unsafe-eval'`), which pieces without script layers never get. Code must be yours or approved before it can be minted.
 
 ## Shortcuts
 

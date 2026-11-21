@@ -5,8 +5,11 @@ import { join } from "node:path";
 import { pathToFileURL } from "node:url";
 import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
-import { builtinPresets, computeTraits, generate, seedSeries, stepHash, toSVG } from "../packages/core/src/index.ts";
+import type { ArtDocument } from "../packages/core/src/index.ts";
+import { builtinPresets, computeTraits, generate, seedSeries, setScriptRunner, starterDocument, stepHash, toSVG } from "../packages/core/src/index.ts";
 import { assembleMint } from "../packages/runtime/src/assemble.ts";
+import { scriptRunner } from "../packages/runtime/src/compile.ts";
+import { STARTER_SCRIPT } from "../apps/studio/src/ui/code/starter.ts";
 
 /**
  * The exported index.html must work with no network at all, fire its done
@@ -16,6 +19,7 @@ const built = join(import.meta.dirname, "../packages/runtime/dist");
 const runtime = {
   engine: readFileSync(join(built, "runtime.js"), "utf8"),
   modules: JSON.parse(readFileSync(join(built, "modules.json"), "utf8")) as Record<string, string>,
+  scripts: readFileSync(join(built, "scripts.js"), "utf8"),
 };
 const dir = mkdtempSync(join(tmpdir(), "gridloom-mint-"));
 const meta = { title: "Mint test", artist: "", licence: "CC0 1.0", captureWidth: 1000, captureHeight: 1000 };
@@ -159,4 +163,31 @@ test.describe("player contract", () => {
     await page.waitForFunction(() => window.rendered instanceof HTMLCanvasElement);
     expect(await page.evaluate(() => [window.rendered?.width, window.rendered?.height])).toEqual([640, 800]);
   });
+});
+
+test("a piece with a script layer runs its code offline and draws what Node draws", async ({ page }) => {
+  const doc: ArtDocument = {
+    ...starterDocument,
+    name: "Rings",
+    layers: [...starterDocument.layers, { id: "rings", module: "script", enabled: true, params: { rings: { value: 5, vary: { kind: "range", min: 2, max: 9, dist: "uniform" } } }, script: STARTER_SCRIPT }],
+    traits: [{ name: "Rings", layerId: "rings", param: "rings" }],
+  };
+  const hash = "7f3a9c0e11d2b4a5968e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a3921";
+  const file = join(dir, "script-piece.html");
+  writeFileSync(file, assembleMint(runtime, doc, meta));
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const requests = await openOffline(page, file, `?hash=0x${hash}`);
+  const result = await page.evaluate(() => ({ features: window.$features, svg: window.gridloom?.svg() ?? "" }));
+  expect(requests, "network requests").toEqual([]);
+  expect(errors).toEqual([]);
+  setScriptRunner(scriptRunner);
+  try {
+    expect(result.features).toEqual(computeTraits(doc, hash));
+    const expected = toSVG(generate(doc, hash).scene);
+    expect(expected).toContain("<circle");
+    expect(sha(result.svg)).toBe(sha(expected));
+  } finally {
+    setScriptRunner(null);
+  }
 });

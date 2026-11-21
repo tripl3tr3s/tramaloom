@@ -1,5 +1,5 @@
 import type { ArtDocument } from "@gridloom/core";
-import { defaultRegistry, ENGINE_VERSION, expectedDistribution } from "@gridloom/core";
+import { defaultRegistry, ENGINE_VERSION, expectedDistribution, SCRIPT_MODULE } from "@gridloom/core";
 
 export interface MintMeta {
   readonly title: string;
@@ -13,11 +13,16 @@ export interface MintMeta {
 
 const MAX_META = 200;
 
-/** The built player: the engine, and one script per module (dist/runtime.js and dist/modules.json). */
+/** The built player: the engine, one script per module, and the script compiler (dist/runtime.js, modules.json, scripts.js). */
 export interface Player {
   readonly engine: string;
   readonly modules: Readonly<Record<string, string>>;
+  /** Only pieces with script layers include it. */
+  readonly scripts?: string;
 }
+
+/** The piece draws its own code (enabled script layers). */
+const runsCode = (doc: ArtDocument): boolean => doc.layers.some((l) => l.enabled && l.module === SCRIPT_MODULE);
 
 /** Modules the piece's enabled layers use, in stack order (so the bytes never depend on anything else). Hidden layers are never drawn. */
 export function modulesUsed(doc: ArtDocument): readonly string[] {
@@ -79,6 +84,9 @@ export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): 
     if (code === undefined) throw new Error(`no player code for module "${id}" (unknown module, or @gridloom/runtime needs a rebuild)`);
     return `<script>${scriptSafeCode(code)}</script>`;
   });
+  const scripted = runsCode(doc);
+  if (scripted && player.scripts === undefined) throw new Error("this piece has script layers, and the player has no script compiler: rebuild @gridloom/runtime");
+  const compiler = scripted && player.scripts !== undefined ? [`<script>${scriptSafeCode(player.scripts)}</script>`] : [];
   const title = meta.title.trim() || doc.name || "Untitled";
   const table = traitTable(doc);
   const header = [
@@ -100,6 +108,7 @@ export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): 
     "Errors: an invalid seed sets window.gridloomError and fires 'genart:error'.",
     "Extras: window.gridloom.svg() returns the current piece as SVG.",
     "Works offline: no network requests. Target: current Chrome, Firefox and Safari.",
+    ...(scripted ? ["Code: this piece includes its artist's own script layers, compiled in the page (the reason for 'unsafe-eval')."] : []),
     "",
     "Traits and the weights used (expected share over a large edition):",
     ...(table.length ? table : ["  none declared"]),
@@ -113,7 +122,8 @@ export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): 
     `<!--\n${header.join("\n")}\n-->`,
     '<meta name="viewport" content="width=device-width, initial-scale=1">',
     // No network, ever: blocks fetches, remote scripts, styles, fonts and images.
-    `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">`,
+    // Script layers are compiled from text, which needs 'unsafe-eval'; other pieces never get it.
+    `<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'${scripted ? " 'unsafe-eval'" : ""}; style-src 'unsafe-inline'; img-src data: blob:; base-uri 'none'; form-action 'none'">`,
     `<title>${htmlEscape(title)}</title>`,
     "<style>html,body{margin:0;height:100%}body{display:flex;align-items:center;justify-content:center;overflow:hidden;background:#111}canvas{display:block}</style>",
     "</head>",
@@ -122,6 +132,8 @@ export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): 
     `<script>${scriptSafeCode(player.engine)}</script>`,
     // Only the modules this piece uses; each registers itself with the engine above.
     ...moduleScripts,
+    // Pieces with script layers: the compiler that runs their code (after the engine, before start).
+    ...compiler,
     "<script>GridloomRuntime.start()</script>",
     "</body>",
     "</html>",

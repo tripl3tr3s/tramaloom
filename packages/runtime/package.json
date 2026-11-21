@@ -10,6 +10,7 @@
     "./runtime.js": "./dist/runtime.js",
     "./modules.json": "./dist/modules.json",
     "./sandbox.js": "./dist/sandbox.js",
+    "./scripts.js": "./dist/scripts.js",
     "./sandboxProtocol": "./src/sandboxProtocol.ts"
   },
   "scripts": {

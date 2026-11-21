@@ -37,8 +37,8 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
     const piece = drawable(doc);
     const onProgress = (done: number, total: number) => setProgress({ done, total });
     const r = hasScripts(piece)
-      ? runScriptBatch({ doc: piece, root, count: n, size, base }, onProgress)
-      : runTool({ kind: "batch", doc: piece, root, count: n, size, base }, onProgress);
+      ? runScriptBatch({ doc: piece, record: doc, root, count: n, size, base }, onProgress)
+      : runTool({ kind: "batch", doc: piece, record: doc, root, count: n, size, base }, onProgress);
     run.current = r;
     setProgress({ done: 0, total: n });
     r.promise.then(

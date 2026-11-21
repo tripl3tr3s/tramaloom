@@ -269,6 +269,12 @@ The studio builds the settings panel, the Add menu entry, mutation, breeding, tr
 
 Push to `main`. The GitHub Actions workflow typechecks, tests, builds `apps/studio` and publishes it to GitHub Pages. In the repo settings, set Pages to "GitHub Actions" once. There is no server, database or secret to maintain.
 
+Security settings that depend on the host:
+
+- **Content security policy.** Built pages carry their own policy in a `<meta>` tag (scripts, workers and data only from the site itself; no plugins; the only frame is the script sandbox). The dev server runs without it.
+- **Response headers.** `public/_headers` is read by Cloudflare Pages and Netlify (other hosts ignore it). It keeps the studio out of other sites' frames, and forces `sandbox.html` into an isolated origin even when it is opened directly. GitHub Pages cannot set headers; the pages then rely on their own checks, which hold, but the headers are a second layer.
+- **The script sandbox on its own origin (recommended).** Serve the same `sandbox.html` from a second origin (another domain or subdomain with nothing else on it), and build with `VITE_SANDBOX_URL=https://that-origin/sandbox.html`. The browser then runs scripts in a separate process, so a script that exhausts memory cannot take the studio's tab down with it. Allow the studio's origin in that host's `frame-ancestors` (see `_headers`).
+
 ## History
 
 - **Engine:** seeded PRNG with named sub-streams, the param system, the display list, SVG and Canvas2D renderers, engine versioning and frozen reference outputs.

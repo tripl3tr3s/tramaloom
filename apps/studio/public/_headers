@@ -1,0 +1,23 @@
+# Response headers for hosts that read this file (Cloudflare Pages, Netlify). Other hosts serve
+# it as a plain file and ignore it. Rules are per path: two Content-Security-Policy headers on
+# one page would both apply, and a studio-wide frame-ancestors 'none' would block the sandbox.
+
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: no-referrer
+  Permissions-Policy: camera=(), microphone=(), geolocation=(), payment=(), usb=()
+
+# The studio and the determinism check: never inside another site's frame.
+/
+  Content-Security-Policy: frame-ancestors 'none'
+/index.html
+  Content-Security-Policy: frame-ancestors 'none'
+/check.html
+  Content-Security-Policy: frame-ancestors 'none'
+/preview.html
+  Content-Security-Policy: frame-ancestors 'none'
+
+# The script sandbox: always an opaque origin (even opened directly), no network, and only the
+# studio may frame it. With the sandbox on its own origin, put the studio's origin here instead of 'self'.
+/sandbox.html
+  Content-Security-Policy: sandbox allow-scripts; default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob:; worker-src blob:; frame-ancestors 'self'

@@ -47,7 +47,16 @@ export interface ThumbResponse {
 
 export type ToolRequest =
   | { readonly kind: "census"; readonly doc: ArtDocument; readonly root: string; readonly count: number }
-  | { readonly kind: "batch"; readonly doc: ArtDocument; readonly root: string; readonly count: number; readonly size: number; readonly base: string };
+  | {
+      readonly kind: "batch";
+      readonly doc: ArtDocument;
+      /** The piece as it really is, saved in the zip; doc is what gets drawn. */
+      readonly record?: ArtDocument;
+      readonly root: string;
+      readonly count: number;
+      readonly size: number;
+      readonly base: string;
+    };
 
 export type ToolResponse =
   | { readonly kind: "progress"; readonly done: number; readonly total: number }

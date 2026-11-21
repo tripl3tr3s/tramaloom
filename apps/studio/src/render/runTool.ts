@@ -51,7 +51,8 @@ export function runTool<R extends ToolRequest>(req: R, onProgress?: (done: numbe
  */
 export function runScriptBatch(job: BatchJob, onProgress?: (done: number, total: number) => void): ToolRun<Blob> {
   let stopped = false;
-  const promise = batchZip(job, (hash) => drawInSandbox(job.doc, hash), onProgress ?? (() => undefined), () => stopped);
+  // It runs on the main thread, so it holds less than the worker may: 1 GB of PNGs.
+  const promise = batchZip(job, (hash) => drawInSandbox(job.doc, hash), onProgress ?? (() => undefined), () => stopped, 1_000_000_000);
   return {
     promise,
     cancel: () => {

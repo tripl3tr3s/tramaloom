@@ -8,56 +8,76 @@ import type { ArtDocument } from "@gridloom/core";
 import { SCRIPT_MODULE } from "@gridloom/core";
 import { useSyncExternalStore } from "react";
 import { STARTER_SCRIPT } from "../ui/code/starter.ts";
+import { sha256 } from "./sha256.ts";
 
-const KEY = "gridloom.approvedScripts";
+// v2: SHA-256 digests. (A short non-cryptographic fingerprint could be forged to match approved code.)
+const KEY = "gridloom.approvedScripts.v2";
 const MAX_REMEMBERED = 300;
 
-/** A short fingerprint of a script's code (cyrb53). Not security: the sandbox is. */
+// Each script is hashed once; drawing asks often.
+const digests = new Map<string, string>();
+/** SHA-256 of a script's code: what an approval remembers. */
 export function fingerprint(code: string): string {
-  let h1 = 0xdeadbeef;
-  let h2 = 0x41c6ce57;
-  for (let i = 0; i < code.length; i++) {
-    const c = code.charCodeAt(i);
-    h1 = Math.imul(h1 ^ c, 2654435761);
-    h2 = Math.imul(h2 ^ c, 1597334677);
-  }
-  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507) ^ Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507) ^ Math.imul(h1 ^ (h1 >>> 13), 3266489909);
-  return (4294967296 * (2097151 & h2) + (h1 >>> 0)).toString(36);
+  const hit = digests.get(code);
+  if (hit) return hit;
+  const d = sha256(code);
+  if (digests.size >= 64) digests.delete(digests.keys().next().value as string);
+  digests.set(code, d);
+  return d;
 }
 
 function load(): string[] {
   try {
     const raw: unknown = JSON.parse(localStorage.getItem(KEY) ?? "[]");
-    return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string").slice(-MAX_REMEMBERED) : [];
+    return Array.isArray(raw) ? raw.filter((x): x is string => typeof x === "string" && /^[0-9a-f]{64}$/.test(x)).slice(-MAX_REMEMBERED) : [];
   } catch {
     return [];
   }
 }
 
-let approved: readonly string[] = [fingerprint(STARTER_SCRIPT.code), ...load()];
+let approved: readonly string[] = load();
 let version = 0;
 const listeners = new Set<() => void>();
+const changed = () => {
+  version += 1;
+  for (const l of listeners) l();
+};
 
-export const isApproved = (code: string): boolean => approved.includes(fingerprint(code));
+// Another tab approved something: pick it up here too.
+if (typeof window !== "undefined") {
+  window.addEventListener("storage", (e) => {
+    if (e.key !== KEY) return;
+    approved = load();
+    changed();
+  });
+}
+
+/** The starter script by its exact text; everything else by a remembered approval. */
+export const isApproved = (code: string): boolean => code === STARTER_SCRIPT.code || approved.includes(fingerprint(code));
 
 /** Trusts these scripts from now on, in this browser. */
 export function approveScripts(codes: readonly string[]): void {
-  const fresh = codes.map(fingerprint).filter((f) => !approved.includes(f));
+  const fresh = codes.filter((c) => !isApproved(c)).map(fingerprint);
   if (fresh.length === 0) return;
-  approved = [...approved, ...fresh].slice(-MAX_REMEMBERED);
+  // Merge with what other tabs saved meanwhile, never overwrite it.
+  const merged = [...new Set([...load(), ...approved, ...fresh])].slice(-MAX_REMEMBERED);
+  approved = merged;
   try {
-    localStorage.setItem(KEY, JSON.stringify(approved));
+    localStorage.setItem(KEY, JSON.stringify(merged));
   } catch {
     // Private windows: approvals last for this visit only.
   }
-  version += 1;
-  for (const l of listeners) l();
+  changed();
 }
 
 /** Code of the enabled script layers the person has not approved yet. */
 export const unapprovedScripts = (doc: ArtDocument): readonly string[] => [
   ...new Set(doc.layers.flatMap((l) => (l.enabled && l.module === SCRIPT_MODULE && l.script && !isApproved(l.script.code) ? [l.script.code] : []))),
+];
+
+/** Code of every script layer not approved yet, hidden ones included: what a minted page or saved file would carry. */
+export const unapprovedCode = (doc: ArtDocument): readonly string[] => [
+  ...new Set(doc.layers.flatMap((l) => (l.module === SCRIPT_MODULE && l.script && !isApproved(l.script.code) ? [l.script.code] : []))),
 ];
 
 /** The document as it may be drawn: script layers with unapproved code are left out. */

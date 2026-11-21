@@ -1,10 +1,39 @@
 import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { fileURLToPath } from "node:url";
-import { defineConfig } from "vite";
+import type { Plugin } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import { VitePWA } from "vite-plugin-pwa";
 
-export default defineConfig({
+/**
+ * The studio's content security policy, added to built pages only: the dev server injects
+ * inline scripts and a websocket that it would block. Scripts, workers and data come from the
+ * studio itself; the only frame allowed is the script sandbox (its own origin when
+ * VITE_SANDBOX_URL points elsewhere). The sandbox page sets its own, stricter policy.
+ */
+function contentSecurityPolicy(sandboxUrl: string | undefined): Plugin {
+  const sandboxOrigin = sandboxUrl ? new URL(sandboxUrl).origin : null;
+  const policy = [
+    "default-src 'self'",
+    "script-src 'self'",
+    // The code editor injects its own style rules.
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "worker-src 'self'",
+    `frame-src 'self'${sandboxOrigin ? ` ${sandboxOrigin}` : ""}`,
+    "connect-src 'self'",
+    "object-src 'none'",
+    "base-uri 'none'",
+    "form-action 'none'",
+  ].join("; ");
+  return {
+    name: "gridloom-csp",
+    apply: "build",
+    transformIndexHtml: (html) => html.replace(/(<meta charset="UTF-8" \/>)/i, `$1\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`),
+  };
+}
+
+export default defineConfig(({ mode }) => ({
   // Relative base so the static build works on any GitHub/Cloudflare Pages path.
   base: "./",
   worker: { format: "es" },
@@ -18,6 +47,7 @@ export default defineConfig({
     },
   },
   plugins: [
+    contentSecurityPolicy(loadEnv(mode, process.cwd(), "VITE_")["VITE_SANDBOX_URL"]),
     react(),
     tailwindcss(),
     VitePWA({
@@ -41,8 +71,8 @@ export default defineConfig({
       workbox: {
         globPatterns: ["**/*.{js,css,html,svg}"],
         // The determinism check page and the script sandbox must load themselves, never the studio shell.
-        navigateFallbackDenylist: [/check\.html$/, /sandbox\.html$/],
+        navigateFallbackDenylist: [/check\.html$/, /sandbox\.html$/, /preview\.html$/],
       },
     }),
   ],
-});
+}));

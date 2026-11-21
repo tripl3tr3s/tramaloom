@@ -12,7 +12,10 @@ import { entryFromBlob, entryFromBytes, zip } from "./zip.ts";
 const MAX_BYTES = 3_500_000_000;
 
 export interface BatchJob {
+  /** What is drawn (script layers whose code is not approved are already left out). */
   readonly doc: ArtDocument;
+  /** The piece as it really is, saved in the zip so the batch can be reproduced. Defaults to doc. */
+  readonly record?: ArtDocument;
   readonly root: string;
   readonly count: number;
   readonly size: number;
@@ -24,6 +27,7 @@ export async function batchZip(
   drawingFor: (hash: string) => Drawing | Promise<Drawing>,
   onProgress: (done: number, total: number) => void,
   cancelled: () => boolean = () => false,
+  maxBytes: number = MAX_BYTES,
 ): Promise<Blob> {
   const hashes = seedSeries(job.root, job.count);
   const entries: ZipEntry[] = [];
@@ -40,13 +44,13 @@ export async function batchZip(
     const blob = await canvas.convertToBlob({ type: "image/png" });
     const file = `${job.base}_${String(i + 1).padStart(4, "0")}_${hash.slice(0, 12)}.png`;
     bytes += blob.size;
-    if (bytes > MAX_BYTES) throw new Error("This batch would be larger than a zip can hold; export fewer or smaller pieces");
+    if (bytes > maxBytes) throw new Error("This batch would be larger than a zip can hold; export fewer or smaller pieces");
     entries.push(await entryFromBlob(file, blob));
     // Traits come from the settings alone: no drawing, no script needed.
     manifest.push({ hash, file, traits: { ...traitsFromResolved(job.doc, resolveDocument(job.doc, hash)) } });
     onProgress(i + 1, hashes.length);
   }
-  const doc = new TextEncoder().encode(JSON.stringify(job.doc, null, 2));
+  const doc = new TextEncoder().encode(JSON.stringify(job.record ?? job.doc, null, 2));
   const list = new TextEncoder().encode(JSON.stringify({ root: job.root, size: job.size, pieces: manifest }, null, 2));
   return zip([...entries, entryFromBytes("manifest.json", list), entryFromBytes("document.gridloom.json", doc)]);
 }

@@ -76,6 +76,22 @@ test.describe("after the welcome", () => {
     expect(box.y + box.height).toBeLessThanOrEqual(main.y + main.height);
   });
 
+  test("the mint preview shows the piece in an isolated frame", async ({ page, context }) => {
+    await page.keyboard.press("e");
+    await page.getByRole("tab", { name: /Mint/ }).click();
+    const popup = context.waitForEvent("page");
+    await page.getByRole("button", { name: "Preview with this seed" }).click();
+    const preview = await popup;
+    await expect(preview.locator("iframe")).toBeAttached();
+    await expect.poll(() => preview.frames().length).toBeGreaterThan(1);
+    const frame = preview.frames()[1];
+    if (!frame) throw new Error("no frame");
+    await frame.waitForFunction(() => (window as unknown as { rendered?: unknown }).rendered instanceof HTMLCanvasElement, undefined, { timeout: 10_000 });
+    // Opaque origin: the piece's code cannot reach the studio's saved pieces.
+    expect(await frame.evaluate(() => self.origin)).toBe("null");
+    expect(await frame.evaluate(() => { try { localStorage.length; return "storage"; } catch { return "blocked"; } })).toBe("blocked");
+  });
+
   test("T shows the piece repeated 3x3, with a hint while the margin would leave seams", async ({ page }) => {
     await page.keyboard.press("t");
     await expect(page.getByRole("img", { name: "The piece repeated three by three" })).toBeVisible();

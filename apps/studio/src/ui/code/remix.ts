@@ -87,7 +87,7 @@ export function remixSource(source: string, moduleId: string, label: string): st
   const body = js.replace(head, "layer(");
   // The layer's own label is the first one after layer(.
   const start = body.indexOf("layer(");
-  const relabelled = body.slice(0, start) + body.slice(start).replace(/label: "[^"]*"/, `label: ${JSON.stringify(`${label} remix`.slice(0, 40))}`);
+  const relabelled = body.slice(0, start) + body.slice(start).replace(/label: "[^"]*"/, () => `label: ${JSON.stringify(`${label} remix`.slice(0, 40))}`);
   const header = [
     `// A remix of the built-in ${label} layer: its own code, now yours to change.`,
     "// It draws exactly like the original until you edit it. The helpers it imported",

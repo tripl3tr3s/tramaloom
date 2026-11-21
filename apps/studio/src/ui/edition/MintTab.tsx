@@ -6,7 +6,7 @@ import runtimeSource from "@gridloom/runtime/runtime.js?raw";
 import scriptsSource from "@gridloom/runtime/scripts.js?raw";
 import { useMemo, useState } from "react";
 import { download } from "../../render/export.ts";
-import { unapprovedScripts, useTrustVersion } from "../../sandbox/trust.ts";
+import { unapprovedCode, useTrustVersion } from "../../sandbox/trust.ts";
 
 const field = "rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-sky-500";
 const LICENCES = ["All rights reserved", "CC BY-NC 4.0", "CC BY 4.0", "CC0 1.0", "NFT licence 2.0"] as const;
@@ -33,9 +33,10 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
   const capture = useMemo(() => pixelSize(generate({ ...doc, layers: doc.layers.filter((l) => l.module !== SCRIPT_MODULE) }, hash).scene, 2000), [doc, hash]);
   // A minted piece runs its code for every collector: only code this person wrote or approved.
   const trust = useTrustVersion();
-  const waiting = useMemo(() => unapprovedScripts(doc).length, [doc, trust]);
+  // Hidden layers count too: the page carries the whole document, code included.
+  const waiting = useMemo(() => unapprovedCode(doc).length, [doc, trust]);
   const html = useMemo(() => {
-    if (waiting > 0) return new Error("this piece has code that has not been run here yet. Choose Run the code above the picture, or hide those layers.");
+    if (waiting > 0) return new Error("this piece carries code that has not been run here, perhaps on a hidden layer. Choose Run the code above the picture, or remove those layers.");
     try {
       return assembleMint(PLAYER, doc, { title, artist, licence, captureWidth: capture.width, captureHeight: capture.height });
     } catch (e) {
@@ -45,14 +46,18 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
   const bytes = typeof html === "string" ? new Blob([html]).size : 0;
 
   const blob = () => (typeof html === "string" ? new Blob([html], { type: "text/html;charset=utf-8" }) : null);
+  // The preview page shows the piece in a sandboxed frame, so its code never runs with the studio's origin.
   const open = () => {
-    const b = blob();
-    if (!b) return;
-    const url = URL.createObjectURL(b);
-    // Blob URLs cannot carry a query string, so the player also reads #hash=.
-    window.open(`${url}#hash=${hash}`, "_blank", "noopener");
-    // Long enough for the tab to load (and a reload or two); then free it.
-    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+    if (typeof html !== "string") return;
+    const preview = window.open(new URL("preview.html", document.baseURI).href, "_blank");
+    if (!preview) return notify("Allow pop-ups for this site to open the preview");
+    const onReady = (e: MessageEvent) => {
+      if (e.source !== preview || e.origin !== location.origin || (e.data as { kind?: unknown } | null)?.kind !== "gridloom-preview-ready") return;
+      window.removeEventListener("message", onReady);
+      preview.postMessage({ html, hash }, location.origin);
+    };
+    window.addEventListener("message", onReady);
+    setTimeout(() => window.removeEventListener("message", onReady), 60_000);
   };
   const save = () => {
     const b = blob();

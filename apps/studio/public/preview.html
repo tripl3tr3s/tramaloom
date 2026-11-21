@@ -1,0 +1,40 @@
+<!doctype html>
+<!--
+  Mint preview. The studio opens this page and sends it the minted index.html; it shows the
+  piece in a sandboxed iframe (opaque origin), so the piece's code never runs with the studio's
+  origin or reaches its saved pieces. A page of its own, not a blob made by the studio: a blob
+  would inherit the studio's content security policy, which forbids inline scripts.
+-->
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="robots" content="noindex" />
+<meta
+  http-equiv="Content-Security-Policy"
+  content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval'; style-src 'unsafe-inline'; img-src data: blob:; frame-src blob:; base-uri 'none'; form-action 'none'"
+/>
+<title>Gridloom mint preview</title>
+<style>
+  html, body { margin: 0; height: 100%; background: #111; color: #a1a1aa; font: 13px/1.5 system-ui, sans-serif; }
+  iframe { display: block; width: 100%; height: 100%; border: 0; }
+  p { padding: 16px; }
+</style>
+<p id="wait">Waiting for the piece from the studio...</p>
+<script>
+  "use strict";
+  const HEX = /^[0-9a-f]{64}$/;
+  addEventListener("message", (e) => {
+    // Only the studio that opened this page, on this same origin, may send a piece.
+    if (e.origin !== location.origin || e.source !== window.opener) return;
+    const msg = e.data;
+    if (!msg || typeof msg.html !== "string" || !HEX.test(String(msg.hash))) return;
+    const url = URL.createObjectURL(new Blob([msg.html], { type: "text/html" }));
+    const frame = document.createElement("iframe");
+    frame.setAttribute("sandbox", "allow-scripts");
+    frame.title = "Minted piece";
+    frame.src = `${url}#hash=${msg.hash}`;
+    document.getElementById("wait")?.remove();
+    document.body.replaceChildren(frame);
+  });
+  if (window.opener) window.opener.postMessage({ kind: "gridloom-preview-ready" }, location.origin);
+  else document.getElementById("wait").textContent = "Open this page from the studio's Mint tab.";
+</script>

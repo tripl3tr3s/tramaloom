@@ -24,6 +24,7 @@ export class SandboxError extends Error {
 export const COMPILE_TIMEOUT_MS = 3000;
 export const DRAW_TIMEOUT_MS = 15_000;
 const START_TIMEOUT_MS = 10_000;
+const SANDBOX_URL: string = typeof import.meta.env["VITE_SANDBOX_URL"] === "string" && import.meta.env["VITE_SANDBOX_URL"] ? import.meta.env["VITE_SANDBOX_URL"] : "sandbox.html";
 
 type NewJob = { readonly op: "compile"; readonly code: string } | { readonly op: "draw"; readonly doc: ArtDocument; readonly hash: string };
 type Ok = Extract<SandboxResponse, { ok: true }>;
@@ -67,7 +68,9 @@ class SandboxHost {
     // Never an unhandled rejection: each request reports the failure itself.
     this.ready.catch(() => undefined);
     window.addEventListener("message", this.onMessage);
-    this.frame.src = new URL("sandbox.html", document.baseURI).href;
+    // Same origin by default; a deployment can serve the sandbox from its own origin (VITE_SANDBOX_URL),
+    // which also gives it its own browser process.
+    this.frame.src = new URL(SANDBOX_URL, document.baseURI).href;
     document.body.append(this.frame);
   }
 

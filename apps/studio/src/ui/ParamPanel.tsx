@@ -14,7 +14,7 @@ interface Props {
   readonly onResetParam: (layerId: string, name: string) => void;
   readonly onResetLayer: (layerId: string) => void;
   /** Opens the source of the module behind this layer. */
-  readonly onViewCode: (moduleId: string, label: string) => void;
+  readonly onViewCode: (moduleId: string, label: string, layerId: string) => void;
   /** Opens the code editor of a script layer. */
   readonly onEditScript: (layerId: string) => void;
   /** Shown above the params when this layer cannot draw as it stands, with a one-click fix. */
@@ -94,7 +94,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
         <button
           type="button"
           className="rounded px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
-          onClick={() => (layer.module === SCRIPT_MODULE ? onEditScript(layer.id) : onViewCode(def.id, def.label))}
+          onClick={() => (layer.module === SCRIPT_MODULE ? onEditScript(layer.id) : onViewCode(def.id, def.label, layer.id))}
           title={layer.module === SCRIPT_MODULE ? "Edit this layer's code" : "See the code that draws this layer"}
         >
           {layer.module === SCRIPT_MODULE ? "Edit code" : "Code"}

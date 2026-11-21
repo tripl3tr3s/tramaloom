@@ -1,14 +1,20 @@
 import { javascript } from "@codemirror/lang-javascript";
 import { EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
+import type { LayerScript } from "@gridloom/core";
+import { defaultRegistry, getModule, SCRIPT_API } from "@gridloom/core";
 import type { ReactNode } from "react";
+import { parseScriptParams } from "../../state/schema.ts";
 import { useEffect, useRef, useState } from "react";
 import { useDialog } from "../../hooks/useDialog.ts";
 import { loadModuleSource } from "./moduleSource.ts";
+import { remixSource } from "./remix.ts";
 import { codeLook } from "./theme.ts";
 
 interface Props {
   readonly moduleId: string;
+  /** Offered for drawing layers: turns the layer into a script layer with this code. */
+  readonly onRemix?: (script: LayerScript) => void;
   /** The name the layer stack shows, for the title. */
   readonly label: string;
   readonly onClose: () => void;
@@ -19,7 +25,7 @@ interface Props {
  * Read-only source of the module behind a layer, with a short guide to reading it.
  * The first rung of learning to code here: every built-in look is a small, commented file.
  */
-export function CodeView({ moduleId, label, onClose, notify }: Props) {
+export function CodeView({ moduleId, label, onClose, notify, onRemix }: Props) {
   const ref = useDialog<HTMLDivElement>((e) => {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -61,6 +67,20 @@ export function CodeView({ moduleId, label, onClose, notify }: Props) {
     return () => view.destroy();
   }, [source, label]);
 
+  const remix = () => {
+    const def = getModule(defaultRegistry, moduleId);
+    if (!source || !def || !onRemix) return;
+    try {
+      const code = remixSource(source, moduleId, label);
+      // The module's own params, as data: the same settings keep the same values.
+      const params = parseScriptParams(JSON.parse(JSON.stringify(def.params)));
+      if (!params.ok) throw new Error(params.error);
+      onRemix({ api: SCRIPT_API, label: `${label} remix`.slice(0, 40), code, params: params.params });
+    } catch (err) {
+      notify(`Could not remix ${label}: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  };
+
   const copy = () => {
     if (!source) return;
     navigator.clipboard.writeText(source).then(
@@ -83,6 +103,17 @@ export function CodeView({ moduleId, label, onClose, notify }: Props) {
           <h2 id="code-title" className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
             How {label} draws
           </h2>
+          {onRemix && (
+            <button
+              type="button"
+              className="rounded bg-sky-700 px-2 py-0.5 text-xs text-white hover:bg-sky-600 disabled:opacity-30"
+              onClick={remix}
+              disabled={!source}
+              title="Turn this layer into a script layer with this code: same picture, and the code is yours to change"
+            >
+              Remix
+            </button>
+          )}
           <button type="button" className="rounded px-2 py-0.5 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white disabled:opacity-30" onClick={copy} disabled={!source}>
             Copy
           </button>

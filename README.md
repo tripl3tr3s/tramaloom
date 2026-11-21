@@ -106,7 +106,7 @@ Add layers with **+ Add**. Settings for each module are grouped, explained by th
 - **Tile preview (`T`).** Shows the piece repeated 3x3, to check that a pattern's edges join. Set the Canvas margin and corner radius to 0 for a seamless repeat.
 - **Undo and redo (`Ctrl+Z`, `Ctrl+Shift+Z`).** Every edit, including resets. A dot next to the name means there are changes you have not saved.
 - **Reset.** The circular arrow on a setting returns it to the default; **Reset all** does the whole layer.
-- **Code.** In the settings panel, **Code** shows the source that draws the selected layer, with a short guide to reading it. Every look in Gridloom is a small, commented file: a first step into generative art coding.
+- **Code.** In the settings panel, **Code** shows the source that draws the selected layer, with a short guide to reading it. Every look in Gridloom is a small, commented file: a first step into generative art coding. **Remix** makes that code your own as a script layer.
 - **Script layers.** **Add > Script** makes a layer drawn by your own code. See [Write your own layer](#write-your-own-layer).
 - **Export.** PNG at 2000 or 4000 px (re-rendered, never upscaled), SVG, the document as a `.gridloom.json` file, and a share link.
 - **Edition (`E`).** Tools for long-form editions: traits and rarity, a census over many seeds, a contact sheet, batch export, pen plotter export and a self-hosted mint export. See [Long-form workflow](#long-form-workflow).
@@ -137,6 +137,7 @@ layer({
 - **apply(scene, v, ctx)** runs once per picture. `v` holds this seed's settings, `ctx.rng("name")` gives numbers the seed decides, and `Math.random` follows the seed too.
 - **Shapes** are `rect`, `circle`, `polyline` and `dots`, measured so that the short side of the canvas is 1. Exports, plotter SVG and share links work as for any layer.
 - **Helpers** are the ones the built-in layers use: `addItems`, `dsin`, `dcos`, `TAU`, `makeNoise2D`, `chance`, `int`, `shuffled`, `pickColor` and more. The editor lists them. Use `dsin` and `dcos` rather than `Math.sin` and `Math.cos`: the editor warns about math that can differ slightly between browsers.
+- **Remix a built-in layer.** In any drawing layer's **Code** view, **Remix** turns that layer into a script layer with the module's own code, comments included. It draws exactly the same picture until you change something, and undo turns it back.
 - **Mistakes are safe.** An error shows its line, and the last working version keeps drawing until the code works again.
 - **Isolated.** Scripts run in a sandbox: a separate, locked-down page with no network access and no way to see your Library or other saved data. A script that runs too long is stopped. This also covers scripts inside share links and files from other people.
 - **Not yet:** batch export and mint export of pieces with script layers. Hide the script layers to use them on the rest.

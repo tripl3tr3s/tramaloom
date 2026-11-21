@@ -1,5 +1,6 @@
 import type { ArtDocument, Layer, LayerScript, ParamSetting, TraitDef } from "@gridloom/core";
 import { SCRIPT_MODULE, stepHash } from "@gridloom/core";
+import { REMIXABLE } from "../ui/code/remixLayer.ts";
 import { STARTER_SCRIPT } from "../ui/code/starter.ts";
 import { insertIndex, promoteIndex, zones } from "./layerOrder.ts";
 import { MAX_LAYERS } from "./limits.ts";
@@ -44,6 +45,8 @@ export type Action =
   | { readonly type: "addLayer"; readonly module: string }
   /** A script layer's new code, label and params (after the sandbox compiled them). */
   | { readonly type: "setScript"; readonly layerId: string; readonly script: LayerScript }
+  /** Turns a built-in drawing layer into a script layer with the same id and settings (so the same picture). */
+  | { readonly type: "remixLayer"; readonly layerId: string; readonly script: LayerScript }
   /** Make a free Palette or Grid the pinned one, when the head has none. */
   | { readonly type: "promoteLayer"; readonly layerId: string }
   | { readonly type: "removeLayer"; readonly layerId: string }
@@ -172,6 +175,11 @@ export function reducer(s: StudioState, a: Action): StudioState {
       // Settings for params the code no longer declares are dropped with them.
       const params = Object.fromEntries(Object.entries(target.params).filter(([name]) => Object.hasOwn(a.script.params, name)));
       return commit(s, mapLayers(s.doc, (l) => (l.id === a.layerId ? { ...l, params, script: a.script } : l)));
+    }
+    case "remixLayer": {
+      const target = s.doc.layers.find((l) => l.id === a.layerId);
+      if (!target || !REMIXABLE.has(target.module)) return s;
+      return commit(s, mapLayers(s.doc, (l) => (l.id === a.layerId ? { ...l, module: SCRIPT_MODULE, script: a.script } : l)));
     }
     case "promoteLayer": {
       const to = promoteIndex(s.doc.layers, a.layerId);

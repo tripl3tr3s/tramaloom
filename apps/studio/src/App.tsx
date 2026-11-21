@@ -18,6 +18,7 @@ import { ScrollHints } from "./ui/ScrollHints.tsx";
 import { TilePreview } from "./ui/TilePreview.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 import { isFirstVisit, Welcome } from "./ui/Welcome.tsx";
+import { REMIXABLE } from "./ui/code/remixLayer.ts";
 
 // Overlays load on demand, so the first paint does not wait for them. The Edition panel is the
 // heaviest: its Mint tab carries the whole player. All are fetched once the page is idle.
@@ -47,7 +48,7 @@ export function App() {
   const [sheet, setSheet] = useState<"layers" | "params" | null>(null);
   const [tiled, setTiled] = useState(false);
   // The module whose source the Code overlay shows.
-  const [codeOf, setCodeOf] = useState<{ readonly id: string; readonly label: string } | null>(null);
+  const [codeOf, setCodeOf] = useState<{ readonly id: string; readonly label: string; readonly layerId: string } | null>(null);
   // The script layer whose code is open in the editor under the canvas.
   const [editingId, setEditingId] = useState<string | null>(null);
   const applyScript = useCallback((layerId: string, script: LayerScript) => dispatch({ type: "setScript", layerId, script }), []);
@@ -318,7 +319,24 @@ export function App() {
             />
           )}
           {overlay === "shortcuts" && <ShortcutsHelp onClose={() => setOverlay("none")} />}
-          {overlay === "code" && codeOf && <CodeView moduleId={codeOf.id} label={codeOf.label} onClose={() => setOverlay("none")} notify={notify} />}
+          {overlay === "code" && codeOf && (
+            <CodeView
+              moduleId={codeOf.id}
+              label={codeOf.label}
+              onClose={() => setOverlay("none")}
+              notify={notify}
+              {...(REMIXABLE.has(codeOf.id)
+                ? {
+                    onRemix: (script: LayerScript) => {
+                      dispatch({ type: "remixLayer", layerId: codeOf.layerId, script });
+                      setOverlay("none");
+                      setEditingId(codeOf.layerId);
+                      notify(`${codeOf.label} is now a script layer: same picture, your code`, 3000);
+                    },
+                  }
+                : {})}
+            />
+          )}
           </Suspense>
           {overlay === "welcome" && <Welcome onClose={() => setOverlay("none")} onPresets={() => setOverlay("library")} />}
           {toast && (
@@ -357,8 +375,8 @@ export function App() {
             onResetParam={(layerId, name) => dispatch({ type: "resetParam", layerId, name })}
             onResetLayer={(layerId) => dispatch({ type: "resetLayer", layerId })}
             onEditScript={setEditingId}
-            onViewCode={(id, label) => {
-              setCodeOf({ id, label });
+            onViewCode={(id, label, layerId) => {
+              setCodeOf({ id, label, layerId });
               setOverlay("code");
             }}
             problem={problem}

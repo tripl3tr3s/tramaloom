@@ -20,6 +20,7 @@
     "@gridloom/core": "workspace:*",
     "@gridloom/runtime": "workspace:*",
     "@lezer/highlight": "^1.2.5",
+    "@lezer/javascript": "^1.5.6",
     "react": "^19.3.1",
     "react-dom": "^19.3.1",
     "zod": "^4.6.7"

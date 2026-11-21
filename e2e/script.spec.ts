@@ -124,3 +124,22 @@ layer({ label: "Quiet", apply(scene) { return scene; } });
   await page.waitForTimeout(500);
   expect(leaks).toEqual([]);
 });
+
+test("Remix turns a layer into a script that draws the same picture", async ({ page }) => {
+  const pixels = () => page.locator("main canvas").evaluate((c: HTMLCanvasElement) => c.toDataURL());
+  await page.getByRole("button", { name: /^Cell fill/ }).click();
+  await page.waitForTimeout(400);
+  const before = await pixels();
+  await page.getByRole("button", { name: "Code", exact: true }).click();
+  await page.getByRole("button", { name: "Remix" }).click();
+  await expect(page.getByRole("button", { name: /^Cell fill remix/ }).first()).toBeVisible();
+  await expect(page.getByRole("textbox", { name: "Script code" })).toContainText("A remix of the built-in Cell fill layer");
+  await expect(page.getByRole("status").filter({ hasText: "Drawing with this code." })).toBeVisible();
+  // The open editor makes the canvas smaller; compare at the original size.
+  await page.getByRole("button", { name: "Close" }).click();
+  await expect.poll(async () => (await pixels()) === before, { timeout: 10_000 }).toBe(true);
+  // Undo brings the built-in layer back.
+  await page.locator("main canvas").click();
+  await page.keyboard.press("ControlOrMeta+z");
+  await expect(page.getByRole("button", { name: /^Cell fill remix/ })).toHaveCount(0);
+});

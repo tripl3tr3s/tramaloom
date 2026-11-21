@@ -132,3 +132,26 @@ describe("store: script layers", () => {
     expect(reducer(s, { type: "setScript", layerId: "grid", script: STARTER_SCRIPT })).toBe(s);
   });
 });
+
+describe("store: remixLayer", () => {
+  const H = "a".repeat(64);
+  const script = { api: 1, label: "Cell fill remix", code: "layer({ apply(s) { return s; } })", params: {} };
+  it("turns a drawing layer into a script layer with the same id, settings and place", () => {
+    let s = initialState(starterDocument, H);
+    const fill = s.doc.layers.find((l) => l.module === "cellFill");
+    if (!fill) throw new Error("no cell fill");
+    s = reducer(s, { type: "setParam", layerId: fill.id, name: "fillChance", setting: { value: 0.5 }, record: true });
+    const r = reducer(s, { type: "remixLayer", layerId: fill.id, script });
+    const i = s.doc.layers.findIndex((l) => l.id === fill.id);
+    expect(r.doc.layers[i]).toEqual({ ...s.doc.layers[i], module: "script", script });
+    expect(reducer(r, { type: "undo" }).doc).toEqual(s.doc);
+  });
+
+  it("leaves pinned setup layers alone", () => {
+    const s = initialState(starterDocument, H);
+    for (const module of ["canvas", "grid", "palette"]) {
+      const l = s.doc.layers.find((x) => x.module === module);
+      if (l) expect(reducer(s, { type: "remixLayer", layerId: l.id, script }), module).toBe(s);
+    }
+  });
+});

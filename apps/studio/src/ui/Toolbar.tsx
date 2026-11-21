@@ -31,6 +31,7 @@ interface Props {
   readonly onMutate: () => void;
   readonly onLibrary: () => void;
   readonly onEdition: () => void;
+  readonly onLearn: () => void;
 }
 
 const btn =
@@ -116,6 +117,9 @@ export function Toolbar(p: Props) {
       <button type="button" className={`${btn} ${wide}`} onClick={p.onEdition} title="Traits, census, contact sheet, batch export (E)">
         Edition
       </button>
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onLearn} title="Lessons: learn to write your own layer (English and Spanish)">
+        Learn
+      </button>
       <div className="flex-1 max-md:hidden" />
       <label className={`${btn} ${wide} cursor-pointer has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-sky-500`} title="Open a .gridloom.json document">
         Open
@@ -160,6 +164,7 @@ export function Toolbar(p: Props) {
             </>
           }
           items={[
+            { label: "Learn", description: "Lessons in writing your own layer", onSelect: p.onLearn },
             { label: "Mutate", description: "Grid of variations to pick from", onSelect: p.onMutate },
             { label: "Library", description: "Presets and saved pieces", onSelect: p.onLibrary },
             { label: "Edition", description: "Traits, census, sheet, batch, mint", onSelect: p.onEdition },

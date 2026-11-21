@@ -6,6 +6,7 @@ import { EditorState as State } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers } from "@codemirror/view";
 import type { Layer, LayerScript } from "@gridloom/core";
 import { SCRIPT_API } from "@gridloom/core";
+import type { ReactNode } from "react";
 import { useEffect, useRef, useState } from "react";
 import { compileInSandbox, SandboxError } from "../../sandbox/host.ts";
 import { MAX_SCRIPT_CHARS } from "../../state/limits.ts";
@@ -21,6 +22,8 @@ interface Props {
   readonly running: boolean;
   readonly onApply: (layerId: string, script: LayerScript) => void;
   readonly onClose: () => void;
+  /** Shown beside the code instead of the helper list: a lesson's current step. */
+  readonly aside?: ReactNode;
 }
 
 type Status = { readonly kind: "ok" } | { readonly kind: "checking" } | { readonly kind: "error"; readonly message: string; readonly line: number | null };
@@ -72,7 +75,7 @@ const HELPERS: readonly (readonly [string, string])[] = [
  * here, then its top level in the sandbox, then the params it declares. Only code that passes
  * replaces the layer's script, so the last working version keeps drawing until then.
  */
-export function ScriptEditor({ layer, running, renderError, onApply, onClose }: Props) {
+export function ScriptEditor({ layer, running, renderError, onApply, onClose, aside }: Props) {
   const script = layer.script;
   const host = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -180,9 +183,13 @@ export function ScriptEditor({ layer, running, renderError, onApply, onClose }: 
           Close
         </button>
       </div>
-      <div className="flex min-h-0 flex-1">
+      {/* A lesson sits beside the code on wide screens and above it on narrow ones. */}
+      <div className={`flex min-h-0 flex-1 ${aside ? "flex-col-reverse lg:flex-row" : ""}`}>
         <div ref={host} className="min-h-0 min-w-0 flex-1 overflow-hidden" />
-        <details className="panel-scroll hidden w-72 shrink-0 overflow-y-auto border-l border-zinc-800 px-3 py-2 text-[11px] leading-snug text-zinc-400 lg:block" open>
+        {aside ? (
+          <div className="panel-scroll max-h-44 shrink-0 overflow-y-auto border-b border-zinc-800 px-3 py-2 lg:max-h-none lg:w-80 lg:border-b-0 lg:border-l">{aside}</div>
+        ) : (
+          <details className="panel-scroll hidden w-72 shrink-0 overflow-y-auto border-l border-zinc-800 px-3 py-2 text-[11px] leading-snug text-zinc-400 lg:block" open>
           <summary className="cursor-pointer select-none font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-300">Helpers</summary>
           <dl className="mt-2 flex flex-col gap-1.5">
             {HELPERS.map(([name, what]) => (
@@ -194,6 +201,7 @@ export function ScriptEditor({ layer, running, renderError, onApply, onClose }: 
           </dl>
           <p className="mt-3 text-zinc-500">Math.random works too: it follows the seed. Press Esc, then Tab, to leave the editor with the keyboard.</p>
         </details>
+        )}
       </div>
       <div className="border-t border-zinc-800 px-3 py-1.5 text-[11px]" role="status" aria-live="polite">
         {status.kind === "checking" && <p className="text-zinc-500">Checking...</p>}

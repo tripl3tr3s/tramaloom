@@ -1,5 +1,5 @@
 import type { ArtDocument, LayerScript, ParamSetting } from "@gridloom/core";
-import { defaultRegistry, ENGINE_VERSION, layerDef, starterDocument } from "@gridloom/core";
+import { defaultRegistry, ENGINE_VERSION, layerDef, SCRIPT_API, SCRIPT_MODULE, starterDocument } from "@gridloom/core";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";
@@ -9,7 +9,7 @@ import { loadFavorites, MAX_FAVORITES, saveFavorites, toggleFavorite } from "./s
 import { needsGrid, promoteIndex } from "./state/layerOrder.ts";
 import { parseDocument } from "./state/schema.ts";
 import { encodeState } from "./state/url.ts";
-import { initialState, randomHash, reducer } from "./state/store.ts";
+import { freshId, initialState, randomHash, reducer } from "./state/store.ts";
 import { DebugPanel } from "./ui/DebugPanel.tsx";
 import { LayerStack } from "./ui/LayerStack.tsx";
 import { FavoritesStrip } from "./ui/FavoritesStrip.tsx";
@@ -19,6 +19,11 @@ import { TilePreview } from "./ui/TilePreview.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 import { isFirstVisit, Welcome } from "./ui/Welcome.tsx";
 import { REMIXABLE } from "./ui/code/remixLayer.ts";
+import type { Lang, Lesson } from "./lessons/lessons.ts";
+import { initialLang, saveLang } from "./lessons/lang.ts";
+import { compileInSandbox } from "./sandbox/host.ts";
+import { parseScriptParams } from "./state/schema.ts";
+import { MAX_LAYERS } from "./state/limits.ts";
 import { approveScripts, unapprovedScripts, useTrustVersion } from "./sandbox/trust.ts";
 
 // Overlays load on demand, so the first paint does not wait for them. The Edition panel is the
@@ -29,20 +34,24 @@ const loadLibrary = () => import("./ui/Library.tsx");
 const loadShortcuts = () => import("./ui/ShortcutsHelp.tsx");
 const loadCode = () => import("./ui/code/CodeView.tsx");
 const loadScriptEditor = () => import("./ui/code/ScriptEditor.tsx");
+const loadLessons = () => import("./ui/lessons/LessonPicker.tsx");
+const loadLessonPanel = () => import("./ui/lessons/LessonPanel.tsx");
 const MutationGrid = lazy(() => loadMutation().then((m) => ({ default: m.MutationGrid })));
 const EditionPanel = lazy(() => loadEdition().then((m) => ({ default: m.EditionPanel })));
 const Library = lazy(() => loadLibrary().then((m) => ({ default: m.Library })));
 const ShortcutsHelp = lazy(() => loadShortcuts().then((m) => ({ default: m.ShortcutsHelp })));
 const CodeView = lazy(() => loadCode().then((m) => ({ default: m.CodeView })));
 const ScriptEditor = lazy(() => loadScriptEditor().then((m) => ({ default: m.ScriptEditor })));
+const LessonPicker = lazy(() => loadLessons().then((m) => ({ default: m.LessonPicker })));
+const LessonPanel = lazy(() => loadLessonPanel().then((m) => ({ default: m.LessonPanel })));
 const preloadOverlays = () => {
-  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts, loadCode, loadScriptEditor]) load().catch(() => undefined);
+  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts, loadCode, loadScriptEditor, loadLessons, loadLessonPanel]) load().catch(() => undefined);
 };
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
   const [debug, setDebug] = useState(false);
-  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome" | "code">(() => (isFirstVisit() ? "welcome" : "none"));
+  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome" | "code" | "lessons">(() => (isFirstVisit() ? "welcome" : "none"));
   const [toast, setToast] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<readonly string[]>(loadFavorites);
   // Phones: which panel is open as a bottom sheet (null shows the art alone). Ignored from md up.
@@ -57,6 +66,49 @@ export function App() {
     approveScripts([script.code]);
     dispatch({ type: "setScript", layerId, script });
   }, []);
+  // Lessons: the chosen language, and the lesson in progress with the layer it follows.
+  const [lang, setLangState] = useState<Lang>(initialLang);
+  const setLang = useCallback((l: Lang) => {
+    saveLang(l);
+    setLangState(l);
+  }, []);
+  const [lesson, setLesson] = useState<{ readonly lesson: Lesson; readonly step: number; readonly layerId: string } | null>(null);
+  const [lessonBusy, setLessonBusy] = useState(false);
+  const docRef = useRef(state.doc);
+  docRef.current = state.doc;
+
+  /** A lesson's code as a script: it is ours, so approved; compiled in the sandbox for its params. */
+  const scriptFrom = async (code: string): Promise<LayerScript> => {
+    approveScripts([code]);
+    const compiled = await compileInSandbox(code);
+    const params = parseScriptParams(compiled.params);
+    if (!params.ok) throw new Error(params.error);
+    return { api: SCRIPT_API, label: compiled.label, code, params: params.params };
+  };
+  const startLesson = async (chosen: Lesson) => {
+    setOverlay("none");
+    if (docRef.current.layers.length >= MAX_LAYERS) return notify(`At most ${MAX_LAYERS} layers: remove one to start a lesson`);
+    try {
+      const script = await scriptFrom(chosen.start(lang));
+      const id = freshId(docRef.current, "lesson");
+      dispatch({ type: "addLayer", module: SCRIPT_MODULE, id, script });
+      setLesson({ lesson: chosen, step: 0, layerId: id });
+      setEditingId(id);
+    } catch (err) {
+      notify(`Could not start the lesson: ${err instanceof Error ? err.message : String(err)}`, 4000);
+    }
+  };
+  const showMe = async (layerId: string, code: string) => {
+    setLessonBusy(true);
+    try {
+      applyScript(layerId, await scriptFrom(code));
+    } catch (err) {
+      notify(`Could not show this step: ${err instanceof Error ? err.message : String(err)}`, 4000);
+    } finally {
+      setLessonBusy(false);
+    }
+  };
+
   // Code that arrived from elsewhere (a link, a file, an import) waits for a yes.
   useTrustVersion();
   const untrusted = unapprovedScripts(state.doc);
@@ -262,6 +314,7 @@ export function App() {
         onMutate={() => setOverlay((o) => (o === "mutate" ? "none" : "mutate"))}
         onLibrary={() => setOverlay((o) => (o === "library" ? "none" : "library"))}
         onEdition={() => setOverlay((o) => (o === "edition" ? "none" : "edition"))}
+        onLearn={() => setOverlay("lessons")}
         onShortcuts={() => setOverlay("shortcuts")}
       />
       </div>
@@ -335,6 +388,7 @@ export function App() {
             />
           )}
           {overlay === "shortcuts" && <ShortcutsHelp onClose={() => setOverlay("none")} />}
+          {overlay === "lessons" && <LessonPicker lang={lang} onLang={setLang} onStart={(l) => void startLesson(l)} onClose={() => setOverlay("none")} />}
           {overlay === "code" && codeOf && (
             <CodeView
               moduleId={codeOf.id}
@@ -392,6 +446,22 @@ export function App() {
                 renderError={info.error}
                 onApply={applyScript}
                 onClose={() => setEditingId(null)}
+                {...(lesson && lesson.layerId === editingLayer.id
+                  ? {
+                      aside: (
+                        <LessonPanel
+                          lesson={lesson.lesson}
+                          step={lesson.step}
+                          lang={lang}
+                          busy={lessonBusy}
+                          onLang={setLang}
+                          onStep={(step) => setLesson({ ...lesson, step: Math.max(0, Math.min(lesson.lesson.steps.length, step)) })}
+                          onShowMe={(code) => void showMe(lesson.layerId, code)}
+                          onEnd={() => setLesson(null)}
+                        />
+                      ),
+                    }
+                  : {})}
               />
             </Suspense>
           </div>

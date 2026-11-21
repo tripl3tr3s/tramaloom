@@ -42,7 +42,14 @@ export type Action =
   | { readonly type: "moveLayer"; readonly layerId: string; readonly dir: -1 | 1 }
   /** Drag reorder: put the layer at `index` in the final order (canvas stays at 0). */
   | { readonly type: "moveLayerTo"; readonly layerId: string; readonly index: number }
-  | { readonly type: "addLayer"; readonly module: string }
+  | {
+      readonly type: "addLayer";
+      readonly module: string;
+      /** Wanted id (used when still free), so a caller can follow the new layer, as a lesson does. */
+      readonly id?: string;
+      /** Code for a new script layer; the starter script when omitted. */
+      readonly script?: LayerScript;
+    }
   /** A script layer's new code, label and params (after the sandbox compiled them). */
   | { readonly type: "setScript"; readonly layerId: string; readonly script: LayerScript }
   /** Turns a built-in drawing layer into a script layer with the same id and settings (so the same picture). */
@@ -161,9 +168,10 @@ export function reducer(s: StudioState, a: Action): StudioState {
     }
     case "addLayer": {
       if (s.doc.layers.length >= MAX_LAYERS) return s;
-      const base: Layer = { id: freshId(s.doc, a.module), module: a.module, enabled: true, params: {} };
+      const free = a.id !== undefined && /^[A-Za-z0-9_-]{1,40}$/.test(a.id) && !s.doc.layers.some((l) => l.id === a.id);
+      const base: Layer = { id: free && a.id ? a.id : freshId(s.doc, a.module), module: a.module, enabled: true, params: {} };
       // A new script layer starts with working, commented code.
-      const layer: Layer = a.module === SCRIPT_MODULE ? { ...base, script: STARTER_SCRIPT } : base;
+      const layer: Layer = a.module === SCRIPT_MODULE ? { ...base, script: a.script ?? STARTER_SCRIPT } : base;
       // Where it belongs, not simply last: a grid added after its drawing layers would leave them blank.
       const at = insertIndex(s.doc.layers, a.module);
       const layers = [...s.doc.layers.slice(0, at), layer, ...s.doc.layers.slice(at)];

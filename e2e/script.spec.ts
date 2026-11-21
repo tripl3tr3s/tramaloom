@@ -10,7 +10,7 @@ test.beforeEach(async ({ page }) => {
 async function addScriptLayer(page: Page) {
   await page.getByRole("button", { name: "Add layer" }).click();
   await page.getByRole("menuitem", { name: /^Script/ }).click();
-  await page.getByRole("button", { name: "Edit code" }).click();
+  await page.getByRole("dialog", { name: "Start a script layer" }).getByRole("button", { name: /^Example: rings/ }).click();
   await expect(page.getByRole("status").filter({ hasText: "Drawing with this code." })).toBeVisible();
 }
 
@@ -240,4 +240,49 @@ test("batch export draws every piece of a script piece in the sandbox", async ({
   expect(bytes.match(/_000[123]_[0-9a-f]{12}\.png/g)?.length).toBeGreaterThanOrEqual(3);
   const manifest = JSON.parse(/\{\s*"root"[\s\S]*?"pieces": \[[\s\S]*?\]\s*\}/.exec(bytes)?.[0] ?? "{}") as { pieces?: { traits: object }[] };
   expect(manifest.pieces?.length).toBe(3);
+});
+
+test.describe("starting a script layer", () => {
+  const openStart = async (page: Page) => {
+    await page.getByRole("button", { name: "Add layer" }).click();
+    await page.getByRole("menuitem", { name: /^Script/ }).click();
+    return page.getByRole("dialog", { name: "Start a script layer" });
+  };
+  const layerCount = (page: Page) => page.locator('ol[aria-label^="Layers"] > li').count();
+
+  test("Blank gives the structure, drawing nothing yet", async ({ page }) => {
+    await (await openStart(page)).getByRole("button", { name: /^Blank/ }).click();
+    await expect(page.getByRole("button", { name: /^My layer/ }).first()).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Script code" })).toContainText("Runs once per picture");
+    await expect(page.getByRole("region", { name: "Code in this piece" })).toHaveCount(0);
+  });
+
+  test("a built-in layer's code becomes a new script layer, leaving the others alone", async ({ page }) => {
+    const before = await layerCount(page);
+    const start = await openStart(page);
+    await start.getByRole("button", { name: /^Start from a built-in layer/ }).click();
+    await expect(page.getByRole("dialog", { name: "Start from a built-in layer" })).toBeVisible();
+    await page.getByRole("button", { name: /^Maze/ }).click();
+    await expect(page.getByRole("button", { name: /^Maze remix/ }).first()).toBeVisible();
+    await expect(page.getByRole("textbox", { name: "Script code" })).toContainText("A remix of the built-in Maze layer");
+    await expect(page.getByRole("status").filter({ hasText: "Drawing with this code." })).toBeVisible();
+    expect(await layerCount(page)).toBe(before + 1);
+    await expect(page.getByRole("button", { name: /^Cell fill/ })).toBeVisible();
+  });
+
+  test("Learn to code it opens the lessons", async ({ page }) => {
+    await (await openStart(page)).getByRole("button", { name: /^Learn to code it/ }).click();
+    await expect(page.getByRole("dialog", { name: "Learn" })).toBeVisible();
+  });
+
+  test("Escape steps back from the list, then closes without adding anything", async ({ page }) => {
+    const before = await layerCount(page);
+    const start = await openStart(page);
+    await start.getByRole("button", { name: /^Start from a built-in layer/ }).click();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Start a script layer" })).toBeVisible();
+    await page.keyboard.press("Escape");
+    await expect(page.getByRole("dialog", { name: "Start a script layer" })).toHaveCount(0);
+    expect(await layerCount(page)).toBe(before);
+  });
 });

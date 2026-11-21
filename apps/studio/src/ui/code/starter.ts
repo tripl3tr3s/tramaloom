@@ -57,3 +57,31 @@ export const STARTER_SCRIPT: LayerScript = {
     ink: { kind: "color", label: "Ink", help: "Color of the lines", default: "#1d3557" },
   },
 };
+
+/**
+ * A blank script layer: the structure, with comments saying where settings and drawing go.
+ * Comments follow the studio's language; it draws nothing until something is added.
+ */
+export function blankScript(lang: "en" | "es"): LayerScript {
+  const es = lang === "es";
+  const c = (en: string, sp: string) => (es ? sp : en);
+  const label = c("My layer", "Mi capa");
+  const code = `// ${c("Your own layer. Edit anything; the picture redraws as you type.", "Tu propia capa. Cambia lo que quieras; la imagen se redibuja mientras escribes.")}
+layer({
+  label: "${label}",
+
+  // ${c("Settings shown in the panel on the right. For example:", "Controles que aparecen en el panel de la derecha. Por ejemplo:")}
+  // size: { kind: "number", label: "Size", min: 0, max: 1, step: 0.01, default: 0.5 },
+  params: {},
+
+  // ${c("Runs once per picture: add shapes to items and return the scene.", "Se ejecuta una vez por imagen: agrega figuras a items y devuelve la escena.")}
+  apply(scene, v, ctx) {
+    const items = [];
+    // ${c("For example, a circle in the middle of the canvas:", "Por ejemplo, un círculo en el centro del lienzo:")}
+    // items.push({ type: "circle", cx: scene.width / 2, cy: scene.height / 2, r: 0.2, stroke: "#1d3557", strokeWidth: 0.004 });
+    return addItems(scene, items);
+  },
+});
+`;
+  return { api: SCRIPT_API, label, code, params: {} };
+}

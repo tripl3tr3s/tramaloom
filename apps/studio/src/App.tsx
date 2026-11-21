@@ -36,6 +36,7 @@ const loadCode = () => import("./ui/code/CodeView.tsx");
 const loadScriptEditor = () => import("./ui/code/ScriptEditor.tsx");
 const loadLessons = () => import("./ui/lessons/LessonPicker.tsx");
 const loadLessonPanel = () => import("./ui/lessons/LessonPanel.tsx");
+const loadScriptStart = () => import("./ui/code/ScriptStart.tsx");
 const MutationGrid = lazy(() => loadMutation().then((m) => ({ default: m.MutationGrid })));
 const EditionPanel = lazy(() => loadEdition().then((m) => ({ default: m.EditionPanel })));
 const Library = lazy(() => loadLibrary().then((m) => ({ default: m.Library })));
@@ -44,14 +45,15 @@ const CodeView = lazy(() => loadCode().then((m) => ({ default: m.CodeView })));
 const ScriptEditor = lazy(() => loadScriptEditor().then((m) => ({ default: m.ScriptEditor })));
 const LessonPicker = lazy(() => loadLessons().then((m) => ({ default: m.LessonPicker })));
 const LessonPanel = lazy(() => loadLessonPanel().then((m) => ({ default: m.LessonPanel })));
+const ScriptStart = lazy(() => loadScriptStart().then((m) => ({ default: m.ScriptStart })));
 const preloadOverlays = () => {
-  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts, loadCode, loadScriptEditor, loadLessons, loadLessonPanel]) load().catch(() => undefined);
+  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts, loadCode, loadScriptEditor, loadLessons, loadLessonPanel, loadScriptStart]) load().catch(() => undefined);
 };
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
   const [debug, setDebug] = useState(false);
-  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome" | "code" | "lessons">(() => (isFirstVisit() ? "welcome" : "none"));
+  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome" | "code" | "lessons" | "scriptStart">(() => (isFirstVisit() ? "welcome" : "none"));
   const [toast, setToast] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<readonly string[]>(loadFavorites);
   // Phones: which panel is open as a bottom sheet (null shows the art alone). Ignored from md up.
@@ -93,6 +95,15 @@ export function App() {
     } catch (err) {
       notify(t("app.lessonFailed", { error: err instanceof Error ? err.message : String(err) }), 4000);
     }
+  };
+  /** A new script layer from code the person chose (an example, blank, or a built-in layer's): theirs, so approved. */
+  const addScript = (script: LayerScript) => {
+    setOverlay("none");
+    if (docRef.current.layers.length >= MAX_LAYERS) return notify(t("layers.full", { max: MAX_LAYERS }));
+    approveScripts([script.code]);
+    const id = freshId(docRef.current, "script");
+    dispatch({ type: "addLayer", module: SCRIPT_MODULE, id, script });
+    setEditingId(id);
   };
   const showMe = async (layerId: string, code: string) => {
     setLessonBusy(true);
@@ -320,7 +331,7 @@ export function App() {
           inert={behind}
           className={`panel-scroll order-2 h-[40dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:order-1 md:block md:h-auto md:w-60 md:border-r md:border-t-0 md:bg-zinc-900/60 ${sheet === "layers" ? "block" : "hidden"}`}
         >
-          <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} notRunning={notRunning} />
+          <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} notRunning={notRunning} onAddScript={() => setOverlay("scriptStart")} />
         </aside>
         <div className="order-1 flex min-h-0 min-w-0 flex-1 flex-col md:order-2">
         <main
@@ -384,6 +395,7 @@ export function App() {
             />
           )}
           {overlay === "shortcuts" && <ShortcutsHelp onClose={() => setOverlay("none")} />}
+          {overlay === "scriptStart" && <ScriptStart onCreate={addScript} onLearn={() => setOverlay("lessons")} onClose={() => setOverlay("none")} />}
           {overlay === "lessons" && <LessonPicker onStart={(l) => void startLesson(l)} onClose={() => setOverlay("none")} />}
           {overlay === "code" && codeOf && (
             <CodeView

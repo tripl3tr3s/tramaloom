@@ -141,7 +141,7 @@ No code needed. The same guide is in the studio under **Learn**, in English and 
 
 New to code? Start with **Learn** in the toolbar: four short lessons, in English or Spanish, walk you through your first script layer.
 
-**Add > Script** adds a layer drawn by your own JavaScript, then **Edit code** opens it under the canvas. It starts with a commented example (rings in every grid cell) that you can change line by line; the picture redraws about half a second after you stop typing.
+**Add > Script** asks where the new layer's code should start: **Learn to code it** (the lessons), **Start from a built-in layer** (that layer's own code, as a new script layer), **Example: rings** (a short commented example, close to the built-in **Insets** layer set to circle and stroke) or **Blank** (just the structure). The code opens in an editor under the canvas, and you can change it line by line; the picture redraws about half a second after you stop typing.
 
 ```js
 layer({

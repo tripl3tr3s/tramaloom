@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 // Test-only: the studio page itself never imports the compiler (see the guard below).
 import { compileScript, scriptRunner } from "../../../packages/runtime/src/compile.ts";
 import { initialState, reducer } from "../src/state/store.ts";
-import { STARTER_SCRIPT } from "../src/ui/code/starter.ts";
+import { blankScript, STARTER_SCRIPT } from "../src/ui/code/starter.ts";
 import { MAX_SCRIPT_CHARS } from "../src/state/limits.ts";
 import { parseDocument, parseScriptParams } from "../src/state/schema.ts";
 
@@ -154,4 +154,25 @@ describe("store: remixLayer", () => {
       if (l) expect(reducer(s, { type: "remixLayer", layerId: l.id, script }), module).toBe(s);
     }
   });
+});
+
+describe("the blank script", () => {
+  afterEach(() => setScriptRunner(null));
+  for (const lang of ["en", "es"] as const) {
+    it(`${lang}: compiles to its stored label and params, and draws nothing until something is added`, () => {
+      const blank = blankScript(lang);
+      const c = compileScript(blank.code);
+      expect(c.label).toBe(blank.label);
+      expect(c.params).toEqual(blank.params);
+      setScriptRunner(scriptRunner);
+      const H = "a".repeat(64);
+      const doc = { ...starterDocument, layers: [...starterDocument.layers, { id: "b", module: "script", enabled: true, params: {}, script: blank }] };
+      expect(generate(doc, H).scene.items).toEqual(generate(starterDocument, H).scene.items);
+      // Uncommenting the example draws exactly that circle.
+      const example = blank.code.replace("    // items.push(", "    items.push(");
+      setScriptRunner(scriptRunner);
+      const withCircle = { ...doc, layers: [...starterDocument.layers, { id: "b", module: "script", enabled: true, params: {}, script: { ...blank, code: example } }] };
+      expect(generate(withCircle, H).scene.items.at(-1)?.type).toBe("circle");
+    });
+  }
 });

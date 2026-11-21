@@ -509,6 +509,20 @@ export const en = {
 
   // Swatches
   "swatch.thisSeed": "this seed",
+
+  // Script start
+  "start.title": "Start a script layer",
+  "start.intro": "A script layer is drawn by your own JavaScript. Pick where its code starts; you can change everything afterwards.",
+  "start.learn": "Learn to code it",
+  "start.learnDesc": "Short guided lessons, one small change at a time. The easiest start if you are new to code.",
+  "start.builtin": "Start from a built-in layer",
+  "start.builtinDesc": "Copy the code of a layer you like, such as Maze or Flow, and change it.",
+  "start.rings": "Example: rings",
+  "start.ringsDesc": "A short, commented example: rings in every grid cell, with three settings. Close to the Insets layer set to circle and stroke.",
+  "start.blank": "Blank",
+  "start.blankDesc": "Just the structure, with notes on where settings and drawing go. Draws nothing yet.",
+  "start.builtinTitle": "Start from a built-in layer",
+  "start.builtinIntro": "A new script layer with that layer's own code and default settings. Your existing layers stay as they are.",
 } as const;
 
 export type MessageKey = keyof typeof en;
@@ -987,6 +1001,19 @@ export const es: { readonly [K in MessageKey]: string } = {
   "editor.line": "Línea {n}",
 
   "swatch.thisSeed": "esta semilla",
+
+  "start.title": "Empezar una capa de script",
+  "start.intro": "Una capa de script se dibuja con tu propio JavaScript. Elige de dónde parte su código; después puedes cambiarlo todo.",
+  "start.learn": "Aprender a programarla",
+  "start.learnDesc": "Lecciones guiadas y cortas, un cambio pequeño a la vez. El inicio más fácil si eres nuevo en el código.",
+  "start.builtin": "Partir de una capa incluida",
+  "start.builtinDesc": "Copia el código de una capa que te guste, como Maze o Flow, y cámbialo.",
+  "start.rings": "Ejemplo: anillos",
+  "start.ringsDesc": "Un ejemplo corto y comentado: anillos en cada celda, con tres controles. Parecido a la capa Insets con forma circle y estilo stroke.",
+  "start.blank": "En blanco",
+  "start.blankDesc": "Solo la estructura, con notas sobre dónde van los controles y el dibujo. Todavía no dibuja nada.",
+  "start.builtinTitle": "Partir de una capa incluida",
+  "start.builtinIntro": "Una capa de script nueva con el código de esa capa y sus controles iniciales. Tus capas actuales se quedan como están.",
 };
 
 export const MESSAGES = { en, es } as const;

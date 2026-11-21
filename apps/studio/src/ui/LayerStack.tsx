@@ -1,5 +1,5 @@
 import type { ArtDocument, Layer } from "@gridloom/core";
-import { defaultRegistry, layerDef } from "@gridloom/core";
+import { defaultRegistry, layerDef, SCRIPT_MODULE } from "@gridloom/core";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useState } from "react";
 import type { Zones } from "../state/layerOrder.ts";
@@ -17,6 +17,8 @@ interface Props {
   readonly dispatch: (a: Action) => void;
   /** Script layers whose code came with the piece and has not been approved: shown, not drawn. */
   readonly notRunning?: ReadonlySet<string>;
+  /** Add > Script asks where the new script layer starts. */
+  readonly onAddScript: () => void;
 }
 
 const iconBtn =
@@ -69,7 +71,7 @@ function addItems(
   });
 }
 
-export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
+export function LayerStack({ doc, selectedId, dispatch, notRunning, onAddScript }: Props) {
   const { t } = useLang();
   const z = zones(doc.layers);
   const names = displayNames(doc.layers, z);
@@ -126,7 +128,7 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
             label: m.label,
             description: m.description,
             ...(m.disabled ? { disabled: true } : {}),
-            onSelect: () => dispatch({ type: "addLayer", module: m.id }),
+            onSelect: () => (m.id === SCRIPT_MODULE ? onAddScript() : dispatch({ type: "addLayer", module: m.id })),
           }))}
         />
       </div>

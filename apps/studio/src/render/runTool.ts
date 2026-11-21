@@ -1,4 +1,7 @@
 import type { CensusResult } from "@gridloom/core";
+import { drawInSandbox } from "../sandbox/host.ts";
+import type { BatchJob } from "./batch.ts";
+import { batchZip } from "./batch.ts";
 import type { ToolRequest, ToolResponse } from "./protocol.ts";
 
 export interface ToolRun<T> {
@@ -38,6 +41,21 @@ export function runTool<R extends ToolRequest>(req: R, onProgress?: (done: numbe
     cancel: () => {
       w.terminate();
       settle?.(new Error("cancelled"));
+    },
+  };
+}
+
+/**
+ * Batch export of a piece with script layers: each seed is drawn in the script sandbox, then
+ * painted and zipped here, one at a time. Cancelling stops before the next piece.
+ */
+export function runScriptBatch(job: BatchJob, onProgress?: (done: number, total: number) => void): ToolRun<Blob> {
+  let stopped = false;
+  const promise = batchZip(job, (hash) => drawInSandbox(job.doc, hash), onProgress ?? (() => undefined), () => stopped);
+  return {
+    promise,
+    cancel: () => {
+      stopped = true;
     },
   };
 }

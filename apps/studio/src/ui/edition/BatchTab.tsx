@@ -3,7 +3,8 @@ import { hasScripts } from "@gridloom/core";
 import { useEffect, useRef, useState } from "react";
 import { download, slug } from "../../render/export.ts";
 import type { ToolRun } from "../../render/runTool.ts";
-import { runTool } from "../../render/runTool.ts";
+import { runScriptBatch, runTool } from "../../render/runTool.ts";
+import { drawable } from "../../sandbox/trust.ts";
 import { randomHash } from "../../state/store.ts";
 
 const field = "rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-sky-500";
@@ -32,7 +33,12 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
     const root = from === "current" ? hash : randomHash();
     const base = slug(doc.name);
     const n = Math.min(count, max);
-    const r = runTool({ kind: "batch", doc, root, count: n, size, base }, (done, total) => setProgress({ done, total }));
+    // Script layers not approved yet are left out, as on the canvas; approved ones are drawn in the sandbox.
+    const piece = drawable(doc);
+    const onProgress = (done: number, total: number) => setProgress({ done, total });
+    const r = hasScripts(piece)
+      ? runScriptBatch({ doc: piece, root, count: n, size, base }, onProgress)
+      : runTool({ kind: "batch", doc: piece, root, count: n, size, base }, onProgress);
     run.current = r;
     setProgress({ done: 0, total: n });
     r.promise.then(
@@ -52,13 +58,6 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
   };
 
   const running = progress !== null;
-  if (hasScripts(doc)) {
-    return (
-      <p className="text-xs text-zinc-400">
-        Batch export does not handle script layers yet. Export pieces one at a time with Export, or hide the script layers to batch the rest.
-      </p>
-    );
-  }
   return (
     <div className="space-y-3 text-xs text-zinc-300">
       <div className="flex flex-wrap items-center gap-2">
@@ -120,6 +119,9 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
         Each piece is re-rendered at full size from its seed (never upscaled). The zip also holds manifest.json (seed, file and traits per
         piece) and the document, so the batch can be reproduced exactly. Up to {max} pieces at {size}px; the panel stays open while it runs.
       </p>
+      {hasScripts(drawable(doc)) && (
+        <p className="text-[11px] text-zinc-500">This piece has script layers: each piece is drawn in the script sandbox, one at a time, so the batch takes a little longer.</p>
+      )}
     </div>
   );
 }

@@ -192,8 +192,11 @@ test.describe("code that arrives with a piece", () => {
     await visitor.waitForTimeout(500);
     expect(await centre(visitor)).not.toBe("0,0,0");
 
+    const layer = visitor.getByRole("button", { name: /^Cover/ }).first();
+    await expect(layer).toContainText("not running");
     await banner.getByRole("button", { name: "Run the code" }).click();
     await expect(banner).toHaveCount(0);
+    await expect(layer).not.toContainText("not running");
     await expect.poll(() => centre(visitor), { timeout: 10_000 }).toBe("0,0,0");
 
     await visitor.reload();
@@ -218,4 +221,23 @@ test.describe("code that arrives with a piece", () => {
     expect(await centre(visitor)).not.toBe("0,0,0");
     await visitor.context().close();
   });
+});
+
+test("batch export draws every piece of a script piece in the sandbox", async ({ page }) => {
+  await addScriptLayer(page);
+  await page.keyboard.press("Escape");
+  await page.locator("main canvas").click();
+  await page.keyboard.press("e");
+  await page.getByRole("tab", { name: "Batch export" }).click();
+  await expect(page.getByText("This piece has script layers")).toBeVisible();
+  await page.getByRole("spinbutton", { name: "Number of pieces" }).fill("3");
+  await page.getByRole("combobox", { name: "Long side in pixels" }).selectOption("1000");
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export zip" }).click();
+  const file = await (await download).path();
+  const bytes = (await import("node:fs")).readFileSync(file).toString("latin1");
+  // Entries are stored uncompressed, so names and the manifest can be read as they are.
+  expect(bytes.match(/_000[123]_[0-9a-f]{12}\.png/g)?.length).toBeGreaterThanOrEqual(3);
+  const manifest = JSON.parse(/\{\s*"root"[\s\S]*?"pieces": \[[\s\S]*?\]\s*\}/.exec(bytes)?.[0] ?? "{}") as { pieces?: { traits: object }[] };
+  expect(manifest.pieces?.length).toBe(3);
 });

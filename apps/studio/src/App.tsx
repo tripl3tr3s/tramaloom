@@ -63,6 +63,11 @@ export function App() {
   const untrustedKey = untrusted.join("\u0000");
   const [keptHidden, setKeptHidden] = useState("");
   const firstUntrusted = state.doc.layers.find((l) => l.enabled && l.script && untrusted.includes(l.script.code));
+  const notRunning = useMemo(
+    () => new Set(state.doc.layers.flatMap((l) => (l.enabled && l.script && untrusted.includes(l.script.code) ? [l.id] : []))),
+    // untrustedKey stands for the untrusted list.
+    [state.doc.layers, untrustedKey],
+  );
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -266,7 +271,7 @@ export function App() {
           inert={behind}
           className={`panel-scroll order-2 h-[40dvh] shrink-0 overflow-y-auto border-t border-zinc-800 bg-zinc-900 md:order-1 md:block md:h-auto md:w-60 md:border-r md:border-t-0 md:bg-zinc-900/60 ${sheet === "layers" ? "block" : "hidden"}`}
         >
-          <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} />
+          <LayerStack doc={state.doc} selectedId={state.selectedId} dispatch={dispatch} notRunning={notRunning} />
         </aside>
         <div className="order-1 flex min-h-0 min-w-0 flex-1 flex-col md:order-2">
         <main

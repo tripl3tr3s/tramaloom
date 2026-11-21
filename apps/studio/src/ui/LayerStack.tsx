@@ -13,6 +13,8 @@ interface Props {
   readonly doc: ArtDocument;
   readonly selectedId: string | null;
   readonly dispatch: (a: Action) => void;
+  /** Script layers whose code came with the piece and has not been approved: shown, not drawn. */
+  readonly notRunning?: ReadonlySet<string>;
 }
 
 const iconBtn =
@@ -63,7 +65,7 @@ function addItems(
   });
 }
 
-export function LayerStack({ doc, selectedId, dispatch }: Props) {
+export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
   const z = zones(doc.layers);
   const names = displayNames(doc.layers, z);
   const free = (i: number) => i >= z.head && i < z.tail;
@@ -217,6 +219,14 @@ export function LayerStack({ doc, selectedId, dispatch }: Props) {
                   {needsGrid(doc.layers, i) && (
                     <span className="ml-1.5 inline-grid size-3.5 place-items-center rounded-full bg-amber-500/20 align-[-1px] text-[9px] font-bold text-amber-300" title="Draws nothing: needs a Grid layer above it">
                       !<span className="sr-only">, draws nothing: needs a Grid layer above it</span>
+                    </span>
+                  )}
+                  {notRunning?.has(l.id) && (
+                    <span
+                      className="ml-1.5 rounded bg-amber-500/15 px-1 py-px align-[1px] text-[9px] font-semibold uppercase tracking-wide text-amber-300"
+                      title="Its code came with this piece and has not been run. Choose Run the code above the picture."
+                    >
+                      <span className="sr-only">, </span>not running
                     </span>
                   )}
                 </button>

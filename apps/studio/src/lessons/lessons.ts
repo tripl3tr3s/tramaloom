@@ -346,6 +346,128 @@ const noise: Lesson = {
   ],
 };
 
-export const LESSONS: readonly Lesson[] = [firstGrid, seeds, noise];
+// ---------------------------------------------------------------------------
+// Lesson 4: lines for the plotter
+
+interface PlotStage {
+  readonly outline: boolean;
+  readonly hatch: boolean;
+  readonly inks: boolean;
+  readonly zigzag: boolean;
+}
+
+function plotCode(lang: Lang, stage: PlotStage): string {
+  const es = lang === "es";
+  const c = (en: string, sp: string) => (es ? sp : en);
+  const params: string[] = [];
+  if (stage.hatch) params.push(`    lines: { kind: "int", label: "${c("Lines", "Líneas")}", help: "${c("Most lines a cell can get", "Máximo de líneas por celda")}", min: 1, max: 16, default: 8 },`);
+  if (stage.inks) {
+    params.push(`    ink1: { kind: "color", label: "${c("Ink 1", "Tinta 1")}", help: "${c("Pen for the darker areas", "Pluma para las zonas oscuras")}", default: "#1d3557" },`);
+    params.push(`    ink2: { kind: "color", label: "${c("Ink 2", "Tinta 2")}", help: "${c("Pen for the lighter areas", "Pluma para las zonas claras")}", default: "#e63946" },`);
+  }
+  const paramBlock = params.length ? `{\n${params.join("\n")}\n  }` : "{}";
+  let body: string;
+  if (!stage.hatch) {
+    const paint = stage.outline
+      ? `stroke: colors[cell.col % colors.length], strokeWidth: 0.003`
+      : `fill: colors[cell.col % colors.length]`;
+    body = `    const colors = scene.palette ? scene.palette.colors : ["#1d3557"];
+    for (const cell of scene.cells) {
+      const s = Math.min(cell.w, cell.h) * 0.8;
+      const cx = cell.x + cell.w / 2;
+      const cy = cell.y + cell.h / 2;
+      // ${stage.outline ? c("A stroke and no fill: on screen, exactly what the pen draws.", "Contorno y sin relleno: en pantalla, justo lo que dibuja la pluma.") : c("A plotter draws only the outline of a filled shape.", "Un plotter solo dibuja el contorno de una figura rellena.")}
+      items.push({ type: "rect", x: cx - s / 2, y: cy - s / 2, w: s, h: s, ${paint} });
+    }`;
+  } else {
+    const ink = stage.inks ? "const ink = n > 0.5 ? v.ink1 : v.ink2;" : `const ink = "#1d3557";`;
+    const lines = stage.zigzag
+      ? `      // ${c("Every other line runs backwards, so one stroke zigzags through them all.", "Una línea sí y otra no va al revés, así que un solo trazo zigzaguea por todas.")}
+      const points = [];
+      for (let i = 0; i < count; i++) {
+        const y = cell.y + (cell.h * (i + 0.5)) / count;
+        if (i % 2 === 0) points.push([x0, y], [x1, y]);
+        else points.push([x1, y], [x0, y]);
+      }
+      if (points.length > 0) items.push({ type: "polyline", points, stroke: ink, strokeWidth: 0.002 });`
+      : `      for (let i = 0; i < count; i++) {
+        const y = cell.y + (cell.h * (i + 0.5)) / count;
+        items.push({ type: "polyline", points: [[x0, y], [x1, y]], stroke: ink, strokeWidth: 0.002 });
+      }`;
+    body = `    const noise = makeNoise2D(ctx.rng("tone"));
+    for (const cell of scene.cells) {
+      // ${c("The noise sets the tone: more lines where it is high.", "El ruido marca el tono: más líneas donde es alto.")}
+      const n = noise(cell.x * 3, cell.y * 3);
+      const count = Math.round(n * v.lines);
+      ${ink}
+      const x0 = cell.x + cell.w * 0.1;
+      const x1 = cell.x + cell.w * 0.9;
+${lines}
+    }`;
+  }
+  return `// ${c("Lesson: lines for the plotter. See the plot in Edition > Plotter.", "Lección: líneas para el plotter. Mira el trazo en Edition > Plotter.")}
+layer({
+  label: "${c("Plot", "Trazo")}",
+  params: ${paramBlock},
+  apply(scene, v, ctx) {
+    const items = [];
+${body}
+    return addItems(scene, items);
+  },
+});
+`;
+}
+
+const PLOT_START: PlotStage = { outline: false, hatch: false, inks: false, zigzag: false };
+const PLOT_1: PlotStage = { ...PLOT_START, outline: true };
+const PLOT_2: PlotStage = { ...PLOT_1, hatch: true };
+const PLOT_3: PlotStage = { ...PLOT_2, inks: true };
+const PLOT_4: PlotStage = { ...PLOT_3, zigzag: true };
+
+const plotter: Lesson = {
+  id: "plotter",
+  title: t("Lines for the plotter", "Líneas para el plotter"),
+  summary: t(
+    "Draw for a pen plotter: outlines instead of fills, shading with lines, one pen per color, and fewer pen lifts.",
+    "Dibuja para un plotter: contornos en vez de rellenos, sombras con líneas, una pluma por color y menos levantadas de pluma.",
+  ),
+  start: (lang) => plotCode(lang, PLOT_START),
+  steps: [
+    {
+      title: t("Outlines, not fills", "Contornos, no rellenos"),
+      body: t(
+        "A pen plotter moves a real pen over paper, so it can only draw lines. In the plotter file every shape becomes its outline: these filled squares would come out as empty frames.\n\nShow me gives them a `stroke` and no `fill`, so the screen shows exactly what the pen will draw. Open Edition > Plotter to see the plot on paper.",
+        "Un plotter mueve una pluma de verdad sobre el papel, así que solo puede dibujar líneas. En el archivo para el plotter cada figura se vuelve su contorno: estos cuadrados rellenos saldrían como marcos vacíos.\n\nMuéstrame les da un `stroke` y ningún `fill`, así la pantalla muestra justo lo que dibujará la pluma. Abre Edition > Plotter para ver el trazo sobre el papel.",
+      ),
+      code: (lang) => plotCode(lang, PLOT_1),
+    },
+    {
+      title: t("Shade with lines", "Sombrear con líneas"),
+      body: t(
+        "With a pen, tone comes from how close the lines are. Show me fills each cell with parallel lines, and smooth noise (from the last lesson) decides how many: more lines read as darker.\n\nEach line is a `polyline`: a list of `[x, y]` points the pen joins in order. Try the Lines setting.\n\nThe plot takes every visible layer: hide the Cell fill layer (its eye) so only your lines get plotted.",
+        "Con una pluma, el tono sale de qué tan juntas están las líneas. Muéstrame llena cada celda de líneas paralelas, y el ruido suave (de la lección anterior) decide cuántas: más líneas se ven más oscuras.\n\nCada línea es una `polyline`: una lista de puntos `[x, y]` que la pluma une en orden. Prueba el control Líneas.\n\nEl trazo toma todas las capas visibles: oculta la capa Cell fill (su ojo) para que solo se dibujen tus líneas.",
+      ),
+      code: (lang) => plotCode(lang, PLOT_2),
+    },
+    {
+      title: t("One pen per color", "Una pluma por color"),
+      body: t(
+        "The plotter file gets one layer per color, and each layer is drawn with its own pen. Show me adds two ink settings and picks one by the noise, so Edition > Plotter shows two pens.\n\nPlot with one pen, change the pen, then plot the other: they land in the same place. Shapes in the background color are left out, since they would be invisible.",
+        "El archivo para el plotter tiene una capa por color, y cada capa se dibuja con su propia pluma. Muéstrame agrega dos controles de tinta y elige uno según el ruido, así Edition > Plotter muestra dos plumas.\n\nDibuja con una pluma, cámbiala y dibuja la otra: caen en el mismo lugar. Las figuras del color del fondo se omiten, porque serían invisibles.",
+      ),
+      code: (lang) => plotCode(lang, PLOT_3),
+    },
+    {
+      title: t("Fewer pen lifts", "Menos levantadas de pluma"),
+      body: t(
+        "Every separate line means the pen lifts, travels and comes down again, and that is most of a plot's time. Show me joins each cell's lines into one zigzag: every other line runs backwards, so the pen never leaves the paper inside a cell. The short joins at the ends become part of the look.\n\nCompare the time estimate in Edition > Plotter before and after. When you like it, Download SVG (or One file per pen) is ready for your plotter software.",
+        "Cada línea separada obliga a la pluma a subir, viajar y volver a bajar, y eso se lleva la mayor parte del tiempo de un trazo. Muéstrame une las líneas de cada celda en un zigzag: una sí y otra no va al revés, así que dentro de una celda la pluma nunca deja el papel. Las uniones cortas de los extremos se vuelven parte del dibujo.\n\nCompara el tiempo estimado en Edition > Plotter antes y después. Cuando te guste, Download SVG (o One file per pen) queda listo para el programa de tu plotter.",
+      ),
+      code: (lang) => plotCode(lang, PLOT_4),
+    },
+  ],
+};
+
+export const LESSONS: readonly Lesson[] = [firstGrid, seeds, noise, plotter];
 
 export const lessonById = (id: string): Lesson | undefined => LESSONS.find((l) => l.id === id);

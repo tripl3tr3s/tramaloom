@@ -1,5 +1,5 @@
 import type { ArtDocument } from "@gridloom/core";
-import { generate, makeNoise2D, setScriptRunner, starterDocument, stream } from "@gridloom/core";
+import { generate, makeNoise2D, setScriptRunner, starterDocument, stream, toPlotterSVG } from "@gridloom/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 // Test-only: the studio page itself never imports the compiler.
 import { compileScript, scriptRunner } from "../../../packages/runtime/src/compile.ts";
@@ -130,5 +130,30 @@ describe("lessons", () => {
       return diffs.reduce((a, b) => a + b, 0) / diffs.length;
     };
     expect(jump(step1("en"))).toBeLessThan(jump(lesson.start("en")) * 0.7);
+  });
+
+  // What the plotter lesson says must be true of the plotter export.
+  const plotStep = (i: number) => {
+    const code = LESSONS.find((l) => l.id === "plotter")?.steps[i]?.code;
+    if (!code) throw new Error("no step");
+    const items = draw(code("en"));
+    return { items, plot: toPlotterSVG({ width: 1, height: 1, cornerRadius: 0, background: "#ffffff", items }) };
+  };
+
+  it("plotter lesson, step 1: every shape is an outline", () => {
+    const { items } = plotStep(0);
+    expect(items.every((it) => it.stroke !== undefined && it.fill === undefined)).toBe(true);
+  });
+
+  it("plotter lesson, step 3: two inks become two pens", () => {
+    expect(plotStep(2).plot.layers.map((l) => l.color).sort()).toEqual(["#1d3557", "#e63946"]);
+  });
+
+  it("plotter lesson, step 4: the zigzag lifts the pen far less, with the same pens", () => {
+    const before = plotStep(2).plot.layers;
+    const after = plotStep(3).plot.layers;
+    const lifts = (ls: typeof before) => ls.reduce((n, l) => n + l.lifts, 0);
+    expect(after.map((l) => l.color).sort()).toEqual(before.map((l) => l.color).sort());
+    expect(lifts(after)).toBeLessThan(lifts(before) / 2);
   });
 });

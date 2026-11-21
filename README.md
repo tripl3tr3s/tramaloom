@@ -108,14 +108,14 @@ Add layers with **+ Add**. Settings for each module are grouped, explained by th
 - **Reset.** The circular arrow on a setting returns it to the default; **Reset all** does the whole layer.
 - **Code.** In the settings panel, **Code** shows the source that draws the selected layer, with a short guide to reading it. Every look in Gridloom is a small, commented file: a first step into generative art coding. **Remix** makes that code your own as a script layer.
 - **Script layers.** **Add > Script** makes a layer drawn by your own code. See [Write your own layer](#write-your-own-layer).
-- **Lessons (Learn), in English and Spanish.** Short guided steps that teach writing your own layer: **Your first grid**, **Seeds and randomness** and **Smooth noise**. Each adds a script layer and explains its code beside the editor, with **Show me** to see a step done.
+- **Lessons (Learn), in English and Spanish.** Short guided steps that teach writing your own layer: **Your first grid**, **Seeds and randomness**, **Smooth noise** and **Lines for the plotter**. Each adds a script layer and explains its code beside the editor, with **Show me** to see a step done.
 - **Export.** PNG at 2000 or 4000 px (re-rendered, never upscaled), SVG, the document as a `.gridloom.json` file, and a share link.
 - **Edition (`E`).** Tools for long-form editions: traits and rarity, a census over many seeds, a contact sheet, batch export, pen plotter export and a self-hosted mint export. See [Long-form workflow](#long-form-workflow).
 - **Plotter export (Edition > Plotter).** An SVG for pen plotters on A5, A4, A3 or Letter: every shape becomes its outline, one layer per color (one pen each), with the drawing distance and an estimated plotting time. Filled shapes are outlined, not shaded: add a Hatching layer for shading. Grain is left out unless you ask for it, and dot drawings (Attractor) plot as one pen tap per dot, which can take hours.
 
 ## Write your own layer
 
-New to code? Start with **Learn** in the toolbar: three short lessons, in English or Spanish, walk you through your first script layer.
+New to code? Start with **Learn** in the toolbar: four short lessons, in English or Spanish, walk you through your first script layer.
 
 **Add > Script** adds a layer drawn by your own JavaScript, then **Edit code** opens it under the canvas. It starts with a commented example (rings in every grid cell) that you can change line by line; the picture redraws about half a second after you stop typing.
 

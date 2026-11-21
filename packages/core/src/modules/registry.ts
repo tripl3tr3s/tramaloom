@@ -2,6 +2,8 @@ import type { Layer } from "../document.ts";
 import { SCRIPT_MODULE } from "../script.ts";
 import { canvasModule } from "./canvas.ts";
 import { scriptModule } from "./script.ts";
+import { spiralModule } from "./spiral.ts";
+import { ridgelinesModule } from "./ridgelines.ts";
 import { attractorModule } from "./attractor.ts";
 import { phyllotaxisModule } from "./phyllotaxis.ts";
 import { spiroModule } from "./spiro.ts";
@@ -65,6 +67,8 @@ export const defaultRegistry: Registry = {
   spiro: asDef(spiroModule),
   waves: asDef(wavesModule),
   attractor: asDef(attractorModule),
+  spiral: asDef(spiralModule),
+  ridgelines: asDef(ridgelinesModule),
   symmetry: asDef(symmetryModule),
   post: asDef(postModule),
   script: asDef(scriptModule),

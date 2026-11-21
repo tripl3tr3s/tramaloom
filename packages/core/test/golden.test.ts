@@ -106,6 +106,10 @@ const DOCS: Record<string, ArtDocument> = {
   chladni: withLayer({ id: "wv", module: "waves", enabled: true, params: { lines: { value: 3 } } }),
   interference: withLayer({ id: "wv", module: "waves", enabled: true, params: { mode: { value: "interference" }, colorRule: { value: "ramp" } } }),
   attractor: withLayer({ id: "at", module: "attractor", enabled: true, params: { points: { value: 8000 } } }),
+  spiral: withLayer({ id: "sl", module: "spiral", enabled: true, params: {} }),
+  spiralCells: withLayer({ id: "sl", module: "spiral", enabled: true, params: { placement: { value: "cells" }, turns: { value: 40 }, wobble: { value: 1 } } }),
+  ridgelines: withLayer({ id: "rl", module: "ridgelines", enabled: true, params: {} }),
+  ridgelinesEven: withLayer({ id: "rl", module: "ridgelines", enabled: true, params: { peaks: { value: "even" }, hidden: { value: false }, lines: { value: 70 } } }),
   attractorDeJong: withLayer({ id: "at", module: "attractor", enabled: true, params: { kind: { value: "dejong" }, a: { value: 1.4 }, b: { value: -2.3 }, c: { value: 2.4 }, d: { value: -2.1 }, points: { value: 8000 }, colorRule: { value: "palette" } } }),
   circuitsTreeMixed: withLayer({
     id: "c",

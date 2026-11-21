@@ -4,5 +4,5 @@
  */
 export const REMIXABLE: ReadonlySet<string> = new Set([
   "cellFill", "insets", "tiles", "circuits", "maze", "halftone", "hatch", "flow", "contour",
-  "knot", "pipes", "packing", "threads", "phyllotaxis", "spiro", "waves", "attractor",
+  "knot", "pipes", "packing", "threads", "phyllotaxis", "spiro", "waves", "attractor", "spiral", "ridgelines",
 ]);

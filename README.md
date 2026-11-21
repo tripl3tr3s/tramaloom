@@ -87,6 +87,8 @@ Add layers with **+ Add**. Settings for each module are grouped, explained by th
 | Spirograph | Gear-wheel curves that close on themselves, or harmonograph pendulum traces. One large or one per cell. |
 | Waves | Chladni plate figures (the patterns of a vibrating plate) or interference rings. |
 | Attractor | A strange attractor (Clifford or de Jong): one point hopping thousands of times, drawn as a cloud of dots. |
+| Spiral | One continuous line spiralling out from the centre, pushed in and out by noise. One large spiral or one per cell; a single stroke each, so it plots without lifting the pen. |
+| Ridgelines | Stacked lines lifted into peaks by noise, seen side-on like a mountain range. Lines in front hide the ones behind, worked out as geometry, so a pen plot hides them too. |
 
 **Finishing** (pinned at the end)
 
@@ -308,7 +310,7 @@ Security settings that depend on the host:
 - **Studio:** layer stack, generated settings with help, vary and lock, rendering in a Web Worker, URL state, exports, undo, shortcuts, offline PWA, mobile layout.
 - **Exploration:** mutation grid, breeding, preset library, favourites, tile preview.
 - **Long-form:** traits and rarity, census, contact sheet, batch export, cross-browser determinism check, self-hosted mint export, pen plotter export.
-- **Modules:** 22, from Grid and Tiles to Celtic knot, Pipes, Waves and Attractor, on deterministic `dsin`/`dcos`.
+- **Modules:** 24, from Grid and Tiles to Celtic knot, Pipes, Waves, Attractor, Spiral and Ridgelines, on deterministic `dsin`/`dcos`.
 
 ## Credits
 

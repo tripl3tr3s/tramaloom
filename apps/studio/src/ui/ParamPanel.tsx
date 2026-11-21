@@ -13,6 +13,8 @@ interface Props {
   readonly onCheckpoint: () => void;
   readonly onResetParam: (layerId: string, name: string) => void;
   readonly onResetLayer: (layerId: string) => void;
+  /** Opens the source of the module behind this layer. */
+  readonly onViewCode: (moduleId: string, label: string) => void;
   /** Shown above the params when this layer cannot draw as it stands, with a one-click fix. */
   readonly problem?: { readonly message: string; readonly fix: string; readonly onFix: () => void } | null;
 }
@@ -66,7 +68,7 @@ function useShowHelp(): readonly [boolean, () => void] {
   return [on, toggle];
 }
 
-export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer, problem }: Props) {
+export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer, onViewCode, problem }: Props) {
   const [collapsed, toggle] = useCollapsed();
   const [showHelp, toggleHelp] = useShowHelp();
   if (!layer) return <p className="p-3 text-xs text-zinc-500">Select a layer.</p>;
@@ -86,6 +88,14 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
           title="Show what every setting does"
         >
           Help
+        </button>
+        <button
+          type="button"
+          className="rounded px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
+          onClick={() => onViewCode(def.id, def.label)}
+          title="See the code that draws this layer"
+        >
+          Code
         </button>
         {/* aria-disabled, not disabled: the button would drop focus to <body> the moment it disabled itself. */}
         <button

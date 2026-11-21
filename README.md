@@ -106,6 +106,7 @@ Add layers with **+ Add**. Settings for each module are grouped, explained by th
 - **Tile preview (`T`).** Shows the piece repeated 3x3, to check that a pattern's edges join. Set the Canvas margin and corner radius to 0 for a seamless repeat.
 - **Undo and redo (`Ctrl+Z`, `Ctrl+Shift+Z`).** Every edit, including resets. A dot next to the name means there are changes you have not saved.
 - **Reset.** The circular arrow on a setting returns it to the default; **Reset all** does the whole layer.
+- **Code.** In the settings panel, **Code** shows the source that draws the selected layer, with a short guide to reading it. Every look in Gridloom is a small, commented file: a first step into generative art coding.
 - **Export.** PNG at 2000 or 4000 px (re-rendered, never upscaled), SVG, the document as a `.gridloom.json` file, and a share link.
 - **Edition (`E`).** Tools for long-form editions: traits and rarity, a census over many seeds, a contact sheet, batch export, pen plotter export and a self-hosted mint export. See [Long-form workflow](#long-form-workflow).
 - **Plotter export (Edition > Plotter).** An SVG for pen plotters on A5, A4, A3 or Letter: every shape becomes its outline, one layer per color (one pen each), with the drawing distance and an estimated plotting time. Filled shapes are outlined, not shaded: add a Hatching layer for shading. Grain is left out unless you ask for it, and dot drawings (Attractor) plot as one pen tap per dot, which can take hours.

@@ -25,23 +25,27 @@ const loadMutation = () => import("./ui/MutationGrid.tsx");
 const loadEdition = () => import("./ui/edition/EditionPanel.tsx");
 const loadLibrary = () => import("./ui/Library.tsx");
 const loadShortcuts = () => import("./ui/ShortcutsHelp.tsx");
+const loadCode = () => import("./ui/code/CodeView.tsx");
 const MutationGrid = lazy(() => loadMutation().then((m) => ({ default: m.MutationGrid })));
 const EditionPanel = lazy(() => loadEdition().then((m) => ({ default: m.EditionPanel })));
 const Library = lazy(() => loadLibrary().then((m) => ({ default: m.Library })));
 const ShortcutsHelp = lazy(() => loadShortcuts().then((m) => ({ default: m.ShortcutsHelp })));
+const CodeView = lazy(() => loadCode().then((m) => ({ default: m.CodeView })));
 const preloadOverlays = () => {
-  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts]) load().catch(() => undefined);
+  for (const load of [loadLibrary, loadMutation, loadEdition, loadShortcuts, loadCode]) load().catch(() => undefined);
 };
 
 export function App() {
   const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
   const [debug, setDebug] = useState(false);
-  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome">(() => (isFirstVisit() ? "welcome" : "none"));
+  const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome" | "code">(() => (isFirstVisit() ? "welcome" : "none"));
   const [toast, setToast] = useState<string | null>(null);
   const [favorites, setFavorites] = useState<readonly string[]>(loadFavorites);
   // Phones: which panel is open as a bottom sheet (null shows the art alone). Ignored from md up.
   const [sheet, setSheet] = useState<"layers" | "params" | null>(null);
   const [tiled, setTiled] = useState(false);
+  // The module whose source the Code overlay shows.
+  const [codeOf, setCodeOf] = useState<{ readonly id: string; readonly label: string } | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -306,6 +310,7 @@ export function App() {
             />
           )}
           {overlay === "shortcuts" && <ShortcutsHelp onClose={() => setOverlay("none")} />}
+          {overlay === "code" && codeOf && <CodeView moduleId={codeOf.id} label={codeOf.label} onClose={() => setOverlay("none")} notify={notify} />}
           </Suspense>
           {overlay === "welcome" && <Welcome onClose={() => setOverlay("none")} onPresets={() => setOverlay("library")} />}
           {toast && (
@@ -336,6 +341,10 @@ export function App() {
             onCheckpoint={() => dispatch({ type: "checkpoint" })}
             onResetParam={(layerId, name) => dispatch({ type: "resetParam", layerId, name })}
             onResetLayer={(layerId) => dispatch({ type: "resetLayer", layerId })}
+            onViewCode={(id, label) => {
+              setCodeOf({ id, label });
+              setOverlay("code");
+            }}
             problem={problem}
           />
           <ScrollHints />

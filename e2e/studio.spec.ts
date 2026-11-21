@@ -47,6 +47,35 @@ test.describe("after the welcome", () => {
     await expect(reset).toBeVisible();
   });
 
+  test("Code shows the source that draws the selected layer, and Escape returns to it", async ({ page }) => {
+    await page.getByRole("button", { name: /^Cell fill/ }).click();
+    const code = page.getByRole("button", { name: "Code", exact: true });
+    await code.click();
+    const dialog = page.getByRole("dialog", { name: "How Cell fill draws" });
+    await expect(dialog).toBeVisible();
+    const source = dialog.getByRole("textbox", { name: "Source code of Cell fill" });
+    // The editor renders only the lines in view, so check near the top of the file.
+    await expect(source).toContainText('id: "cellFill"');
+    await page.keyboard.press("Escape");
+    await expect(dialog).toBeHidden();
+    await expect(code).toBeFocused();
+  });
+
+  test("the Code window fits above the favourites strip on a short screen", async ({ page }) => {
+    await page.setViewportSize({ width: 1280, height: 720 });
+    await page.keyboard.press("b");
+    await expect(page.getByText(/Favourites/i).first()).toBeVisible();
+    await page.getByRole("button", { name: /^Palette/ }).first().click();
+    await page.getByRole("button", { name: "Code", exact: true }).click();
+    const dialog = page.getByRole("dialog", { name: "How Palette draws" });
+    await expect(dialog.getByRole("textbox", { name: "Source code of Palette" })).toContainText('id: "palette"');
+    const box = await dialog.boundingBox();
+    const main = await page.locator("main").boundingBox();
+    if (!box || !main) throw new Error("no boxes");
+    expect(box.y).toBeGreaterThanOrEqual(main.y);
+    expect(box.y + box.height).toBeLessThanOrEqual(main.y + main.height);
+  });
+
   test("T shows the piece repeated 3x3, with a hint while the margin would leave seams", async ({ page }) => {
     await page.keyboard.press("t");
     await expect(page.getByRole("img", { name: "The piece repeated three by three" })).toBeVisible();

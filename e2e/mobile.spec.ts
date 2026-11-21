@@ -47,5 +47,5 @@ test("a finger drags a layer to a new place in the stack", async ({ page, browse
 
   const after = await names();
   expect(after).not.toEqual(before);
-  expect(after.toSorted()).toEqual(before.toSorted());
+  expect([...after].sort()).toEqual([...before].sort());
 });

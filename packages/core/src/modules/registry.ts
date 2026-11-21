@@ -1,4 +1,7 @@
+import type { Layer } from "../document.ts";
+import { SCRIPT_MODULE } from "../script.ts";
 import { canvasModule } from "./canvas.ts";
+import { scriptModule } from "./script.ts";
 import { attractorModule } from "./attractor.ts";
 import { phyllotaxisModule } from "./phyllotaxis.ts";
 import { spiroModule } from "./spiro.ts";
@@ -31,6 +34,16 @@ const asDef = (m: unknown): ModuleDef => m as ModuleDef;
 export const getModule = (registry: Registry, id: string): ModuleDef | undefined =>
   Object.hasOwn(registry, id) ? registry[id] : undefined;
 
+/**
+ * The definition that applies to one layer. A script layer brings its own label and params
+ * (declared by its code, stored as data); every other layer uses its module's definition.
+ */
+export const layerDef = (registry: Registry, layer: Layer): ModuleDef | undefined => {
+  const def = getModule(registry, layer.module);
+  if (!def || layer.module !== SCRIPT_MODULE || !layer.script) return def;
+  return { ...def, label: layer.script.label || def.label, params: layer.script.params };
+};
+
 export const defaultRegistry: Registry = {
   canvas: asDef(canvasModule),
   grid: asDef(gridModule),
@@ -54,4 +67,5 @@ export const defaultRegistry: Registry = {
   attractor: asDef(attractorModule),
   symmetry: asDef(symmetryModule),
   post: asDef(postModule),
+  script: asDef(scriptModule),
 };

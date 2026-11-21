@@ -1,4 +1,5 @@
-import type { Item, Paint, Scene } from "../scene.ts";
+import type { Item, Paint } from "../scene.ts";
+import type { Drawing } from "./drawing.ts";
 
 const n = (v: number): string => (Math.round(v * 1e5) / 1e5).toString();
 const esc = (s: string): string => s.replace(/[<>&"]/g, "");
@@ -41,7 +42,7 @@ export interface SvgOptions {
 }
 
 /** Serialise a scene to an SVG document in normalised viewBox units. */
-export function toSVG(scene: Scene, opts: SvgOptions = {}): string {
+export function toSVG(scene: Drawing, opts: SvgOptions = {}): string {
   const long = Math.max(scene.width, scene.height);
   const size = opts.size ?? 1000;
   const pw = Math.round((scene.width / long) * size);

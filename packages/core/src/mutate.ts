@@ -1,6 +1,6 @@
 import type { ArtDocument, Layer } from "./document.ts";
 import type { Registry } from "./modules/registry.ts";
-import { defaultRegistry, getModule } from "./modules/registry.ts";
+import { defaultRegistry, layerDef } from "./modules/registry.ts";
 import type { ParamSetting, ParamSpec, ParamValue, Variation } from "./params/params.ts";
 import type { Rng } from "./prng/prng.ts";
 
@@ -110,7 +110,7 @@ export function mutateDocument(
   // Hidden layers are left alone: changing them would show nothing.
   const inScope = (l: Layer) => l.enabled && (opts.layers ? opts.layers.includes(l.id) : l.module !== "canvas");
   const layers = doc.layers.map((layer): Layer => {
-    const def = getModule(registry, layer.module);
+    const def = layerDef(registry, layer);
     if (!def || !inScope(layer)) return layer;
     const params = Object.fromEntries(
       Object.entries(def.params).flatMap(([name, spec]) => {

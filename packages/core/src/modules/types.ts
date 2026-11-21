@@ -1,10 +1,13 @@
 import type { Rng } from "../prng/prng.ts";
 import type { ParamSpecs, ValuesOf } from "../params/params.ts";
 import type { Scene } from "../scene.ts";
+import type { LayerScript } from "../script.ts";
 
 export interface ModuleContext {
   /** Named sub-stream scoped to this layer. */
   readonly rng: (label: string) => Rng;
+  /** The layer's code, for script layers only. */
+  readonly script?: LayerScript;
 }
 
 export interface ModuleDef<P extends ParamSpecs = ParamSpecs> {

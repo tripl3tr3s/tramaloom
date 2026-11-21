@@ -41,6 +41,8 @@ const emptyRegistry = (): Plugin => ({
     if (clean(id) !== registryFile) return null;
     return [
       "export const getModule = (registry, id) => (Object.hasOwn(registry, id) ? registry[id] : undefined);",
+      // Same as registry.ts: a script layer brings its own label and params.
+      "export const layerDef = (registry, layer) => { const def = getModule(registry, layer.module); return def && layer.module === 'script' && layer.script ? { ...def, label: layer.script.label || def.label, params: layer.script.params } : def; };",
       "export const defaultRegistry = {};",
     ].join("\n");
   },
@@ -56,6 +58,18 @@ await build({
   plugins: [stripHelp(), emptyRegistry()],
   build: { outDir: dist, emptyOutDir: true, target: "es2020", minify: true, lib: lib(join(root, "src/runtime.ts"), "GridloomRuntime", "runtime.js") },
 });
+
+// The script sandbox's worker: the whole engine with every module, plus the script compiler.
+// The studio hands it to a sandboxed iframe as text; it never runs in a minted piece.
+await build({
+  configFile: false,
+  root,
+  logLevel: "warn",
+  plugins: [stripHelp()],
+  build: { outDir: dist, emptyOutDir: false, target: "es2020", minify: true, lib: lib(join(root, "src/sandbox.ts"), "GridloomSandbox", "sandbox.js") },
+});
+const sandboxCode = readFileSync(join(dist, "sandbox.js"), "utf8");
+if (!sandboxCode.includes("layer(...)")) fail("the sandbox build lost the script compiler");
 
 // What the engine actually exposes, read back from the built file in a sandbox: module
 // scripts can use these and nothing else. Loading defines the global and runs nothing.
@@ -140,4 +154,4 @@ try {
 writeFileSync(join(dist, "modules.json"), JSON.stringify(out));
 
 const sizes = Object.entries(out).map(([id, c]) => `${id} ${(c.length / 1024).toFixed(1)}`);
-console.log(`engine ${(engineCode.length / 1024).toFixed(1)} KB; modules (KB): ${sizes.join(", ")}`);
+console.log(`engine ${(engineCode.length / 1024).toFixed(1)} KB; sandbox ${(sandboxCode.length / 1024).toFixed(1)} KB; modules (KB): ${sizes.join(", ")}`);

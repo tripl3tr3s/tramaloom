@@ -1,6 +1,6 @@
 import type { ArtDocument, Layer } from "./document.ts";
 import type { Registry } from "./modules/registry.ts";
-import { defaultRegistry, getModule } from "./modules/registry.ts";
+import { defaultRegistry, layerDef } from "./modules/registry.ts";
 import type { Rng } from "./prng/prng.ts";
 
 export interface BreedOptions {
@@ -65,7 +65,7 @@ export function breedDocuments(
 
   const crossed = a.layers.map((layer): Layer => {
     const partner = pairs.get(layer.id);
-    const def = getModule(registry, layer.module);
+    const def = layerDef(registry, layer);
     if (!partner || !def) return layer;
     const names = Object.keys(def.params);
     const params = Object.fromEntries(

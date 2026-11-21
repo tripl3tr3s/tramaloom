@@ -22,6 +22,7 @@ export { sampleField } from "../../core/src/modules/trace.ts";
 export { chance, int, shuffled } from "../../core/src/prng/distributions.ts";
 export { makeNoise2D } from "../../core/src/prng/noise.ts";
 export { dcos, dsin, TAU } from "../../core/src/math/trig.ts";
+export { runScript, setScriptRunner } from "../../core/src/script.ts";
 export { PALETTE_NAMES, PALETTES } from "../../core/src/palettes/palettes.ts";
 
 /** The modules this page's script tags registered: exactly the ones the piece uses. */

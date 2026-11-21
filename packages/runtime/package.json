@@ -8,7 +8,9 @@
   "exports": {
     "./assemble": "./src/assemble.ts",
     "./runtime.js": "./dist/runtime.js",
-    "./modules.json": "./dist/modules.json"
+    "./modules.json": "./dist/modules.json",
+    "./sandbox.js": "./dist/sandbox.js",
+    "./sandboxProtocol": "./src/sandboxProtocol.ts"
   },
   "scripts": {
     "build": "node scripts/build.ts",

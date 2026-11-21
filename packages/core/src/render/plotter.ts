@@ -1,4 +1,5 @@
-import type { Item, Scene } from "../scene.ts";
+import type { Item } from "../scene.ts";
+import type { Drawing } from "./drawing.ts";
 
 /** Paper sizes in millimetres, portrait (width, height). */
 export const PAPERS = {
@@ -85,7 +86,7 @@ function outline(it: Item, includeTexture: boolean): { readonly svg: string; rea
  * they are invisible on screen but would still be drawn. Sized in millimetres,
  * centred on the sheet inside the margin.
  */
-export function toPlotterSVG(scene: Scene, opts: PlotterOptions = DEFAULT_PLOTTER): PlotterSvg {
+export function toPlotterSVG(scene: Drawing, opts: PlotterOptions = DEFAULT_PLOTTER): PlotterSvg {
   const [pw, ph] = PAPERS[opts.paper];
   const landscape = opts.orientation === "landscape" || (opts.orientation === "auto" && scene.width > scene.height);
   const W = landscape ? Math.max(pw, ph) : Math.min(pw, ph);

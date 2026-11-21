@@ -1,4 +1,5 @@
-import type { Item, Scene } from "../scene.ts";
+import type { Item } from "../scene.ts";
+import type { Drawing } from "./drawing.ts";
 
 /** Structural subset of CanvasRenderingContext2D / OffscreenCanvasRenderingContext2D. */
 export interface Ctx2D {
@@ -89,7 +90,7 @@ function drawItem(ctx: Ctx2D, it: Item, bleed: number): void {
  * Draw a scene into a context whose buffer is pxWidth x pxHeight.
  * Re-render at a larger size for high-res export; never upscale.
  */
-export function drawScene(ctx: Ctx2D, scene: Scene, pxWidth: number, pxHeight: number): void {
+export function drawScene(ctx: Ctx2D, scene: Drawing, pxWidth: number, pxHeight: number): void {
   const s = Math.min(pxWidth / scene.width, pxHeight / scene.height);
   ctx.save();
   ctx.clearRect(0, 0, pxWidth, pxHeight);
@@ -106,7 +107,7 @@ export function drawScene(ctx: Ctx2D, scene: Scene, pxWidth: number, pxHeight: n
 }
 
 /** Pixel size for a scene given the long-side length. */
-export function pixelSize(scene: Scene, longSide: number): { width: number; height: number } {
+export function pixelSize(scene: Drawing, longSide: number): { width: number; height: number } {
   const long = Math.max(scene.width, scene.height);
   return {
     width: Math.round((scene.width / long) * longSide),

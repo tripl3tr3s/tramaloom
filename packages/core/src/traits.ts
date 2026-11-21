@@ -2,7 +2,7 @@ import type { ArtDocument, ResolvedLayer } from "./document.ts";
 import { resolveDocument } from "./document.ts";
 import { stepHash } from "./prng/prng.ts";
 import type { Registry } from "./modules/registry.ts";
-import { defaultRegistry, getModule } from "./modules/registry.ts";
+import { defaultRegistry, layerDef } from "./modules/registry.ts";
 import type { Distribution, ParamSpec, ParamValue } from "./params/params.ts";
 
 /** A numeric bin: values up to and including `upTo` get `label`. The last bin has no `upTo`. */
@@ -100,7 +100,7 @@ const add = (acc: Record<string, number>, k: string, p: number) => ({ ...acc, [k
 export function expectedDistribution(doc: ArtDocument, trait: TraitDef, registry: Registry = defaultRegistry): Expected | null {
   const layer = doc.layers.find((l) => l.id === trait.layerId);
   if (!layer || !layer.enabled) return { shares: { [NONE]: 1 }, exact: true };
-  const spec: ParamSpec | undefined = getModule(registry, layer.module)?.params[trait.param];
+  const spec: ParamSpec | undefined = layerDef(registry, layer)?.params[trait.param];
   // A setting the module no longer has resolves to nothing, which computeTraits reports as None.
   if (!spec) return { shares: { [NONE]: 1 }, exact: true };
   const setting = layer.params[trait.param];

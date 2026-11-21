@@ -7,6 +7,8 @@ import { needsGrid, zones } from "../state/layerOrder.ts";
 import { MAX_LAYERS } from "../state/limits.ts";
 import type { Action } from "../state/store.ts";
 import { CopyIcon, DownIcon, EyeIcon, EyeOffIcon, GripIcon, PinIcon, PlusIcon, TrashIcon, UpIcon } from "./icons.tsx";
+import { useLang } from "../i18n/i18n.tsx";
+import type { MessageKey } from "../i18n/messages.ts";
 import { Menu } from "./Menu.tsx";
 
 interface Props {
@@ -25,10 +27,11 @@ const DRAG_TYPE = "application/x-gridloom-layer";
 const labelOf = (layer: Layer): string => layerDef(defaultRegistry, layer)?.label ?? layer.module;
 
 /** Free copies of the setup modules do a different job mid-stack, so they get their own names. */
-const FREE_ROLE: Readonly<Record<string, { readonly label: string; readonly description: string }>> = {
-  grid: { label: "Re-grid", description: "A second grid: the layers below it draw on these cells instead." },
-  palette: { label: "Re-palette", description: "Switch colors for the layers below it." },
-  symmetry: { label: "Mirror", description: "Mirror only the layers above it." },
+// Names stay in English, like module names; descriptions follow the studio's language.
+const FREE_ROLE: Readonly<Record<string, { readonly label: string; readonly description: MessageKey }>> = {
+  grid: { label: "Re-grid", description: "layers.regridDesc" },
+  palette: { label: "Re-palette", description: "layers.repaletteDesc" },
+  symmetry: { label: "Mirror", description: "layers.mirrorDesc" },
 };
 
 const roleLabel = (l: Layer, i: number, z: Zones): string => {
@@ -53,19 +56,21 @@ function displayNames(layers: readonly Layer[], z: Zones): ReadonlyMap<string, s
 function addItems(
   layers: readonly Layer[],
   z: Zones,
+  t: (key: MessageKey) => string,
 ): readonly { readonly id: string; readonly label: string; readonly description: string; readonly disabled?: boolean }[] {
   const inHead = (m: string) => layers.slice(0, z.head).some((l) => l.module === m);
   const inTail = (m: string) => layers.slice(z.tail).some((l) => l.module === m);
   return ADDABLE.flatMap((m) => {
     // Kept in the list, greyed, so it never looks missing; one Post finishes the picture.
-    if (m.id === "post" && inTail("post")) return [{ id: m.id, label: m.label, description: "Already at the end of the stack.", disabled: true }];
+    if (m.id === "post" && inTail("post")) return [{ id: m.id, label: m.label, description: t("layers.postTaken"), disabled: true }];
     const taken = m.id === "symmetry" ? inTail("symmetry") : (m.id === "grid" || m.id === "palette") && inHead(m.id);
     const free = taken ? FREE_ROLE[m.id] : undefined;
-    return [{ id: m.id, label: free?.label ?? m.label, description: free?.description ?? m.description }];
+    return [{ id: m.id, label: free?.label ?? m.label, description: free ? t(free.description) : m.description }];
   });
 }
 
 export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
+  const { t } = useLang();
   const z = zones(doc.layers);
   const names = displayNames(doc.layers, z);
   const free = (i: number) => i >= z.head && i < z.tail;
@@ -103,10 +108,10 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
   return (
     <div className="flex flex-col gap-0.5 p-2">
       <div className="flex items-center justify-between px-1 pb-1">
-        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">Layers</h2>
+        <h2 className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">{t("layers.title")}</h2>
         <Menu
-          label="Add layer"
-          title={full ? `At most ${MAX_LAYERS} layers` : "Add a layer"}
+          label={t("layers.addLayer")}
+          title={full ? t("layers.full", { max: MAX_LAYERS }) : t("layers.addHint")}
           disabled={full}
           align="right"
           // Inside the scrolling layer panel, so it must fit the panel's width (w-60).
@@ -114,10 +119,10 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
           triggerClass="inline-flex items-center gap-1 rounded bg-zinc-800 px-1.5 py-0.5 text-[11px] text-zinc-200 hover:bg-zinc-700 disabled:opacity-30"
           trigger={
             <>
-              <PlusIcon /> Add
+              <PlusIcon /> {t("layers.add")}
             </>
           }
-          items={addItems(doc.layers, z).map((m) => ({
+          items={addItems(doc.layers, z, t).map((m) => ({
             label: m.label,
             description: m.description,
             ...(m.disabled ? { disabled: true } : {}),
@@ -126,7 +131,7 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
         />
       </div>
 
-      <ol className="flex flex-col gap-0.5" aria-label="Layers, top of the list is drawn first" onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDrop(null)}>
+      <ol className="flex flex-col gap-0.5" aria-label={t("layers.list")} onDragLeave={(e) => !e.currentTarget.contains(e.relatedTarget as Node) && setDrop(null)}>
         {doc.layers.map((l, i) => {
           const isCanvas = l.module === "canvas";
           const movable = free(i);
@@ -168,7 +173,7 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
                 {movable ? (
                   <span
                     className="grid size-5 cursor-grab touch-none place-items-center text-zinc-600 group-hover:text-zinc-400 pointer-coarse:size-8"
-                    title="Drag to reorder"
+                    title={t("layers.drag")}
                     onPointerDown={(e) => {
                       if (e.pointerType === "mouse") return;
                       e.preventDefault();
@@ -184,7 +189,7 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
                 ) : (
                   <span
                     className={`grid size-5 place-items-center text-zinc-700 ${isCanvas ? "invisible" : ""}`}
-                    title={pinnedHead ? "Pinned: every drawing layer depends on it" : "Pinned to the end: it finishes the picture"}
+                    title={pinnedHead ? t("layers.pinnedHead") : t("layers.pinnedTail")}
                   >
                     <PinIcon />
                   </span>
@@ -195,8 +200,8 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
                   <button
                     type="button"
                     className={iconBtn}
-                    aria-label={l.enabled ? `Hide ${name}` : `Show ${name}`}
-                    title={l.enabled ? "Hide layer" : "Show layer"}
+                    aria-label={l.enabled ? t("layers.hideNamed", { name }) : t("layers.showNamed", { name })}
+                    title={l.enabled ? t("layers.hide") : t("layers.show")}
                     onClick={() => dispatch({ type: "toggleLayer", layerId: l.id })}
                   >
                     {l.enabled ? <EyeIcon /> : <EyeOffIcon />}
@@ -206,7 +211,7 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
                   type="button"
                   className={`min-w-0 flex-1 truncate rounded px-1 py-0.5 text-left focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 ${l.enabled ? "" : "text-zinc-500 line-through decoration-zinc-600"}`}
                   aria-current={selected ? "true" : undefined}
-                  title={`${name} (id ${l.id})${movable ? "" : ", pinned"}`}
+                  title={`${name} (id ${l.id})${movable ? "" : t("layers.pinnedSuffix")}`}
                   onClick={() => dispatch({ type: "select", layerId: l.id })}
                   onKeyDown={(e) => {
                     // Alt+arrows reorder from the keyboard, the counterpart of dragging.
@@ -217,16 +222,16 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
                 >
                   {name}
                   {needsGrid(doc.layers, i) && (
-                    <span className="ml-1.5 inline-grid size-3.5 place-items-center rounded-full bg-amber-500/20 align-[-1px] text-[9px] font-bold text-amber-300" title="Draws nothing: needs a Grid layer above it">
-                      !<span className="sr-only">, draws nothing: needs a Grid layer above it</span>
+                    <span className="ml-1.5 inline-grid size-3.5 place-items-center rounded-full bg-amber-500/20 align-[-1px] text-[9px] font-bold text-amber-300" title={t("layers.needsGrid")}>
+                      !<span className="sr-only">, {t("layers.needsGrid")}</span>
                     </span>
                   )}
                   {notRunning?.has(l.id) && (
                     <span
                       className="ml-1.5 rounded bg-amber-500/15 px-1 py-px align-[1px] text-[9px] font-semibold uppercase tracking-wide text-amber-300"
-                      title="Its code came with this piece and has not been run. Choose Run the code above the picture."
+                      title={t("layers.notRunningHint")}
                     >
-                      <span className="sr-only">, </span>not running
+                      <span className="sr-only">, </span>{t("layers.notRunning")}
                     </span>
                   )}
                 </button>
@@ -238,8 +243,8 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
                         <button
                           type="button"
                           className={iconBtn}
-                          aria-label={`Move ${name} up`}
-                          title="Move up (Alt+Up)"
+                          aria-label={t("layers.moveUpNamed", { name })}
+                          title={t("layers.moveUp")}
                           aria-disabled={i <= z.head}
                           onClick={() => i > z.head && dispatch({ type: "moveLayer", layerId: l.id, dir: -1 })}
                         >
@@ -248,14 +253,14 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
                         <button
                           type="button"
                           className={iconBtn}
-                          aria-label={`Move ${name} down`}
-                          title="Move down (Alt+Down)"
+                          aria-label={t("layers.moveDownNamed", { name })}
+                          title={t("layers.moveDown")}
                           aria-disabled={i >= z.tail - 1}
                           onClick={() => i < z.tail - 1 && dispatch({ type: "moveLayer", layerId: l.id, dir: 1 })}
                         >
                           <DownIcon />
                         </button>
-                        <button type="button" className={iconBtn} aria-label={`Duplicate ${name}`} title="Duplicate" disabled={full} onClick={() => dispatch({ type: "duplicateLayer", layerId: l.id })}>
+                        <button type="button" className={iconBtn} aria-label={t("layers.duplicateNamed", { name })} title={t("layers.duplicate")} disabled={full} onClick={() => dispatch({ type: "duplicateLayer", layerId: l.id })}>
                           <CopyIcon />
                         </button>
                       </>
@@ -263,8 +268,8 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning }: Props) {
                     <button
                       type="button"
                       className={`${iconBtn} hover:bg-red-950 hover:text-red-300`}
-                      aria-label={`Remove ${name}`}
-                      title="Remove (undo with Ctrl+Z)"
+                      aria-label={t("layers.removeNamed", { name })}
+                      title={t("layers.remove")}
                       onClick={() => dispatch({ type: "removeLayer", layerId: l.id })}
                     >
                       <TrashIcon />

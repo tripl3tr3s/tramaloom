@@ -1,5 +1,6 @@
 import type { RefObject } from "react";
 import { useEffect, useRef } from "react";
+import { useLang } from "../i18n/i18n.tsx";
 
 interface Props {
   /** The studio's main canvas; read back, never drawn into. */
@@ -15,6 +16,7 @@ const REPEAT = 3;
 
 /** The current render repeated 3x3, to check that a pattern's edges join. */
 export function TilePreview({ source, version, box, seamHint }: Props) {
+  const { t } = useLang();
   const ref = useRef<HTMLCanvasElement | null>(null);
   useEffect(() => {
     const src = source.current;
@@ -37,7 +39,7 @@ export function TilePreview({ source, version, box, seamHint }: Props) {
 
   return (
     <div className="absolute inset-0 z-10 flex flex-col items-center justify-center gap-2 bg-zinc-950">
-      <canvas ref={ref} role="img" aria-label="The piece repeated three by three" className="shadow-2xl shadow-black/60" />
+      <canvas ref={ref} role="img" aria-label={t("tile.alt")} className="shadow-2xl shadow-black/60" />
       {seamHint && <p className="rounded bg-zinc-900/90 px-2 py-1 text-[11px] text-zinc-400">{seamHint}</p>}
     </div>
   );

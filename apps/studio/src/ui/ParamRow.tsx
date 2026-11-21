@@ -1,5 +1,6 @@
 import type { Distribution, ParamSetting, ParamSpec, ParamValue, Variation } from "@gridloom/core";
 import { useId, useRef, useState } from "react";
+import { useLang } from "../i18n/i18n.tsx";
 import { MAX_WEIGHT } from "../state/limits.ts";
 import { ResetIcon } from "./icons.tsx";
 import { isDefaultSetting, weightShares } from "./params.ts";
@@ -34,7 +35,6 @@ function format(v: ParamValue | undefined): string {
   return String(v ?? "");
 }
 
-const distLabel = (d: Distribution): string => DISTRIBUTIONS.find((x) => x.id === d)?.label ?? d;
 
 function defaultVary(spec: ParamSpec, value: ParamValue): Variation | null {
   switch (spec.kind) {
@@ -54,6 +54,11 @@ function defaultVary(spec: ParamSpec, value: ParamValue): Variation | null {
 }
 
 export function ParamRow({ name, spec, setting, resolved, swatches, onChange, onCheckpoint, onReset, showHelp = false }: Props) {
+  const { t } = useLang();
+  const distLabel = (d: Distribution): string => {
+    const found = DISTRIBUTIONS.find((x) => x.id === d);
+    return found ? t(found.label) : d;
+  };
   const [helpOpen, setHelpOpen] = useState(false);
   const helpId = useId();
   const helpShown = !!spec.help && (showHelp || helpOpen);
@@ -108,7 +113,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
             <button
               type="button"
               className={`grid size-3.5 shrink-0 place-items-center rounded-full text-[9px] font-semibold ring-1 focus-visible:outline-none focus-visible:ring-sky-500 ${helpShown ? "bg-zinc-600 text-white ring-zinc-500" : "text-zinc-500 ring-zinc-700 hover:text-zinc-200"}`}
-              aria-label={`About ${spec.label}`}
+              aria-label={t("param.about", { label: spec.label })}
               aria-expanded={helpShown}
               aria-controls={helpId}
               onClick={() => setHelpOpen((o) => !o)}
@@ -118,18 +123,18 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
           )}
         </span>
         {varying && (
-          <span className="font-mono text-[11px] text-sky-400" title="This seed's value">
+          <span className="font-mono text-[11px] text-sky-400" title={t("vary.seedValue")}>
             = {format(resolved)}
           </span>
         )}
         {canVary && (
-          <button type="button" className={chip(!!vary)} onClick={toggleVary} aria-pressed={!!vary} title="Let the hash choose this value">
-            vary
+          <button type="button" className={chip(!!vary)} onClick={toggleVary} aria-pressed={!!vary} title={t("param.varyHint")}>
+            {t("param.vary")}
           </button>
         )}
         {vary && (
-          <button type="button" className={chip(locked)} onClick={toggleLock} aria-pressed={locked} title="Ignore variation, use the fixed value">
-            lock
+          <button type="button" className={chip(locked)} onClick={toggleLock} aria-pressed={locked} title={t("param.lockHint")}>
+            {t("param.lock")}
           </button>
         )}
         {!isDefaultSetting(spec, setting) && (
@@ -138,8 +143,8 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
             className="grid size-5 place-items-center rounded text-zinc-500 hover:bg-zinc-700 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
             data-reset=""
             onClick={reset}
-            aria-label={`Reset ${spec.label} to default`}
-            title={`Reset to default (${format(spec.default)})`}
+            aria-label={t("param.resetNamed", { label: spec.label })}
+            title={t("param.resetHint", { value: format(spec.default) })}
           >
             <ResetIcon />
           </button>
@@ -162,25 +167,25 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
           />
           <div className="mt-1.5 flex flex-wrap items-center gap-1.5 text-[11px] text-zinc-400">
             {/* Unclamped while typing ("12" passes through "1"); core orders the ends itself. */}
-            {numberBox(vary.min, (n) => onChange(withVary({ ...vary, min: n }), true), `${spec.label}, lowest value`)}
-            <span>to</span>
-            {numberBox(vary.max, (n) => onChange(withVary({ ...vary, max: n }), true), `${spec.label}, highest value`)}
+            {numberBox(vary.min, (n) => onChange(withVary({ ...vary, min: n }), true), t("param.lowest", { label: spec.label }))}
+            <span>{t("param.to")}</span>
+            {numberBox(vary.max, (n) => onChange(withVary({ ...vary, max: n }), true), t("param.highest", { label: spec.label }))}
             <select
               className={input}
               value={vary.dist}
-              aria-label={`${spec.label}, distribution`}
+              aria-label={t("param.distribution", { label: spec.label })}
               onChange={(e) => onChange(withVary({ ...vary, dist: e.target.value as Distribution }), true)}
             >
               {DISTRIBUTIONS.map((d) => (
                 <option key={d.id} value={d.id}>
-                  {d.label}
+                  {t(d.label)}
                 </option>
               ))}
             </select>
           </div>
-          <label className="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-500" title="Used when the param is locked">
-            <span>if locked</span>
-            {numberBox(Number(value), (n) => onChange(withValue(n), true), `${spec.label}, fixed value`)}
+          <label className="mt-1 flex items-center gap-1.5 text-[11px] text-zinc-500" title={t("param.ifLockedHint")}>
+            <span>{t("param.ifLocked")}</span>
+            {numberBox(Number(value), (n) => onChange(withValue(n), true), t("param.fixed", { label: spec.label }))}
           </label>
         </>
       )}
@@ -200,11 +205,11 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
               onChange={(e) => onChange(withValue(Number(e.target.value)), false)}
               aria-label={spec.label}
             />
-            {numberBox(Number(value), (n) => onChange(withValue(n), true), `${spec.label}, value`)}
+            {numberBox(Number(value), (n) => onChange(withValue(n), true), t("param.value", { label: spec.label }))}
           </div>
           {vary?.kind === "range" && (
             <p className="mt-1 text-[11px] text-zinc-500">
-              Locked. Varies {format(vary.min)} to {format(vary.max)}, {distLabel(vary.dist)}, when unlocked.
+              {t("param.lockedVaries", { min: format(vary.min), max: format(vary.max), dist: distLabel(vary.dist) })}
             </p>
           )}
         </>
@@ -213,7 +218,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
       {spec.kind === "enum" &&
         (swatches ? (
           <div>
-            {varying && <p className="mb-1 text-[11px] text-zinc-500">Outlined: used when locked. The seed draws by the weights below.</p>}
+            {varying && <p className="mb-1 text-[11px] text-zinc-500">{t("param.swatchVarying")}</p>}
             <SwatchPicker
               label={spec.label}
               options={spec.options}
@@ -246,7 +251,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
             checked={value === true}
             onChange={(e) => onChange(withValue(e.target.checked), true)}
           />
-          {value === true ? "on" : "off"}
+          {value === true ? t("param.on") : t("param.off")}
         </label>
       )}
 
@@ -260,7 +265,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
               const share = shares[i] ?? 0;
               const isDrawn = o === drawn;
               return (
-                <label key={o} className="flex items-center gap-2 text-[11px] text-zinc-400" title={`${o}: ${Math.round(share * 100)}% of seeds`}>
+                <label key={o} className="flex items-center gap-2 text-[11px] text-zinc-400" title={t("param.share", { option: o, pct: Math.round(share * 100) })}>
                   {swatches?.[o] ? <Swatch colors={swatches[o]} className="h-3 w-16 shrink-0" /> : <span className={`w-16 shrink-0 truncate ${isDrawn ? "text-zinc-100" : ""}`}>{o}</span>}
                   <span className="relative h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-800" aria-hidden="true">
                     <span className={`absolute inset-y-0 left-0 rounded-full ${isDrawn ? "bg-sky-400" : "bg-sky-700"}`} style={{ width: `${share * 100}%` }} />
@@ -273,7 +278,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
                     max={MAX_WEIGHT}
                     step={1}
                     value={vary.weights[o] ?? 0}
-                    aria-label={`${spec.label}, weight of ${o}`}
+                    aria-label={t("param.weightOf", { label: spec.label, option: o })}
                     onChange={(e) =>
                       onChange(withVary({ kind: "weights", weights: { ...vary.weights, [o]: Math.min(MAX_WEIGHT, Math.max(0, Number(e.target.value) || 0)) } }), true)
                     }

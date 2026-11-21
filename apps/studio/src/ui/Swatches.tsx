@@ -1,5 +1,6 @@
 import { PALETTES } from "@gridloom/core";
 import { useId } from "react";
+import { useLang } from "../i18n/i18n.tsx";
 
 export type OptionSwatches = Readonly<Record<string, readonly string[]>>;
 
@@ -35,6 +36,7 @@ interface PickerProps {
 
 /** Radio group of palettes: arrow keys move between them, as with native radios. */
 export function SwatchPicker({ label, options, swatches, value, drawn, onPick }: PickerProps) {
+  const { t } = useLang();
   const name = useId();
   return (
     <div role="radiogroup" aria-label={label} className="grid grid-cols-2 gap-1">
@@ -50,7 +52,7 @@ export function SwatchPicker({ label, options, swatches, value, drawn, onPick }:
             <Swatch colors={swatches[o] ?? []} />
             <span className={`mt-1 flex items-center gap-1 text-[10px] ${on || isDrawn ? "text-zinc-100" : "text-zinc-400"}`}>
               <span className="flex-1 truncate">{o}</span>
-              {isDrawn && <span className="rounded bg-sky-500/20 px-1 text-[9px] text-sky-300">this seed</span>}
+              {isDrawn && <span className="rounded bg-sky-500/20 px-1 text-[9px] text-sky-300">{t("swatch.thisSeed")}</span>}
             </span>
           </label>
         );

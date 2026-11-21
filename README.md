@@ -108,10 +108,34 @@ Add layers with **+ Add**. Settings for each module are grouped, explained by th
 - **Reset.** The circular arrow on a setting returns it to the default; **Reset all** does the whole layer.
 - **Code.** In the settings panel, **Code** shows the source that draws the selected layer, with a short guide to reading it. Every look in Gridloom is a small, commented file: a first step into generative art coding. **Remix** makes that code your own as a script layer.
 - **Script layers.** **Add > Script** makes a layer drawn by your own code. See [Write your own layer](#write-your-own-layer).
-- **Lessons (Learn), in English and Spanish.** Short guided steps that teach writing your own layer: **Your first grid**, **Seeds and randomness**, **Smooth noise** and **Lines for the plotter**. Each adds a script layer and explains its code beside the editor, with **Show me** to see a step done.
+- **Learn, in English and Spanish.** Four short lessons in writing your own layer (**Your first grid**, **Seeds and randomness**, **Smooth noise**, **Lines for the plotter**), each adding a script layer and explaining its code beside the editor, with **Show me** to see a step done. Learn also has **Plot your first piece**, a no-code guide from a preset to paper, and a **Glossary** of the words the studio uses.
+- **English and Spanish.** The whole studio switches language (in Welcome, Learn, the `?` shortcuts list, or **More** on phones); a Spanish browser starts in Spanish. Module names and their settings are still in English.
 - **Export.** PNG at 2000 or 4000 px (re-rendered, never upscaled), SVG, the document as a `.gridloom.json` file, and a share link.
-- **Edition (`E`).** Tools for long-form editions: traits and rarity, a census over many seeds, a contact sheet, batch export, pen plotter export and a self-hosted mint export. See [Long-form workflow](#long-form-workflow).
+- **Edition (`E`), advanced.** Optional tools you do not need to make or export a picture. For long-form editions: traits and rarity, a census over many seeds, a contact sheet, batch export, pen plotter export and a self-hosted mint export. See [Long-form workflow](#long-form-workflow).
 - **Plotter export (Edition > Plotter).** An SVG for pen plotters on A5, A4, A3 or Letter: every shape becomes its outline, one layer per color (one pen each), with the drawing distance and an estimated plotting time. Filled shapes are outlined, not shaded: add a Hatching layer for shading. Grain is left out unless you ask for it, and dot drawings (Attractor) plot as one pen tap per dot, which can take hours.
+
+## Plot your first piece
+
+No code needed. The same guide is in the studio under **Learn**, in English and Spanish.
+
+1. **Start from lines.** Open the Library (`L`) and pick **Currents**, **Topography**, **Knotwork**, **Specimens** or **Resonance**: they are all lines. Avoid **Chaos** at first: it is thousands of dots, each a pen tap, and would take hours.
+2. **Find a seed you like.** `R` for new seeds, Left to go back, `B` to star. Fewer, longer lines plot faster.
+3. **Check what the pen will draw.** **Edition > Plotter** shows the plot on paper: every shape becomes its outline, one pen per color. Add a **Hatching** layer to shade filled areas, or hide layers you do not want plotted.
+4. **Set up the paper.** Paper size, margin and orientation; the pen list shows each color's drawing distance and an estimate of the time.
+5. **Save the file.** **Download SVG** gives one file with a layer per pen, in millimetres; **One file per pen** suits plotters that take one pen at a time. Open it in your plotter's software (for example Inkscape with your plotter's extension).
+6. **Plot.** Try cheap paper first. Plot one pen, change pens, plot the next. Copy the share link or save the document to plot it again later.
+
+## Glossary
+
+- **Seed** and **hash.** The seed makes every random choice in a picture; the hash is how it is written (64 letters and digits). Same settings and seed, same picture.
+- **Layer**, **setting.** A layer is one step of the picture; settings are the values it reads (params, in code).
+- **Vary**, **lock.** Vary lets the seed pick a setting inside a range; lock keeps it as it is when mutating or breeding.
+- **Document**, **share link.** The layers and settings, saved as a file or held in a link with the seed.
+- **Mutate**, **breed.** Variations of a piece, or children of two pieces.
+- **Trait**, **rarity**, **census.** Named features collectors read, how often each value turns up, and the count that checks it over many seeds.
+- **Edition**, **mint.** Many pieces from one document, one per seed; minting publishes it so each collector gets their own.
+- **Plotter**, **pen lift.** A machine that draws with a real pen; every separate line lifts the pen, which takes most of a plot's time.
+- **Script layer**, **sandbox.** A layer drawn by your own code, run walled off from your saved pieces and the internet.
 
 ## Write your own layer
 

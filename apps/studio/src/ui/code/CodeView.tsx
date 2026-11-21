@@ -10,6 +10,7 @@ import { useDialog } from "../../hooks/useDialog.ts";
 import { loadModuleSource } from "./moduleSource.ts";
 import { remixSource } from "./remix.ts";
 import { codeLook } from "./theme.ts";
+import { useLang } from "../../i18n/i18n.tsx";
 
 interface Props {
   readonly moduleId: string;
@@ -26,6 +27,9 @@ interface Props {
  * The first rung of learning to code here: every built-in look is a small, commented file.
  */
 export function CodeView({ moduleId, label, onClose, notify, onRemix }: Props) {
+  const { t } = useLang();
+  /** A sentence with `backticks` shown as code. Text only, never HTML. */
+  const prose = (text: string) => text.split(/`([^`]+)`/).map((part, i) => (i % 2 === 1 ? <Code key={i}>{part}</Code> : part));
   const ref = useDialog<HTMLDivElement>((e) => {
     if (e.key === "Escape") {
       e.preventDefault();
@@ -58,14 +62,14 @@ export function CodeView({ moduleId, label, onClose, notify, onRemix }: Props) {
           lineNumbers(),
           EditorState.readOnly.of(true),
           EditorView.lineWrapping,
-          EditorView.contentAttributes.of({ "aria-label": `Source code of ${label}` }),
+          EditorView.contentAttributes.of({ "aria-label": t("code.sourceOf", { label }) }),
           javascript({ typescript: true }),
           ...codeLook,
         ],
       }),
     });
     return () => view.destroy();
-  }, [source, label]);
+  }, [source, label, t]);
 
   const remix = () => {
     const def = getModule(defaultRegistry, moduleId);
@@ -77,15 +81,15 @@ export function CodeView({ moduleId, label, onClose, notify, onRemix }: Props) {
       if (!params.ok) throw new Error(params.error);
       onRemix({ api: SCRIPT_API, label: `${label} remix`.slice(0, 40), code, params: params.params });
     } catch (err) {
-      notify(`Could not remix ${label}: ${err instanceof Error ? err.message : String(err)}`);
+      notify(t("code.remixFailed", { label, error: err instanceof Error ? err.message : String(err) }));
     }
   };
 
   const copy = () => {
     if (!source) return;
     navigator.clipboard.writeText(source).then(
-      () => notify("Code copied"),
-      () => notify("Could not copy: select the code and copy it instead"),
+      () => notify(t("code.copied")),
+      () => notify(t("code.copyFailed")),
     );
   };
 
@@ -101,7 +105,7 @@ export function CodeView({ moduleId, label, onClose, notify, onRemix }: Props) {
       >
         <div className="flex items-center gap-2 border-b border-zinc-800 px-4 py-2.5">
           <h2 id="code-title" className="min-w-0 flex-1 truncate text-sm font-semibold text-white">
-            How {label} draws
+            {t("code.howDraws", { label })}
           </h2>
           {onRemix && (
             <button
@@ -109,43 +113,33 @@ export function CodeView({ moduleId, label, onClose, notify, onRemix }: Props) {
               className="rounded bg-sky-700 px-2 py-0.5 text-xs text-white hover:bg-sky-600 disabled:opacity-30"
               onClick={remix}
               disabled={!source}
-              title="Turn this layer into a script layer with this code: same picture, and the code is yours to change"
+              title={t("code.remixHint")}
             >
-              Remix
+              {t("code.remix")}
             </button>
           )}
           <button type="button" className="rounded px-2 py-0.5 text-xs text-zinc-300 hover:bg-zinc-800 hover:text-white disabled:opacity-30" onClick={copy} disabled={!source}>
-            Copy
+            {t("code.copy")}
           </button>
           <button type="button" className="rounded px-2 py-0.5 text-xs text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100" onClick={onClose}>
-            Close
+            {t("common.close")}
           </button>
         </div>
 
         <details open className="group border-b border-zinc-800 px-4 py-2 text-xs leading-relaxed text-zinc-300">
-          <summary className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-300">How to read it</summary>
+          <summary className="cursor-pointer select-none text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-300">{t("code.howToRead")}</summary>
           <ul className="mt-2 flex list-disc flex-col gap-1 pl-4 marker:text-zinc-600">
-            <li>
-              <Code>params</Code> are the settings in the panel: <Code>label</Code> is the name you see, <Code>help</Code> is the text behind its <b>i</b> button, and <Code>min</Code>, <Code>max</Code> and <Code>default</Code> set up the slider.
-            </li>
-            <li>
-              <Code>apply(scene, v, ctx)</Code> runs once for every picture. <Code>v</Code> holds the value each setting has for this seed: <Code>v.</Code> followed by the setting&apos;s name.
-            </li>
-            <li>
-              <Code>ctx.rng(&quot;name&quot;)</Code> gives random numbers that the seed decides. The same seed always gives the same numbers, so the same picture.
-            </li>
-            <li>
-              It returns the scene with new shapes added: <Code>rect</Code>, <Code>circle</Code>, <Code>polyline</Code> (lines, what a pen plotter draws) and <Code>dots</Code>. Positions are measured so that the short side of the canvas is 1.
-            </li>
+            <li>{prose(t("code.read1"))}</li>
+            <li>{prose(t("code.read2"))}</li>
+            <li>{prose(t("code.read3"))}</li>
+            <li>{prose(t("code.read4"))}</li>
           </ul>
-          <p className="mt-2 text-zinc-400">
-            This is TypeScript: JavaScript plus type labels after a colon, such as <Code>cx: number</Code>. You can read past them.
-          </p>
+          <p className="mt-2 text-zinc-400">{prose(t("code.readTs"))}</p>
         </details>
 
         <div className="min-h-0 flex-1 overflow-hidden px-1 py-1">
-          {source === undefined && <p className="p-3 text-xs text-zinc-500">Loading the code...</p>}
-          {source === null && <p className="p-3 text-xs text-zinc-400">There is no code to show for this layer.</p>}
+          {source === undefined && <p className="p-3 text-xs text-zinc-500">{t("code.loading")}</p>}
+          {source === null && <p className="p-3 text-xs text-zinc-400">{t("code.none")}</p>}
           <div ref={host} className={source ? "h-full" : "hidden"} />
         </div>
       </div>

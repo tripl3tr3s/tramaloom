@@ -1,4 +1,8 @@
 import { useDialog } from "../hooks/useDialog.ts";
+import { useLang } from "../i18n/i18n.tsx";
+import type { MessageKey } from "../i18n/messages.ts";
+import { MESSAGES } from "../i18n/messages.ts";
+import { LangSwitch } from "./LangSwitch.tsx";
 
 const KEY = "gridloom.welcomed";
 
@@ -26,15 +30,18 @@ interface Props {
 
 const kbd = "rounded border border-zinc-700 bg-zinc-800 px-1.5 py-px font-sans text-[11px] text-zinc-200";
 
-const TIPS: readonly { readonly keys: readonly string[]; readonly text: string }[] = [
-  { keys: ["R", "Left", "Right"], text: "A piece is a stack of layers plus a seed. R draws a new seed; the arrows walk back and forth through the ones you saw." },
-  { keys: ["vary", "lock"], text: "Vary hands a parameter to the seed, inside a range you set. Lock freezes it at a fixed value." },
-  { keys: ["M", "L"], text: "M shows mutations of the current piece; L opens presets to start from." },
-  { keys: ["B", "?"], text: "B stars a seed for later. Export saves images, the document or a share link, and ? lists every shortcut." },
+// Keys are shown as they are, or as the button names they stand for (which follow the language).
+const TIPS: readonly { readonly keys: readonly (string | MessageKey)[]; readonly text: MessageKey }[] = [
+  { keys: ["R", "←", "→"], text: "welcome.tipSeeds" },
+  { keys: ["param.vary", "param.lock"], text: "welcome.tipVary" },
+  { keys: ["M", "L"], text: "welcome.tipMutate" },
+  { keys: ["toolbar.learn"], text: "welcome.tipLearn" },
+  { keys: ["B", "?"], text: "welcome.tipMore" },
 ];
 
 /** First-run card: four tips and a way into the presets. */
 export function Welcome({ onClose, onPresets }: Props) {
+  const { t } = useLang();
   const close = () => {
     rememberWelcomed();
     onClose();
@@ -55,21 +62,24 @@ export function Welcome({ onClose, onPresets }: Props) {
         aria-labelledby="welcome-title"
         className="w-full max-w-md rounded-lg border border-zinc-700 bg-zinc-900 p-5 shadow-2xl shadow-black/60 outline-none"
       >
-        <h2 id="welcome-title" className="text-base font-semibold text-white">
-          Welcome to Gridloom
-        </h2>
-        <p className="mt-1 text-xs text-zinc-400">Generative grid art, made in the browser. Nothing leaves this device unless you share it.</p>
+        <div className="flex items-start gap-2">
+          <h2 id="welcome-title" className="flex-1 text-base font-semibold text-white">
+            {t("welcome.title")}
+          </h2>
+          <LangSwitch />
+        </div>
+        <p className="mt-1 text-xs text-zinc-400">{t("welcome.intro")}</p>
         <ul className="mt-4 flex flex-col gap-3">
-          {TIPS.map((t) => (
-            <li key={t.text} className="flex gap-3 text-xs leading-relaxed text-zinc-300">
+          {TIPS.map((tip) => (
+            <li key={tip.text} className="flex gap-3 text-xs leading-relaxed text-zinc-300">
               <span className="flex w-24 shrink-0 flex-wrap content-start gap-1">
-                {t.keys.map((k) => (
+                {tip.keys.map((k) => (
                   <kbd key={k} className={kbd}>
-                    {k}
+                    {Object.hasOwn(MESSAGES.en, k) ? t(k as MessageKey) : k}
                   </kbd>
                 ))}
               </span>
-              <span>{t.text}</span>
+              <span>{t(tip.text)}</span>
             </li>
           ))}
         </ul>
@@ -82,10 +92,10 @@ export function Welcome({ onClose, onPresets }: Props) {
               onPresets();
             }}
           >
-            Browse presets
+            {t("welcome.browse")}
           </button>
           <button type="button" className="rounded bg-sky-700 px-3 py-1 text-xs text-white hover:bg-sky-600" onClick={close}>
-            Start making
+            {t("welcome.start")}
           </button>
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { normaliseHash } from "@gridloom/core";
 import { useEffect, useRef, useState } from "react";
 import { ChevronIcon, StarIcon } from "./icons.tsx";
+import { useLang } from "../i18n/i18n.tsx";
 import { Menu } from "./Menu.tsx";
 
 interface Props {
@@ -43,6 +44,7 @@ const wide = "max-md:hidden";
 const row2 = "max-md:order-last";
 
 export function Toolbar(p: Props) {
+  const { lang, setLang, t } = useLang();
   const [draft, setDraft] = useState(p.hash);
   const fileRef = useRef<HTMLInputElement | null>(null);
   useEffect(() => setDraft(p.hash), [p.hash]);
@@ -56,73 +58,75 @@ export function Toolbar(p: Props) {
 
   return (
     <header className="flex flex-wrap items-center gap-1 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5 max-md:gap-y-1.5 max-md:px-2">
-      <span className="mr-2 text-sm font-semibold tracking-tight text-white max-sm:hidden">Gridloom</span>
+      <span className="mr-2 text-sm font-semibold tracking-tight text-white max-xl:hidden">Gridloom</span>
       <input
-        className="w-36 rounded bg-transparent max-md:min-w-0 max-md:flex-1 px-1.5 py-0.5 text-xs text-zinc-300 outline-none hover:bg-zinc-800 focus:bg-zinc-800"
+        className="w-24 lg:w-28 xl:w-32 rounded bg-transparent max-md:min-w-0 max-md:flex-1 px-1.5 py-0.5 text-xs text-zinc-300 outline-none hover:bg-zinc-800 focus:bg-zinc-800"
         value={p.name}
         onChange={(e) => p.onRename(e.target.value)}
-        aria-label="Piece name"
+        aria-label={t("toolbar.pieceName")}
       />
       {p.unsaved && (
-        <span className="-ml-1 grid size-4 place-items-center" title="Unsaved changes: Save document, add it to the Library, or copy a share link to keep them">
+        <span className="-ml-1 grid size-4 place-items-center" title={t("toolbar.unsavedHint")}>
           <span className="size-1.5 rounded-full bg-amber-400" aria-hidden="true" />
-          <span className="sr-only">Unsaved changes</span>
+          <span className="sr-only">{t("toolbar.unsaved")}</span>
         </span>
       )}
       {sep}
       {/* Phones: forces the seed controls onto their own row. */}
       <span className={`hidden basis-full max-md:block ${row2}`} aria-hidden="true" />
-      <button type="button" className={`${btn} ${row2}`} onClick={p.onPrev} disabled={!p.canPrev} title="Previous seed (Left)">
+      <button type="button" className={`${btn} ${row2}`} onClick={p.onPrev} disabled={!p.canPrev} title={t("toolbar.prevSeed")} aria-label={t("toolbar.prevSeed")}>
         ←
       </button>
-      <button type="button" className={`${btn} ${row2}`} onClick={p.onReroll} title="New random seed (R)">
-        Reroll
+      <button type="button" className={`${btn} ${row2}`} onClick={p.onReroll} title={t("toolbar.rerollHint")}>
+        {t("toolbar.reroll")}
       </button>
-      <button type="button" className={`${btn} ${row2}`} onClick={p.onNext} title="Next seed (Right)">
+      <button type="button" className={`${btn} ${row2}`} onClick={p.onNext} title={t("toolbar.nextSeed")} aria-label={t("toolbar.nextSeed")}>
         →
       </button>
       <input
-        className="w-44 rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400 outline-none focus:text-zinc-100 focus:ring-1 focus:ring-sky-500 lg:w-72 max-md:order-last max-md:min-w-0 max-md:flex-1"
+        className="w-32 lg:w-36 rounded bg-zinc-800 px-1.5 py-0.5 font-mono text-[11px] text-zinc-400 outline-none focus:text-zinc-100 focus:ring-1 focus:ring-sky-500 xl:w-56 max-md:order-last max-md:min-w-0 max-md:flex-1"
         value={draft}
         onChange={(e) => setDraft(e.target.value)}
         onBlur={commitHash}
         onKeyDown={(e) => e.key === "Enter" && commitHash()}
         spellCheck={false}
-        aria-label="Hash"
+        aria-label={t("toolbar.hash")}
       />
       <button
         type="button"
         className={`${btn} ${row2} ${p.favorite ? "text-amber-300 hover:text-amber-200" : ""}`}
         onClick={p.onFavorite}
         aria-pressed={p.favorite}
-        aria-label="Favourite this seed"
-        title={p.favorite ? "Remove this seed from favourites (B)" : "Star this seed (B). Stars keep the seed only; save to the Library to keep the whole piece"}
+        aria-label={t("toolbar.favourite")}
+        title={p.favorite ? t("toolbar.unfavouriteHint") : t("toolbar.favouriteHint")}
       >
         <StarIcon filled={p.favorite} />
       </button>
       {sep}
-      <button type="button" className={btn} onClick={p.onUndo} disabled={!p.canUndo} title="Undo (Ctrl+Z)">
-        Undo
+      <button type="button" className={btn} onClick={p.onUndo} disabled={!p.canUndo} title={t("toolbar.undoHint")} aria-label={t("toolbar.undo")}>
+        <span aria-hidden="true" className="text-sm leading-none">↶</span>
       </button>
-      <button type="button" className={btn} onClick={p.onRedo} disabled={!p.canRedo} title="Redo (Ctrl+Shift+Z)">
-        Redo
+      <button type="button" className={btn} onClick={p.onRedo} disabled={!p.canRedo} title={t("toolbar.redoHint")} aria-label={t("toolbar.redo")}>
+        <span aria-hidden="true" className="text-sm leading-none">↷</span>
       </button>
       {sep}
-      <button type="button" className={`${btn} ${wide}`} onClick={p.onMutate} title="Mutation grid (M)">
-        Mutate
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onMutate} title={t("toolbar.mutateHint")}>
+        {t("toolbar.mutate")}
       </button>
-      <button type="button" className={`${btn} ${wide}`} onClick={p.onLibrary} title="Preset library (L)">
-        Library
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onLibrary} title={t("toolbar.libraryHint")}>
+        {t("toolbar.library")}
       </button>
-      <button type="button" className={`${btn} ${wide}`} onClick={p.onEdition} title="Traits, census, contact sheet, batch export (E)">
-        Edition
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onLearn} title={t("toolbar.learnHint")}>
+        {t("toolbar.learn")}
       </button>
-      <button type="button" className={`${btn} ${wide}`} onClick={p.onLearn} title="Lessons: learn to write your own layer (English and Spanish)">
-        Learn
+      {/* Advanced: set apart and muted. Nothing in it is needed to make or export a picture. */}
+      <span className={`mx-1 h-4 w-px bg-zinc-800 ${wide}`} />
+      <button type="button" className={`${btn} ${wide} text-zinc-500`} onClick={p.onEdition} title={t("toolbar.editionHint")}>
+        {t("toolbar.edition")}
       </button>
       <div className="flex-1 max-md:hidden" />
-      <label className={`${btn} ${wide} cursor-pointer has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-sky-500`} title="Open a .gridloom.json document">
-        Open
+      <label className={`${btn} ${wide} cursor-pointer has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-sky-500`} title={t("toolbar.openHint")}>
+        {t("toolbar.open")}
         <input
           ref={fileRef}
           type="file"
@@ -136,49 +140,51 @@ export function Toolbar(p: Props) {
         />
       </label>
       <Menu
-        label="Export"
-        title="Export images, save the document, copy a share link"
+        label={t("toolbar.export")}
+        title={t("toolbar.exportHint")}
         align="right"
         triggerClass={`${btn} inline-flex items-center gap-1 bg-sky-700/80 text-white hover:bg-sky-600`}
         trigger={
           <>
-            Export <ChevronIcon />
+            {t("toolbar.export")} <ChevronIcon />
           </>
         }
         items={[
           { label: "PNG, 2000 px", hint: "S", onSelect: () => p.onExportPNG(2000) },
           { label: "PNG, 4000 px", hint: "Shift+S", onSelect: () => p.onExportPNG(4000) },
-          { label: "SVG", description: "Vector, from the same drawing", onSelect: p.onExportSVG },
-          { label: "Save document", description: "JSON file you can Open later", separatorBefore: true, onSelect: p.onExportJSON },
-          { label: "Copy share link", description: "Settings and seed, no server", onSelect: p.onCopyLink },
+          { label: "SVG", description: t("toolbar.svgDesc"), onSelect: p.onExportSVG },
+          { label: t("toolbar.saveDoc"), description: t("toolbar.saveDocDesc"), separatorBefore: true, onSelect: p.onExportJSON },
+          { label: t("toolbar.copyLink"), description: t("toolbar.copyLinkDesc"), onSelect: p.onCopyLink },
         ]}
       />
       <div className="md:hidden">
         <Menu
-          label="More"
+          label={t("toolbar.more")}
           align="right"
           triggerClass={`${btn} inline-flex items-center gap-1`}
           trigger={
             <>
-              More <ChevronIcon />
+              {t("toolbar.more")} <ChevronIcon />
             </>
           }
           items={[
-            { label: "Learn", description: "Lessons in writing your own layer", onSelect: p.onLearn },
-            { label: "Mutate", description: "Grid of variations to pick from", onSelect: p.onMutate },
-            { label: "Library", description: "Presets and saved pieces", onSelect: p.onLibrary },
-            { label: "Edition", description: "Traits, census, sheet, batch, mint", onSelect: p.onEdition },
-            { label: "Open document", description: "A .gridloom.json file", separatorBefore: true, onSelect: () => fileRef.current?.click() },
-            { label: "Debug panel", separatorBefore: true, onSelect: p.onToggleDebug },
-            { label: "Keyboard shortcuts", onSelect: p.onShortcuts },
+            { label: t("toolbar.learn"), description: t("toolbar.learnDesc"), onSelect: p.onLearn },
+            { label: t("toolbar.mutate"), description: t("toolbar.mutateDesc"), onSelect: p.onMutate },
+            { label: t("toolbar.library"), description: t("toolbar.libraryDesc"), onSelect: p.onLibrary },
+            { label: t("toolbar.edition"), description: t("toolbar.editionDesc"), onSelect: p.onEdition },
+            { label: t("toolbar.openDoc"), description: t("toolbar.openDocDesc"), separatorBefore: true, onSelect: () => fileRef.current?.click() },
+            { label: t("lang.switchTo"), separatorBefore: true, onSelect: () => setLang(lang === "es" ? "en" : "es") },
+            { label: t("toolbar.debugPanel"), separatorBefore: true, onSelect: p.onToggleDebug },
+            { label: t("toolbar.shortcuts"), onSelect: p.onShortcuts },
           ]}
         />
       </div>
       {sep}
-      <button type="button" className={`${btn} ${wide}`} onClick={p.onToggleDebug} title="Debug panel (G)">
-        Debug
+      {/* A developer tool: G opens it at any width; the button only where there is room. */}
+      <button type="button" className={`${btn} ${wide} max-xl:hidden`} onClick={p.onToggleDebug} title={t("toolbar.debugHint")}>
+        {t("toolbar.debug")}
       </button>
-      <button type="button" className={`${btn} ${wide}`} onClick={p.onShortcuts} aria-label="Keyboard shortcuts" title="Keyboard shortcuts (?)">
+      <button type="button" className={`${btn} ${wide}`} onClick={p.onShortcuts} aria-label={t("toolbar.shortcuts")} title={t("toolbar.shortcutsHint")}>
         ?
       </button>
     </header>

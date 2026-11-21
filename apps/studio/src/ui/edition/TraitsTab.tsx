@@ -5,6 +5,7 @@ import { MAX_WEIGHT } from "../../state/limits.ts";
 import { MAX_BINS, MAX_TRAITS } from "../../state/schema.ts";
 import type { Action } from "../../state/store.ts";
 import { pct, ShareBar } from "./ShareBar.tsx";
+import { useLang } from "../../i18n/i18n.tsx";
 
 interface Props {
   readonly doc: ArtDocument;
@@ -43,7 +44,7 @@ function sources(doc: ArtDocument): Source[] {
 }
 
 /** Default bins for a numeric source: thirds of its varying range. */
-function defaultBins(doc: ArtDocument, layerId: string, param: string): TraitBin[] {
+function defaultBins(doc: ArtDocument, layerId: string, param: string, names: readonly [string, string, string]): TraitBin[] {
   const layer = doc.layers.find((l) => l.id === layerId);
   const spec = layer ? layerDef(defaultRegistry, layer)?.params[param] : undefined;
   if (!spec || (spec.kind !== "number" && spec.kind !== "int")) return [];
@@ -53,9 +54,9 @@ function defaultBins(doc: ArtDocument, layerId: string, param: string): TraitBin
   const round = (v: number) => (spec.kind === "int" ? Math.floor(v) : Number(v.toFixed(3)));
   const third = (hi - lo) / 3;
   return [
-    { label: "Low", upTo: round(lo + third) },
-    { label: "Mid", upTo: round(lo + 2 * third) },
-    { label: "High" },
+    { label: names[0], upTo: round(lo + third) },
+    { label: names[1], upTo: round(lo + 2 * third) },
+    { label: names[2] },
   ];
 }
 
@@ -77,6 +78,8 @@ function TraitEditor({
   readonly onRemove: () => void;
   readonly onWeights: (weights: Record<string, number>) => void;
 }) {
+  const { t } = useLang();
+  const binNames = [t("traits.low"), t("traits.mid"), t("traits.high")] as const;
   // Text fields edit a draft and commit on blur/Enter, so typing is one undo step.
   const [name, setName] = useState(trait.name);
   const [nameError, setNameError] = useState<string | null>(null);
@@ -91,7 +94,7 @@ function TraitEditor({
   const commitName = () => {
     const n = name.trim().slice(0, 40);
     if (n && n !== trait.name && onChange({ ...trait, name: n })) return setNameError(null);
-    if (n && n !== trait.name) setNameError(`"${n}" is already used`);
+    if (n && n !== trait.name) setNameError(t("traits.nameUsed", { name: n }));
     setName(trait.name);
   };
   const setBins = (next: readonly TraitBin[]) => {
@@ -109,7 +112,7 @@ function TraitEditor({
           onChange={(e) => setName(e.target.value)}
           onBlur={commitName}
           onKeyDown={(e) => e.key === "Enter" && e.currentTarget.blur()}
-          aria-label="Trait name"
+          aria-label={t("traits.name")}
         />
         <select
           className={`${field} max-w-56`}
@@ -117,29 +120,29 @@ function TraitEditor({
           onChange={(e) => {
             const s = all.find((x) => x.key === e.target.value);
             if (!s) return;
-            const b = s.kind === "number" || s.kind === "int" ? defaultBins(doc, s.layerId, s.param) : [];
+            const b = s.kind === "number" || s.kind === "int" ? defaultBins(doc, s.layerId, s.param, binNames) : [];
             onChange({ name: trait.name, layerId: s.layerId, param: s.param, ...(b.length ? { bins: b } : {}) });
           }}
-          aria-label="Trait source"
+          aria-label={t("traits.source")}
         >
-          {!src && <option value={`${trait.layerId}/${trait.param}`}>missing: {trait.layerId}/{trait.param}</option>}
+          {!src && <option value={`${trait.layerId}/${trait.param}`}>{t("traits.missing", { source: `${trait.layerId}/${trait.param}` })}</option>}
           {all.map((s) => (
             <option key={s.key} value={s.key}>
               {s.label}
-              {s.varying ? "" : " (fixed)"}
+              {s.varying ? "" : t("traits.fixedSuffix")}
             </option>
           ))}
         </select>
-        {src && !src.varying && <span className="text-[11px] text-amber-300">Fixed setting: every piece gets the same value</span>}
+        {src && !src.varying && <span className="text-[11px] text-amber-300">{t("traits.fixed")}</span>}
         <div className="flex-1" />
         <button type="button" className="rounded px-1.5 text-[11px] text-zinc-500 hover:bg-zinc-800 hover:text-zinc-200" onClick={onRemove}>
-          Remove
+          {t("traits.remove")}
         </button>
       </div>
 
       {numeric && (
         <div className="mt-2 flex flex-wrap items-center gap-2 text-[11px] text-zinc-400">
-          <span>Bins</span>
+          <span>{t("traits.bins")}</span>
           {bins.map((b, i) => (
             // Keyed by content: when the bins change underneath, the fields remount with the real values.
             <span key={`${i}:${b.label}:${b.upTo ?? ""}`} className="flex items-center gap-1 rounded bg-zinc-900 px-1 py-0.5">
@@ -152,11 +155,11 @@ function TraitEditor({
                   if (label && label !== b.label) setBins(bins.map((x, j) => (j === i ? { ...x, label } : x)));
                   else e.target.value = b.label;
                 }}
-                aria-label={`Bin ${i + 1} label`}
+                aria-label={t("traits.binLabel", { n: i + 1 })}
               />
               {b.upTo !== undefined ? (
                 <>
-                  <span>up to</span>
+                  <span>{t("traits.upTo")}</span>
                   <input
                     type="number"
                     className={`${field} w-16`}
@@ -170,11 +173,11 @@ function TraitEditor({
                       if (ok && upTo !== b.upTo) setBins(bins.map((x, j) => (j === i ? { ...x, upTo } : x)));
                       else e.target.value = String(b.upTo);
                     }}
-                    aria-label={`Bin ${i + 1} upper bound`}
+                    aria-label={t("traits.binBound", { n: i + 1 })}
                   />
                 </>
               ) : (
-                <span>rest</span>
+                <span>{t("traits.rest")}</span>
               )}
             </span>
           ))}
@@ -184,30 +187,30 @@ function TraitEditor({
               className="rounded bg-zinc-800 px-1.5 hover:bg-zinc-700"
               onClick={() => {
                 const last = bins[bins.length - 1];
-                if (!last) return setBins(defaultBins(doc, trait.layerId, trait.param));
+                if (!last) return setBins(defaultBins(doc, trait.layerId, trait.param, binNames));
                 // Insert before the catch-all, one step above the previous bound.
                 const prevUp = bins[bins.length - 2]?.upTo ?? 0;
                 const step = src?.kind === "int" ? 1 : 0.1;
                 const used = new Set(bins.map((b) => b.label));
                 let k = bins.length;
-                while (used.has(`Bin ${k}`)) k++;
-                setBins([...bins.slice(0, -1), { label: `Bin ${k}`, upTo: Number((prevUp + step).toFixed(6)) }, last]);
+                while (used.has(t("traits.binN", { n: k }))) k++;
+                setBins([...bins.slice(0, -1), { label: t("traits.binN", { n: k }), upTo: Number((prevUp + step).toFixed(6)) }, last]);
               }}
             >
-              + bin
+              {t("traits.addBin")}
             </button>
           )}
           {bins.length > 0 && (
             <button type="button" className="rounded px-1.5 hover:bg-zinc-800" onClick={() => setBins(bins.length > 1 ? [...bins.slice(0, -2), ...bins.slice(-1)] : [])}>
-              - bin
+              {t("traits.removeBin")}
             </button>
           )}
-          {bins.length === 0 && <span className="text-zinc-500">none: the number itself is the value</span>}
+          {bins.length === 0 && <span className="text-zinc-500">{t("traits.noBins")}</span>}
         </div>
       )}
 
       {nameError && <p className="mt-1 text-[11px] text-red-300">{nameError}</p>}
-      {!src && <p className="mt-1 text-[11px] text-amber-300">This trait&apos;s setting no longer exists; every piece reports None.</p>}
+      {!src && <p className="mt-1 text-[11px] text-amber-300">{t("traits.gone")}</p>}
 
       <div className="mt-3 space-y-1">
         {weights ? (
@@ -246,8 +249,8 @@ function TraitEditor({
                       else if (next !== w) onWeights({ ...weights, [k]: next });
                       else e.target.value = String(w);
                     }}
-                    aria-label={`Weight for ${k}`}
-                    title="Weight (relative odds)"
+                    aria-label={t("traits.weightFor", { value: k })}
+                    title={t("traits.weightHint")}
                   />
                 </div>
               );
@@ -267,14 +270,12 @@ function TraitEditor({
             </div>
           ))
         ) : (
-          <p className="text-[11px] text-zinc-500">Continuous number: add bins to get a rarity table.</p>
+          <p className="text-[11px] text-zinc-500">{t("traits.continuous")}</p>
         )}
-        {weights && total0(weights) && <p className="text-[11px] text-amber-300">All weights are 0: every piece uses the fixed value.</p>}
+        {weights && total0(weights) && <p className="text-[11px] text-amber-300">{t("traits.allZero")}</p>}
         {weights && (
           <p className="text-[10px] text-zinc-500">
-            Weights are relative odds. Changing one moves the boundaries for every seed, so many seeds switch value, not only rare ones.{" "}
-            <span className="text-amber-200/80">Settle rarity first, then pick favourite seeds.</span> Links and saved files keep their own
-            weights.
+            {t("traits.weightsNote")} <span className="text-amber-200/80">{t("traits.weightsSettle")}</span> {t("traits.weightsKeep")}
           </p>
         )}
       </div>
@@ -283,6 +284,7 @@ function TraitEditor({
 }
 
 export function TraitsTab({ doc, hash, dispatch }: Props) {
+  const { t } = useLang();
   const traits = doc.traits ?? [];
   const all = useMemo(() => sources(doc), [doc]);
   const current = useMemo(() => {
@@ -295,51 +297,50 @@ export function TraitsTab({ doc, hash, dispatch }: Props) {
   const set = (next: readonly TraitDef[]) => dispatch({ type: "setTraits", traits: next });
 
   const add = () => {
-    const used = new Set(traits.map((t) => `${t.layerId}/${t.param}`));
+    const used = new Set(traits.map((x) => `${x.layerId}/${x.param}`));
     const s = all.find((x) => x.varying && !used.has(x.key)) ?? all.find((x) => !used.has(x.key));
     if (!s) return;
-    const names = new Set(traits.map((t) => t.name));
+    const names = new Set(traits.map((x) => x.name));
     let n = 1;
-    while (names.has(`Trait ${n}`)) n++;
-    const bins = s.kind === "number" || s.kind === "int" ? defaultBins(doc, s.layerId, s.param) : [];
-    set([...traits, { name: `Trait ${n}`, layerId: s.layerId, param: s.param, ...(bins.length ? { bins } : {}) }]);
+    while (names.has(t("traits.traitN", { n }))) n++;
+    const bins = s.kind === "number" || s.kind === "int" ? defaultBins(doc, s.layerId, s.param, [t("traits.low"), t("traits.mid"), t("traits.high")]) : [];
+    set([...traits, { name: t("traits.traitN", { n }), layerId: s.layerId, param: s.param, ...(bins.length ? { bins } : {}) }]);
   };
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <span className="text-zinc-400">This seed:</span>
+        <span className="text-zinc-400">{t("traits.thisSeed")}</span>
         {Object.entries(current).map(([k, v]) => (
           <span key={k} className="rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-200">
             {k}: {String(v)}
           </span>
         ))}
-        {traits.length === 0 && <span className="text-zinc-500">no traits yet</span>}
+        {traits.length === 0 && <span className="text-zinc-500">{t("traits.none")}</span>}
       </div>
       <p className="text-[11px] text-zinc-500">
-        Traits describe the work for collectors: 4 to 8 axes you can name after five seconds of looking, values as words. They come
-        from settings that vary with the seed, so they are known before anything is drawn.
-        {traits.length > 8 && <span className="text-amber-300"> More than 8 traits is hard to read.</span>}
+        {t("traits.about")}
+        {traits.length > 8 && <span className="text-amber-300">{t("traits.tooMany")}</span>}
       </p>
-      {traits.map((t, i) => (
+      {traits.map((trait, i) => (
         <TraitEditor
-          key={`${i}:${t.name}:${t.layerId}/${t.param}`}
+          key={`${i}:${trait.name}:${trait.layerId}/${trait.param}`}
           doc={doc}
-          trait={t}
+          trait={trait}
           all={all}
           onChange={(next) => {
-            if (next.name !== t.name && traits.some((x, j) => j !== i && x.name === next.name)) return false;
+            if (next.name !== trait.name && traits.some((x, j) => j !== i && x.name === next.name)) return false;
             set(traits.map((x, j) => (j === i ? next : x)));
             return true;
           }}
           onRemove={() => set(traits.filter((_, j) => j !== i))}
           onWeights={(weights) => {
-            const setting = doc.layers.find((l) => l.id === t.layerId)?.params[t.param];
+            const setting = doc.layers.find((l) => l.id === trait.layerId)?.params[trait.param];
             if (!setting) return;
             dispatch({
               type: "setParam",
-              layerId: t.layerId,
-              name: t.param,
+              layerId: trait.layerId,
+              name: trait.param,
               setting: { ...setting, vary: { kind: "weights", weights } },
               record: true,
             });
@@ -352,7 +353,7 @@ export function TraitsTab({ doc, hash, dispatch }: Props) {
         onClick={add}
         disabled={traits.length >= MAX_TRAITS || all.length === 0}
       >
-        + Add trait
+        {t("traits.add")}
       </button>
     </div>
   );

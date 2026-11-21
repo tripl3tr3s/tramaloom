@@ -5,6 +5,7 @@ import { download, slug } from "../../render/export.ts";
 import type { ThumbJob } from "../../render/protocol.ts";
 import { useThumbnails } from "../../render/useThumbnails.ts";
 import { randomHash } from "../../state/store.ts";
+import { useLang } from "../../i18n/i18n.tsx";
 
 interface Props {
   readonly doc: ArtDocument;
@@ -47,6 +48,7 @@ async function exportSheet(doc: ArtDocument, urls: readonly string[], hashes: re
 }
 
 export function SheetTab({ doc, hash, onPick, notify }: Props) {
+  const { t } = useLang();
   const [n, setN] = useState(4);
   const [root, setRoot] = useState(hash);
   const hashes = useMemo(() => seedSeries(root, n * n), [root, n]);
@@ -57,12 +59,12 @@ export function SheetTab({ doc, hash, onPick, notify }: Props) {
 
   const save = async () => {
     const ready = urls.filter((u): u is string => u !== null);
-    if (!fresh || ready.length !== urls.length) return notify("Wait for the sheet to finish rendering");
+    if (!fresh || ready.length !== urls.length) return notify(t("sheet.wait"));
     setExporting(true);
     try {
       await exportSheet(doc, ready, hashes, traits, n);
     } catch (e) {
-      notify(`Sheet export failed: ${String(e)}`);
+      notify(t("sheet.failed", { error: e instanceof Error ? e.message : String(e) }));
     } finally {
       setExporting(false);
     }
@@ -72,8 +74,8 @@ export function SheetTab({ doc, hash, onPick, notify }: Props) {
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-300">
         <label className="flex items-center gap-1">
-          Grid
-          <select className={field} value={n} onChange={(e) => setN(Number(e.target.value))} aria-label="Sheet size">
+          {t("sheet.grid")}
+          <select className={field} value={n} onChange={(e) => setN(Number(e.target.value))} aria-label={t("sheet.size")}>
             {[3, 4, 5, 6, 8].map((k) => (
               <option key={k} value={k}>
                 {k} x {k}
@@ -82,10 +84,10 @@ export function SheetTab({ doc, hash, onPick, notify }: Props) {
           </select>
         </label>
         <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" onClick={() => setRoot(randomHash())}>
-          New sample
+          {t("sheet.new")}
         </button>
         <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" onClick={() => setRoot(hash)}>
-          From current seed
+          {t("sheet.fromCurrent")}
         </button>
         <button
           type="button"
@@ -93,13 +95,13 @@ export function SheetTab({ doc, hash, onPick, notify }: Props) {
           onClick={save}
           disabled={!fresh || exporting}
         >
-          Export PNG
+          {t("sheet.export")}
         </button>
         <span className="text-zinc-500" aria-live="polite">
           {error ?? (busy ? "rendering" : "")}
         </span>
       </div>
-      <p className="text-[11px] text-zinc-500">One good render proves nothing: look at many. Click a tile to open that seed.</p>
+      <p className="text-[11px] text-zinc-500">{t("sheet.about")}</p>
       <div className="grid gap-3" style={{ gridTemplateColumns: `repeat(${n}, minmax(0, 1fr))` }}>
         {hashes.map((h, i) => (
           <button
@@ -107,7 +109,7 @@ export function SheetTab({ doc, hash, onPick, notify }: Props) {
             key={h}
             onClick={() => onPick(h)}
             className="group flex flex-col gap-1 rounded-lg p-1 text-left hover:bg-zinc-900"
-            title={`Open ${h}`}
+            title={t("sheet.open", { hash: h })}
           >
             <span className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded bg-zinc-900">
               {urls[i] ? (

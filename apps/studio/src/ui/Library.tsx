@@ -7,6 +7,7 @@ import { useThumbnails } from "../render/useThumbnails.ts";
 import type { UserPreset } from "../state/library.ts";
 import { deletePreset, libraryFile, listPresets, parseLibraryFile, presetId, requestPersistence, savePreset } from "../state/library.ts";
 import { download } from "../render/export.ts";
+import { useLang } from "../i18n/i18n.tsx";
 
 interface Props {
   readonly doc: ArtDocument;
@@ -29,6 +30,7 @@ interface Entry {
 const THUMB = 220;
 
 export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) {
+  const { t } = useLang();
   const [user, setUser] = useState<readonly UserPreset[]>([]);
   const [name, setName] = useState(doc.name);
   const [available, setAvailable] = useState(true);
@@ -66,19 +68,19 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
       await savePreset({ id: presetId(), name: label, doc: { ...doc, name: label }, hash, createdAt: Date.now() });
       onSaved();
       void requestPersistence();
-      notify(`Saved "${label}" to your library`);
+      notify(t("library.saved", { name: label }));
       refresh();
     } catch (e) {
-      notify(e instanceof Error ? e.message : "Could not save");
+      notify(e instanceof Error ? e.message : t("library.saveFailed"));
     } finally {
       setSaving(false);
     }
   };
   const importFile = async (file: File) => {
-    if (file.size > 20 * 1024 * 1024) return notify("That file is too large to be a Gridloom library");
+    if (file.size > 20 * 1024 * 1024) return notify(t("library.tooLarge"));
     try {
       const parsed = parseLibraryFile(JSON.parse(await file.text()));
-      if (!parsed) return notify("Not a Gridloom library file");
+      if (!parsed) return notify(t("library.notLibrary"));
       let saved = 0;
       let stopped: string | null = null;
       for (const p of parsed.presets) {
@@ -86,20 +88,20 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
           await savePreset(p); // same id overwrites, so importing twice does not duplicate
           saved++;
         } catch (e) {
-          stopped = e instanceof Error ? e.message : "Could not save";
+          stopped = e instanceof Error ? e.message : t("library.saveFailed");
           break;
         }
       }
       void requestPersistence();
       const parts = [
-        `Imported ${saved} preset${saved === 1 ? "" : "s"}`,
-        parsed.skipped ? `skipped ${parsed.skipped} invalid` : "",
-        stopped ? `stopped: ${stopped}` : "",
+        saved === 1 ? t("library.importedOne") : t("library.importedMany", { n: saved }),
+        parsed.skipped ? t("library.skipped", { n: parsed.skipped }) : "",
+        stopped ? t("library.stopped", { error: stopped }) : "",
       ].filter(Boolean);
       notify(parts.join(", "));
       refresh();
     } catch {
-      notify("Could not read that file");
+      notify(t("app.unreadable"));
     }
   };
 
@@ -110,10 +112,10 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
     setConfirming(null);
     try {
       await deletePreset(e.userId);
-      notify(`Deleted "${e.name}"`);
+      notify(t("library.deleted", { name: e.name }));
       refresh();
     } catch {
-      notify("Could not delete");
+      notify(t("library.deleteFailed"));
     }
   };
 
@@ -133,7 +135,7 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
       <button
         type="button"
         onClick={() => onLoad(e.doc, e.hash)}
-        title={`Load ${e.name}`}
+        title={t("library.load", { name: e.name })}
         className="flex aspect-[3/4] w-full items-center justify-center overflow-hidden rounded-lg bg-zinc-900 ring-1 ring-zinc-800 transition hover:ring-2 hover:ring-sky-500"
       >
         {urls[i] ? (
@@ -152,9 +154,9 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
             className={`rounded px-1.5 py-0.5 text-[11px] ${
               confirming === e.userId ? "bg-red-800 text-white" : "text-zinc-500 hover:bg-red-900/60 hover:text-red-200"
             }`}
-            aria-label={confirming === e.userId ? `Confirm delete ${e.name}` : `Delete ${e.name}`}
+            aria-label={confirming === e.userId ? t("library.confirmDelete", { name: e.name }) : t("library.delete", { name: e.name })}
           >
-            {confirming === e.userId ? "Delete?" : "x"}
+            {confirming === e.userId ? t("library.deleteAsk") : "x"}
           </button>
         )}
       </div>
@@ -169,16 +171,16 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
       className="absolute inset-0 z-30 flex flex-col gap-4 overflow-auto bg-zinc-950 p-4 outline-none"
       role="dialog"
       aria-modal="true"
-      aria-label="Library"
+      aria-label={t("toolbar.library")}
     >
       <div className="flex flex-wrap items-center gap-2 text-xs text-zinc-300">
-        <span className="font-semibold text-white">Library</span>
+        <span className="font-semibold text-white">{t("toolbar.library")}</span>
         <input
           className="w-48 rounded bg-zinc-800 px-1.5 py-0.5 text-zinc-100 outline-none focus:ring-1 focus:ring-sky-500"
           value={name}
           onChange={(e) => setName(e.target.value)}
           onKeyDown={(e) => e.key === "Enter" && save()}
-          aria-label="Preset name"
+          aria-label={t("library.presetName")}
           maxLength={100}
         />
         <button
@@ -187,19 +189,19 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
           onClick={save}
           disabled={!available || saving}
         >
-          Save current
+          {t("library.saveCurrent")}
         </button>
         <button
           type="button"
           className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700 disabled:opacity-40"
           disabled={user.length === 0}
           onClick={() => download(libraryFile(user), "gridloom-library.json")}
-          title="Download all your presets as one file"
+          title={t("library.exportAllHint")}
         >
-          Export all
+          {t("library.exportAll")}
         </button>
-        <label className="cursor-pointer rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" title="Add presets from a library file">
-          Import
+        <label className="cursor-pointer rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" title={t("library.importHint")}>
+          {t("library.import")}
           <input
             type="file"
             accept=".json,application/json"
@@ -217,25 +219,24 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
         </span>
         <div className="flex-1" />
         <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" onClick={onClose}>
-          Done (Esc)
+          {t("common.doneEsc")}
         </button>
       </div>
       <section>
-        <h2 className="mb-2 text-[11px] uppercase tracking-wide text-zinc-500">Built-in</h2>
+        <h2 className="mb-2 text-[11px] uppercase tracking-wide text-zinc-500">{t("library.builtIn")}</h2>
         <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
           {entries.slice(0, builtins).map((e, i) => tile(e, i))}
         </div>
       </section>
       <section>
-        <h2 className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">Yours</h2>
+        <h2 className="mb-1 text-[11px] uppercase tracking-wide text-zinc-500">{t("library.yours")}</h2>
         <p className="mb-2 text-[11px] text-amber-200/80">
-          Saved in this browser on this site only. Clearing site data, private windows, or Safari&apos;s cleanup of unvisited sites can remove
-          them. Use Export all for a backup or to move them to another browser.
+          {t("library.storageNote")}
         </p>
         {!available ? (
-          <p className="text-xs text-zinc-500">This browser does not allow local storage here, so presets cannot be saved. Close the library and use Save in the toolbar to download a file instead.</p>
+          <p className="text-xs text-zinc-500">{t("library.noStorage")}</p>
         ) : user.length === 0 ? (
-          <p className="text-xs text-zinc-500">Nothing saved yet.</p>
+          <p className="text-xs text-zinc-500">{t("library.empty")}</p>
         ) : (
           <div className="grid grid-cols-[repeat(auto-fill,minmax(140px,1fr))] gap-3">
             {entries.slice(builtins).map((e, i) => tile(e, i + builtins))}

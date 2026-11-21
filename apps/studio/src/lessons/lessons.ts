@@ -117,7 +117,7 @@ const firstGrid: Lesson = {
       title: t("Your own setting", "Tu propio control"),
       body: t(
         "`params` declares settings. Each one appears in the panel on the right, with a slider, help text, vary and lock, like the built-in layers.\n\nInside `apply`, `v.size` holds the setting's value for this seed. Show me adds a Size setting; move its slider and watch the squares change.",
-        "`params` declara controles. Cada uno aparece en el panel de la derecha, con su barra, su ayuda, vary y lock, igual que las capas incluidas.\n\nDentro de `apply`, `v.size` tiene el valor del control para esta semilla. Muéstrame agrega un control Tamaño; mueve su barra y mira cómo cambian los cuadrados.",
+        "`params` declara controles. Cada uno aparece en el panel de la derecha, con su barra, su ayuda, Variar y Fijar, igual que las capas incluidas.\n\nDentro de `apply`, `v.size` tiene el valor del control para esta semilla. Muéstrame agrega un control Tamaño; mueve su barra y mira cómo cambian los cuadrados.",
       ),
       code: (lang) => gridCode(lang, GRID_4),
     },
@@ -228,7 +228,7 @@ const seeds: Lesson = {
       title: t("Let the seed choose a setting", "Que la semilla elija un control"),
       body: t(
         "No code this time. In the panel on the right, click vary on Size and drag the two ends of its range. Each seed now picks its own size inside that range.\n\nPress R a few times. With vary, one piece of code becomes a family of pictures: that is the heart of generative art.",
-        "Esta vez no hay código. En el panel de la derecha, haz clic en vary en Tamaño y arrastra los dos extremos de su rango. Ahora cada semilla elige su propio tamaño dentro de ese rango.\n\nPresiona R varias veces. Con vary, un mismo código se vuelve una familia de imágenes: ese es el corazón del arte generativo.",
+        "Esta vez no hay código. En el panel de la derecha, haz clic en Variar en Tamaño y arrastra los dos extremos de su rango. Ahora cada semilla elige su propio tamaño dentro de ese rango.\n\nPresiona R varias veces. Con Variar, un mismo código se vuelve una familia de imágenes: ese es el corazón del arte generativo.",
       ),
     },
   ],
@@ -405,7 +405,7 @@ function plotCode(lang: Lang, stage: PlotStage): string {
 ${lines}
     }`;
   }
-  return `// ${c("Lesson: lines for the plotter. See the plot in Edition > Plotter.", "Lección: líneas para el plotter. Mira el trazo en Edition > Plotter.")}
+  return `// ${c("Lesson: lines for the plotter. See the plot in Edición > Plotter.", "Lección: líneas para el plotter. Mira el trazo en Edición > Plotter.")}
 layer({
   label: "${c("Plot", "Trazo")}",
   params: ${paramBlock},
@@ -437,7 +437,7 @@ const plotter: Lesson = {
       title: t("Outlines, not fills", "Contornos, no rellenos"),
       body: t(
         "A pen plotter moves a real pen over paper, so it can only draw lines. In the plotter file every shape becomes its outline: these filled squares would come out as empty frames.\n\nShow me gives them a `stroke` and no `fill`, so the screen shows exactly what the pen will draw. Open Edition > Plotter to see the plot on paper.",
-        "Un plotter mueve una pluma de verdad sobre el papel, así que solo puede dibujar líneas. En el archivo para el plotter cada figura se vuelve su contorno: estos cuadrados rellenos saldrían como marcos vacíos.\n\nMuéstrame les da un `stroke` y ningún `fill`, así la pantalla muestra justo lo que dibujará la pluma. Abre Edition > Plotter para ver el trazo sobre el papel.",
+        "Un plotter mueve una pluma de verdad sobre el papel, así que solo puede dibujar líneas. En el archivo para el plotter cada figura se vuelve su contorno: estos cuadrados rellenos saldrían como marcos vacíos.\n\nMuéstrame les da un `stroke` y ningún `fill`, así la pantalla muestra justo lo que dibujará la pluma. Abre Edición > Plotter para ver el trazo sobre el papel.",
       ),
       code: (lang) => plotCode(lang, PLOT_1),
     },
@@ -453,7 +453,7 @@ const plotter: Lesson = {
       title: t("One pen per color", "Una pluma por color"),
       body: t(
         "The plotter file gets one layer per color, and each layer is drawn with its own pen. Show me adds two ink settings and picks one by the noise, so Edition > Plotter shows two pens.\n\nPlot with one pen, change the pen, then plot the other: they land in the same place. Shapes in the background color are left out, since they would be invisible.",
-        "El archivo para el plotter tiene una capa por color, y cada capa se dibuja con su propia pluma. Muéstrame agrega dos controles de tinta y elige uno según el ruido, así Edition > Plotter muestra dos plumas.\n\nDibuja con una pluma, cámbiala y dibuja la otra: caen en el mismo lugar. Las figuras del color del fondo se omiten, porque serían invisibles.",
+        "El archivo para el plotter tiene una capa por color, y cada capa se dibuja con su propia pluma. Muéstrame agrega dos controles de tinta y elige uno según el ruido, así Edición > Plotter muestra dos plumas.\n\nDibuja con una pluma, cámbiala y dibuja la otra: caen en el mismo lugar. Las figuras del color del fondo se omiten, porque serían invisibles.",
       ),
       code: (lang) => plotCode(lang, PLOT_3),
     },
@@ -461,7 +461,7 @@ const plotter: Lesson = {
       title: t("Fewer pen lifts", "Menos levantadas de pluma"),
       body: t(
         "Every separate line means the pen lifts, travels and comes down again, and that is most of a plot's time. Show me joins each cell's lines into one zigzag: every other line runs backwards, so the pen never leaves the paper inside a cell. The short joins at the ends become part of the look.\n\nCompare the time estimate in Edition > Plotter before and after. When you like it, Download SVG (or One file per pen) is ready for your plotter software.",
-        "Cada línea separada obliga a la pluma a subir, viajar y volver a bajar, y eso se lleva la mayor parte del tiempo de un trazo. Muéstrame une las líneas de cada celda en un zigzag: una sí y otra no va al revés, así que dentro de una celda la pluma nunca deja el papel. Las uniones cortas de los extremos se vuelven parte del dibujo.\n\nCompara el tiempo estimado en Edition > Plotter antes y después. Cuando te guste, Download SVG (o One file per pen) queda listo para el programa de tu plotter.",
+        "Cada línea separada obliga a la pluma a subir, viajar y volver a bajar, y eso se lleva la mayor parte del tiempo de un trazo. Muéstrame une las líneas de cada celda en un zigzag: una sí y otra no va al revés, así que dentro de una celda la pluma nunca deja el papel. Las uniones cortas de los extremos se vuelven parte del dibujo.\n\nCompara el tiempo estimado en Edición > Plotter antes y después. Cuando te guste, Descargar SVG (o Un archivo por pluma) queda listo para el programa de tu plotter.",
       ),
       code: (lang) => plotCode(lang, PLOT_4),
     },

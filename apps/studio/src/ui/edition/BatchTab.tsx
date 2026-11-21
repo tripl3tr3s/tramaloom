@@ -6,6 +6,7 @@ import type { ToolRun } from "../../render/runTool.ts";
 import { runScriptBatch, runTool } from "../../render/runTool.ts";
 import { drawable } from "../../sandbox/trust.ts";
 import { randomHash } from "../../state/store.ts";
+import { useLang } from "../../i18n/i18n.tsx";
 
 const field = "rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-sky-500";
 /** Pieces per batch by long side: every PNG is held until the zip is written. */
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function BatchTab({ doc, hash, notify, onBusy }: Props) {
+  const { t } = useLang();
   const [count, setCount] = useState(16);
   const [size, setSize] = useState(2000);
   const [from, setFrom] = useState<"current" | "random">("current");
@@ -44,10 +46,10 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
     r.promise.then(
       (zipBlob) => {
         download(zipBlob, `${base}_${n}x${size}_${root.slice(0, 10)}.zip`);
-        notify(`Exported ${n} PNGs`);
+        notify(t("batch.exported", { n }));
       },
       (e: unknown) => {
-        if (!(e instanceof Error && e.message === "cancelled")) notify(`Batch export failed: ${String(e)}`);
+        if (!(e instanceof Error && e.message === "cancelled")) notify(t("batch.failed", { error: e instanceof Error ? e.message : String(e) }));
       },
     ).finally(() => {
       if (run.current === r) {
@@ -62,7 +64,7 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
     <div className="space-y-3 text-xs text-zinc-300">
       <div className="flex flex-wrap items-center gap-2">
         <label className="flex items-center gap-1">
-          Pieces
+          {t("batch.pieces")}
           <input
             type="number"
             min={1}
@@ -70,13 +72,13 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
             className={`${field} w-16`}
             value={Math.min(count, max)}
             onChange={(e) => setCount(Math.min(max, Math.max(1, Math.round(Number(e.target.value) || 1))))}
-            aria-label="Number of pieces"
+            aria-label={t("batch.piecesLabel")}
             disabled={running}
           />
         </label>
         <label className="flex items-center gap-1">
-          Long side
-          <select className={field} value={size} onChange={(e) => setSize(Number(e.target.value))} aria-label="Long side in pixels" disabled={running}>
+          {t("batch.longSide")}
+          <select className={field} value={size} onChange={(e) => setSize(Number(e.target.value))} aria-label={t("batch.longSideLabel")} disabled={running}>
             {[1000, 2000, 4000].map((s) => (
               <option key={s} value={s}>
                 {s}px
@@ -85,42 +87,41 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
           </select>
         </label>
         <label className="flex items-center gap-1">
-          Seeds
+          {t("batch.seeds")}
           <select
             className={field}
             value={from}
             onChange={(e) => setFrom(e.target.value === "random" ? "random" : "current")}
-            aria-label="Seed source"
+            aria-label={t("batch.seedSource")}
             disabled={running}
           >
-            <option value="current">from the current seed</option>
-            <option value="random">from a random seed</option>
+            <option value="current">{t("batch.fromCurrent")}</option>
+            <option value="random">{t("batch.fromRandom")}</option>
           </select>
         </label>
         {running ? (
           <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" onClick={() => run.current?.cancel()}>
-            Cancel
+            {t("common.cancel")}
           </button>
         ) : (
           <button type="button" className="rounded bg-sky-700 px-2 py-0.5 text-white hover:bg-sky-600" onClick={start}>
-            Export zip
+            {t("batch.export")}
           </button>
         )}
       </div>
       {progress && (
         <div className="flex items-center gap-2" aria-live="polite">
-          <progress className="h-2 w-64" value={progress.done} max={progress.total} aria-label="Batch export progress" />
+          <progress className="h-2 w-64" value={progress.done} max={progress.total} aria-label={t("batch.progress")} />
           <span className="tabular-nums text-zinc-400">
             {progress.done} / {progress.total}
           </span>
         </div>
       )}
       <p className="text-[11px] text-zinc-500">
-        Each piece is re-rendered at full size from its seed (never upscaled). The zip also holds manifest.json (seed, file and traits per
-        piece) and the document, so the batch can be reproduced exactly. Up to {max} pieces at {size}px; the panel stays open while it runs.
+        {t("batch.about", { max, size })}
       </p>
       {hasScripts(drawable(doc)) && (
-        <p className="text-[11px] text-zinc-500">This piece has script layers: each piece is drawn in the script sandbox, one at a time, so the batch takes a little longer.</p>
+        <p className="text-[11px] text-zinc-500">{t("batch.scripts")}</p>
       )}
     </div>
   );

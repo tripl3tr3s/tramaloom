@@ -1,3 +1,5 @@
+import { useLang } from "../i18n/i18n.tsx";
+import type { MessageKey } from "../i18n/messages.ts";
 import type { Distribution, IntSpec, NumberSpec, Variation } from "@gridloom/core";
 import { useMemo, useRef } from "react";
 import { densityCurve, SLIDER_KEYS } from "./vary.ts";
@@ -21,6 +23,7 @@ const SAMPLES = 48;
  * Both thumbs are native range inputs, so keyboard and screen readers work as usual.
  */
 export function VaryRange({ spec, vary, resolved, onChange, onCheckpoint }: Props) {
+  const { t } = useLang();
   const span = spec.max - spec.min || 1;
   const pct = (v: number) => ((Math.min(spec.max, Math.max(spec.min, v)) - spec.min) / span) * 100;
   // Typed ends may be out of order for a moment; core orders them, so the drawing does too.
@@ -93,7 +96,7 @@ export function VaryRange({ spec, vary, resolved, onChange, onCheckpoint }: Prop
           <div
             className="pointer-events-none absolute top-0 h-4 w-0.5 -translate-x-1/2 rounded bg-white/90"
             style={{ left: `${pct(resolved)}%` }}
-            title="This seed's value"
+            title={t("vary.seedValue")}
           />
         )}
         {thumb("min", loOnTop ? "z-20" : "z-10")}
@@ -103,9 +106,9 @@ export function VaryRange({ spec, vary, resolved, onChange, onCheckpoint }: Prop
   );
 }
 
-export const DISTRIBUTIONS: readonly { readonly id: Distribution; readonly label: string }[] = [
-  { id: "uniform", label: "even" },
-  { id: "low", label: "lean low" },
-  { id: "high", label: "lean high" },
-  { id: "gaussian", label: "middle" },
+export const DISTRIBUTIONS: readonly { readonly id: Distribution; readonly label: MessageKey }[] = [
+  { id: "uniform", label: "vary.uniform" },
+  { id: "low", label: "vary.low" },
+  { id: "high", label: "vary.high" },
+  { id: "gaussian", label: "vary.gaussian" },
 ];

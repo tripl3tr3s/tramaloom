@@ -1,5 +1,8 @@
 import type { ErrorInfo, ReactNode } from "react";
 import { Component } from "react";
+import type { Vars } from "../i18n/i18n.tsx";
+import { initialLang, translate } from "../i18n/i18n.tsx";
+import type { MessageKey } from "../i18n/messages.ts";
 
 const page = "grid min-h-dvh place-items-center bg-zinc-950 p-6 text-zinc-200";
 const card = "w-full max-w-md space-y-3 rounded-lg border border-zinc-800 bg-zinc-900 p-5 text-sm leading-relaxed";
@@ -16,13 +19,16 @@ export function missingFeatures(): readonly string[] {
   return checks.filter(([, ok]) => !ok).map(([name]) => name);
 }
 
+// Shown when the studio itself cannot run, outside its language provider: read the saved choice directly.
+const tr = (key: MessageKey, vars?: Vars): string => translate(initialLang(), key, vars);
+
 export function Unsupported({ missing }: { readonly missing: readonly string[] }) {
   return (
     <main className={page}>
       <div className={card}>
-        <h1 className="text-base font-semibold text-white">This browser is too old for Gridloom</h1>
-        <p>Gridloom needs a recent Chrome, Edge or Firefox, or Safari 16.4 or later. Updating the browser is enough; nothing to install.</p>
-        <p className="text-xs text-zinc-500">Missing: {missing.join(", ")}.</p>
+        <h1 className="text-base font-semibold text-white">{tr("fallback.oldTitle")}</h1>
+        <p>{tr("fallback.oldBody")}</p>
+        <p className="text-xs text-zinc-500">{tr("fallback.missing", { list: missing.join(", ") })}</p>
       </div>
     </main>
   );
@@ -54,21 +60,21 @@ export class ErrorBoundary extends Component<{ readonly children: ReactNode }, S
     return (
       <main className={page}>
         <div className={card}>
-          <h1 className="text-base font-semibold text-white">Something broke</h1>
-          <p>Your piece is safe: it is stored in this page's address. Reloading usually fixes it. If it keeps happening, copy the link so the piece is not lost, then start fresh.</p>
+          <h1 className="text-base font-semibold text-white">{tr("fallback.brokeTitle")}</h1>
+          <p>{tr("fallback.brokeBody")}</p>
           <div className="flex flex-wrap gap-2">
             <button type="button" className={primary} onClick={() => window.location.reload()}>
-              Reload
+              {tr("fallback.reload")}
             </button>
             <button type="button" className={btn} onClick={copy}>
-              Copy link to this piece
+              {tr("fallback.copy")}
             </button>
             <button type="button" className={btn} onClick={() => window.location.assign(window.location.pathname)}>
-              Start fresh
+              {tr("fallback.fresh")}
             </button>
           </div>
           <details className="text-xs text-zinc-500">
-            <summary className="cursor-pointer">Error details</summary>
+            <summary className="cursor-pointer">{tr("fallback.details")}</summary>
             <pre className="mt-2 whitespace-pre-wrap break-words font-mono">{error.message}</pre>
           </details>
         </div>

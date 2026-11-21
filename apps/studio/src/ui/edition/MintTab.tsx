@@ -7,6 +7,7 @@ import scriptsSource from "@gridloom/runtime/scripts.js?raw";
 import { useMemo, useState } from "react";
 import { download } from "../../render/export.ts";
 import { unapprovedCode, useTrustVersion } from "../../sandbox/trust.ts";
+import { useLang } from "../../i18n/i18n.tsx";
 
 const field = "rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-sky-500";
 const LICENCES = ["All rights reserved", "CC BY-NC 4.0", "CC BY 4.0", "CC0 1.0", "NFT licence 2.0"] as const;
@@ -23,6 +24,7 @@ const PLAYER = ((): { readonly engine: string; readonly modules: Readonly<Record
 
 /** Self-hosted release: one index.html with the player, the frozen document and its documentation. */
 export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; readonly hash: string; readonly notify: (m: string) => void }) {
+  const { t } = useLang();
   // Follows the piece's name until you type your own title.
   const [titleDraft, setTitle] = useState<string | null>(null);
   const title = titleDraft ?? doc.name;
@@ -36,13 +38,13 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
   // Hidden layers count too: the page carries the whole document, code included.
   const waiting = useMemo(() => unapprovedCode(doc).length, [doc, trust]);
   const html = useMemo(() => {
-    if (waiting > 0) return new Error("this piece carries code that has not been run here, perhaps on a hidden layer. Choose Run the code above the picture, or remove those layers.");
+    if (waiting > 0) return new Error(t("mint.unapproved"));
     try {
       return assembleMint(PLAYER, doc, { title, artist, licence, captureWidth: capture.width, captureHeight: capture.height });
     } catch (e) {
       return e instanceof Error ? e : new Error(String(e));
     }
-  }, [doc, title, artist, licence, capture, waiting]);
+  }, [doc, title, artist, licence, capture, waiting, t]);
   const bytes = typeof html === "string" ? new Blob([html]).size : 0;
 
   const blob = () => (typeof html === "string" ? new Blob([html], { type: "text/html;charset=utf-8" }) : null);
@@ -50,7 +52,7 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
   const open = () => {
     if (typeof html !== "string") return;
     const preview = window.open(new URL("preview.html", document.baseURI).href, "_blank");
-    if (!preview) return notify("Allow pop-ups for this site to open the preview");
+    if (!preview) return notify(t("mint.popups"));
     const onReady = (e: MessageEvent) => {
       if (e.source !== preview || e.origin !== location.origin || (e.data as { kind?: unknown } | null)?.kind !== "gridloom-preview-ready") return;
       window.removeEventListener("message", onReady);
@@ -64,17 +66,17 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
     if (!b) return;
     // Hosts (IPFS, Arweave, static servers) look for exactly index.html.
     download(b, "index.html");
-    notify(`Exported index.html for "${title || doc.name}"`);
+    notify(t("mint.exported", { title: title || doc.name }));
   };
 
   return (
     <div className="space-y-3 text-xs text-zinc-300">
       <div className="grid max-w-xl grid-cols-[8rem_1fr] items-center gap-2">
-        <label htmlFor="mint-title">Title</label>
+        <label htmlFor="mint-title">{t("mint.title")}</label>
         <input id="mint-title" className={field} value={title} maxLength={100} onChange={(e) => setTitle(e.target.value)} />
-        <label htmlFor="mint-artist">Artist</label>
-        <input id="mint-artist" className={field} value={artist} maxLength={100} onChange={(e) => setArtist(e.target.value)} placeholder="optional" />
-        <label htmlFor="mint-licence">Artwork licence</label>
+        <label htmlFor="mint-artist">{t("mint.artist")}</label>
+        <input id="mint-artist" className={field} value={artist} maxLength={100} onChange={(e) => setArtist(e.target.value)} placeholder={t("mint.optional")} />
+        <label htmlFor="mint-licence">{t("mint.licence")}</label>
         <input id="mint-licence" className={field} list="mint-licences" value={licence} maxLength={100} onChange={(e) => setLicence(e.target.value)} />
         <datalist id="mint-licences">
           {LICENCES.map((l) => (
@@ -84,26 +86,24 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
       </div>
       <div className="flex flex-wrap items-center gap-2">
         <button type="button" className="rounded bg-sky-700 px-2 py-0.5 text-white hover:bg-sky-600 disabled:opacity-40" onClick={save} disabled={typeof html !== "string"}>
-          Export index.html
+          {t("mint.export")}
         </button>
         <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700 disabled:opacity-40" onClick={open} disabled={typeof html !== "string"}>
-          Preview with this seed
+          {t("mint.preview")}
         </button>
-        <span className="text-zinc-500">{typeof html === "string" ? `${kb(bytes)}, self-contained` : `Cannot export: ${html.message}`}</span>
+        <span className="text-zinc-500">{typeof html === "string" ? t("mint.size", { size: kb(bytes) }) : t("mint.cannot", { error: html.message })}</span>
       </div>
       <div className="max-w-2xl space-y-1.5 text-[11px] text-zinc-400">
         <p>
-          One file holds the player (Gridloom engine, MIT), this document frozen as it is now, and a header documenting the seed format,
-          traits and weights, licences and suggested capture size ({capture.width} x {capture.height}). It makes no network requests.
+          {t("mint.about", { w: capture.width, h: capture.height })}
         </p>
         <p>
-          The piece reads <code className="text-zinc-300">?hash=</code> (64 hex) and optional <code className="text-zinc-300">?width=</code>/
-          <code className="text-zinc-300">?height=</code>, sets <code className="text-zinc-300">window.$features</code> before drawing, and fires{" "}
-          <code className="text-zinc-300">genart:done</code> when the frame is complete.
+          {t("mint.reads")} <code className="text-zinc-300">?hash=</code> {t("mint.readsHex")} <code className="text-zinc-300">?width=</code>/
+          <code className="text-zinc-300">?height=</code>{t("mint.sets")} <code className="text-zinc-300">window.$features</code> {t("mint.fires")}{" "}
+          <code className="text-zinc-300">genart:done</code> {t("mint.complete")}
         </p>
         <p className="text-amber-200/80">
-          Freeze the rarity table before exporting: the file keeps the weights it was exported with. Test it with the network disabled, and
-          host it somewhere permanent (IPFS with a pinning service you pay for, or Arweave); a personal domain is mortal.
+          {t("mint.warn")}
         </p>
       </div>
     </div>

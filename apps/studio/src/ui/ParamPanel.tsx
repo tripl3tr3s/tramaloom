@@ -1,6 +1,7 @@
 import type { Layer, ParamSetting, ResolvedLayer } from "@gridloom/core";
 import { defaultRegistry, layerDef, SCRIPT_MODULE } from "@gridloom/core";
 import { useState } from "react";
+import { useLang } from "../i18n/i18n.tsx";
 import { ChevronIcon } from "./icons.tsx";
 import { groupParams, isDefaultSetting, isRelevant } from "./params.ts";
 import { ParamRow } from "./ParamRow.tsx";
@@ -71,11 +72,12 @@ function useShowHelp(): readonly [boolean, () => void] {
 }
 
 export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer, onViewCode, onEditScript, problem }: Props) {
+  const { t } = useLang();
   const [collapsed, toggle] = useCollapsed();
   const [showHelp, toggleHelp] = useShowHelp();
-  if (!layer) return <p className="p-3 text-xs text-zinc-500">Select a layer.</p>;
+  if (!layer) return <p className="p-3 text-xs text-zinc-500">{t("panel.selectLayer")}</p>;
   const def = layerDef(defaultRegistry, layer);
-  if (!def) return <p className="p-3 text-xs text-red-400">Unknown module {layer.module}</p>;
+  if (!def) return <p className="p-3 text-xs text-red-400">{t("panel.unknownModule", { module: layer.module })}</p>;
   const changed = Object.entries(def.params).some(([name, spec]) => !isDefaultSetting(spec, layer.params[name]));
   return (
     <div className="pb-24 pl-4 pr-3">
@@ -87,17 +89,17 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
           className={`rounded px-1.5 py-0.5 text-[11px] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 ${showHelp ? "bg-zinc-700 text-white" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}
           aria-pressed={showHelp}
           onClick={toggleHelp}
-          title="Show what every setting does"
+          title={t("panel.helpHint")}
         >
-          Help
+          {t("panel.help")}
         </button>
         <button
           type="button"
           className="rounded px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
           onClick={() => (layer.module === SCRIPT_MODULE ? onEditScript(layer.id) : onViewCode(def.id, def.label, layer.id))}
-          title={layer.module === SCRIPT_MODULE ? "Edit this layer's code" : "See the code that draws this layer"}
+          title={layer.module === SCRIPT_MODULE ? t("panel.editCodeHint") : t("panel.codeHint")}
         >
-          {layer.module === SCRIPT_MODULE ? "Edit code" : "Code"}
+          {layer.module === SCRIPT_MODULE ? t("panel.editCode") : t("panel.code")}
         </button>
         {/* aria-disabled, not disabled: the button would drop focus to <body> the moment it disabled itself. */}
         <button
@@ -105,9 +107,9 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
           className="rounded px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 aria-disabled:cursor-default aria-disabled:opacity-30 aria-disabled:hover:bg-transparent aria-disabled:hover:text-zinc-400"
           aria-disabled={!changed}
           onClick={() => changed && onResetLayer(layer.id)}
-          title={changed ? "Reset every parameter of this layer to its default (undo with Ctrl+Z)" : "Every parameter is at its default"}
+          title={changed ? t("panel.resetAllHint") : t("panel.allDefault")}
         >
-          Reset all
+          {t("panel.resetAll")}
         </button>
       </div>
       <p className="mb-2 text-[11px] leading-snug text-zinc-500">{def.description}</p>
@@ -168,7 +170,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
               <span className="flex-1">{title}</span>
               {!open && changedCount > 0 && (
                 <span className="rounded bg-zinc-800 px-1.5 py-px text-[10px] font-normal normal-case tracking-normal text-sky-300">
-                  {changedCount} changed
+                  {t("panel.changed", { n: changedCount })}
                 </span>
               )}
             </button>

@@ -11,7 +11,7 @@ test.beforeEach(async ({ page }) => {
 
 test("a lesson adds its layer, walks through its steps, and switches language", async ({ page }) => {
   await page.getByRole("button", { name: "Learn" }).click();
-  const picker = page.getByRole("dialog", { name: "Lessons" });
+  const picker = page.getByRole("dialog", { name: "Learn" });
   await expect(picker).toContainText("Your first grid");
   await picker.getByRole("listitem").filter({ hasText: "Your first grid" }).getByRole("button", { name: "Start" }).click();
 
@@ -45,13 +45,45 @@ test("a lesson adds its layer, walks through its steps, and switches language", 
   await panelEs.getByRole("button", { name: "Listo" }).click();
   await expect(panelEs).toContainText("Lección terminada");
   await panelEs.getByRole("button", { name: "Terminar lección" }).click();
-  await expect(page.locator("summary", { hasText: "Helpers" })).toBeVisible();
+  // The switch changed the whole studio, the editor's helper list included.
+  await expect(page.locator("summary", { hasText: "Ayudantes" })).toBeVisible();
 });
 
 test("the seeds lesson starts from its own code", async ({ page }) => {
   await page.getByRole("button", { name: "Learn" }).click();
-  await page.getByRole("dialog", { name: "Lessons" }).getByRole("listitem").filter({ hasText: "Seeds and randomness" }).getByRole("button", { name: "Start" }).click();
+  await page.getByRole("dialog", { name: "Learn" }).getByRole("listitem").filter({ hasText: "Seeds and randomness" }).getByRole("button", { name: "Start" }).click();
   await expect(page.getByRole("button", { name: /^Seeds/ }).first()).toBeVisible();
   await expect(page.getByRole("region", { name: "Seeds and randomness" })).toContainText("Random sizes");
   await expect(page.getByText("Size", { exact: true })).toBeVisible();
+});
+
+test("one switch turns the whole studio to Spanish, and it is remembered", async ({ page }) => {
+  // The switch lives in Welcome, Learn, the shortcuts list (?) and, on phones, More.
+  await page.getByRole("button", { name: "Keyboard shortcuts" }).click();
+  await page.getByRole("dialog").getByRole("group", { name: "Language" }).getByRole("button", { name: "es", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Atajos de teclado" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await expect(page.getByRole("button", { name: "Biblioteca" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Edición" })).toBeVisible();
+  await expect(page.locator("html")).toHaveAttribute("lang", "es");
+  await page.getByRole("button", { name: "Exportar" }).click();
+  await expect(page.getByRole("menuitem", { name: /Copiar enlace/ })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.reload();
+  await expect(page.getByRole("button", { name: "Aprender" })).toBeVisible();
+  await page.getByRole("button", { name: "Aprender" }).click();
+  const learn = page.getByRole("dialog", { name: "Aprender" });
+  await learn.getByRole("tab", { name: "Glosario" }).click();
+  await expect(learn).toContainText("Semilla");
+  await learn.getByRole("tab", { name: "Dibuja tu primera pieza con plotter" }).click();
+  await expect(learn).toContainText("Empieza con líneas");
+});
+
+test("Learn has the plotting guide and the glossary in English", async ({ page }) => {
+  await page.getByRole("button", { name: "Learn" }).click();
+  const learn = page.getByRole("dialog", { name: "Learn" });
+  await learn.getByRole("tab", { name: "Plot your first piece" }).click();
+  await expect(learn).toContainText("Start from lines");
+  await learn.getByRole("tab", { name: "Glossary" }).click();
+  await expect(learn).toContainText("Pen and pen lift");
 });

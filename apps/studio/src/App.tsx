@@ -19,8 +19,8 @@ import { TilePreview } from "./ui/TilePreview.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 import { isFirstVisit, Welcome } from "./ui/Welcome.tsx";
 import { REMIXABLE } from "./ui/code/remixLayer.ts";
-import type { Lang, Lesson } from "./lessons/lessons.ts";
-import { initialLang, saveLang } from "./lessons/lang.ts";
+import type { Lesson } from "./lessons/lessons.ts";
+import { useLang } from "./i18n/i18n.tsx";
 import { compileInSandbox } from "./sandbox/host.ts";
 import { parseScriptParams } from "./state/schema.ts";
 import { MAX_LAYERS } from "./state/limits.ts";
@@ -67,11 +67,7 @@ export function App() {
     dispatch({ type: "setScript", layerId, script });
   }, []);
   // Lessons: the chosen language, and the lesson in progress with the layer it follows.
-  const [lang, setLangState] = useState<Lang>(initialLang);
-  const setLang = useCallback((l: Lang) => {
-    saveLang(l);
-    setLangState(l);
-  }, []);
+  const { lang, t } = useLang();
   const [lesson, setLesson] = useState<{ readonly lesson: Lesson; readonly step: number; readonly layerId: string } | null>(null);
   const [lessonBusy, setLessonBusy] = useState(false);
   const docRef = useRef(state.doc);
@@ -87,7 +83,7 @@ export function App() {
   };
   const startLesson = async (chosen: Lesson) => {
     setOverlay("none");
-    if (docRef.current.layers.length >= MAX_LAYERS) return notify(`At most ${MAX_LAYERS} layers: remove one to start a lesson`);
+    if (docRef.current.layers.length >= MAX_LAYERS) return notify(t("app.lessonFull", { max: MAX_LAYERS }));
     try {
       const script = await scriptFrom(chosen.start(lang));
       const id = freshId(docRef.current, "lesson");
@@ -95,7 +91,7 @@ export function App() {
       setLesson({ lesson: chosen, step: 0, layerId: id });
       setEditingId(id);
     } catch (err) {
-      notify(`Could not start the lesson: ${err instanceof Error ? err.message : String(err)}`, 4000);
+      notify(t("app.lessonFailed", { error: err instanceof Error ? err.message : String(err) }), 4000);
     }
   };
   const showMe = async (layerId: string, code: string) => {
@@ -103,7 +99,7 @@ export function App() {
     try {
       applyScript(layerId, await scriptFrom(code));
     } catch (err) {
-      notify(`Could not show this step: ${err instanceof Error ? err.message : String(err)}`, 4000);
+      notify(t("app.stepFailed", { error: err instanceof Error ? err.message : String(err) }), 4000);
     } finally {
       setLessonBusy(false);
     }
@@ -134,7 +130,7 @@ export function App() {
   const ready = useUrlSync(state.doc, state.hash, (doc, hash, engine) => {
     dispatch({ type: "hydrate", doc, hash });
     if (doc && engine !== ENGINE_VERSION) {
-      notify(`This link was made with engine v${engine}; this is v${ENGINE_VERSION}, so it may look different`, 6000);
+      notify(t("app.oldEngine", { then: engine, now: ENGINE_VERSION }), 6000);
     }
   });
 
@@ -164,8 +160,8 @@ export function App() {
 
   const png = useCallback(
     (size: number) => {
-      notify(`Rendering ${size}px PNG`);
-      exportPNG(state.doc, state.hash, size).catch((e: unknown) => notify(`Export failed: ${String(e)}`));
+      notify(t("app.renderingPng", { size }));
+      exportPNG(state.doc, state.hash, size).catch((e: unknown) => notify(t("app.exportFailed", { error: e instanceof Error ? e.message : String(e) })));
     },
     [state.doc, state.hash, notify],
   );
@@ -175,25 +171,25 @@ export function App() {
         notify(msg);
         onDone?.();
       },
-      () => notify("Clipboard unavailable"),
+      () => notify(t("app.noClipboard")),
     );
   const importFile = async (file: File) => {
     // Documents are small; a script layer adds at most 20,000 characters.
-    if (file.size > 2_000_000) return notify("That file is too large to be a Gridloom document");
+    if (file.size > 2_000_000) return notify(t("app.fileTooLarge"));
     try {
       const doc = parseDocument(JSON.parse(await file.text()));
-      if (!doc) return notify("Not a valid Gridloom document");
+      if (!doc) return notify(t("app.notADoc"));
       dispatch({ type: "loadDoc", doc });
-      notify(`Opened ${doc.name}`);
+      notify(t("app.opened", { name: doc.name }));
     } catch {
-      notify("Could not read that file");
+      notify(t("app.unreadable"));
     }
   };
 
   const toggleFav = (h: string) => {
     const next = toggleFavorite(favorites, h);
     if (!favorites.includes(h) && favorites.length >= MAX_FAVORITES) {
-      notify(`Favourites keep the newest ${MAX_FAVORITES} seeds; the oldest one was dropped`, 3000);
+      notify(t("app.favouritesFull", { max: MAX_FAVORITES }), 3000);
     }
     setFavorites(next);
     saveFavorites(next);
@@ -210,7 +206,7 @@ export function App() {
     r: () => dispatch({ type: "setHash", hash: randomHash() }),
     ArrowLeft: () => dispatch({ type: "seedPrev" }),
     ArrowRight: () => dispatch({ type: "seedNext" }),
-    c: () => copy(state.hash, "Hash copied"),
+    c: () => copy(state.hash, t("app.hashCopied")),
     b: () => toggleFav(state.hash),
     s: () => png(2000),
     "shift+s": () => png(4000),
@@ -247,21 +243,21 @@ export function App() {
     const stranded = grids.find((g) => g.enabled && promoteIndex(state.doc.layers, g.id) !== null);
     if (stranded) {
       return {
-        message: "This layer draws into the grid's cells, but the Grid layer runs after it, so there is nothing to draw on yet.",
-        fix: "Use it as the main grid",
+        message: t("app.gridAfter"),
+        fix: t("app.gridAfterFix"),
         onFix: () => dispatch({ type: "promoteLayer", layerId: stranded.id }),
       };
     }
     if (hidden) {
       return {
-        message: "This layer draws into the grid's cells, but the Grid layer is hidden.",
-        fix: "Show Grid",
+        message: t("app.gridHidden"),
+        fix: t("app.gridHiddenFix"),
         onFix: () => dispatch({ type: "toggleLayer", layerId: hidden.id }),
       };
     }
     return {
-      message: "This layer draws into the grid's cells, and there is no Grid layer.",
-      fix: "Add a Grid layer",
+      message: t("app.noGrid"),
+      fix: t("app.noGridFix"),
       onFix: () => dispatch({ type: "addLayer", module: "grid" }),
     };
   })();
@@ -292,9 +288,9 @@ export function App() {
         onExportPNG={png}
         onExportSVG={() => {
           try {
-            exportSVG(state.doc, state.hash).catch((e: unknown) => notify(`Export failed: ${e instanceof Error ? e.message : String(e)}`));
+            exportSVG(state.doc, state.hash).catch((e: unknown) => notify(t("app.exportFailed", { error: e instanceof Error ? e.message : String(e) })));
           } catch (e) {
-            notify(`Export failed: ${String(e)}`);
+            notify(t("app.exportFailed", { error: e instanceof Error ? e.message : String(e) }));
           }
         }}
         onExportJSON={() => {
@@ -306,8 +302,8 @@ export function App() {
           // Build the link from state now: the address bar updates on a debounce and may still be stale.
           const doc = state.doc;
           encodeState(doc, state.hash).then(
-            (frag) => copy(`${window.location.origin}${window.location.pathname}#${frag}`, "Link copied", () => dispatch({ type: "markSaved", doc })),
-            () => notify("Could not build the link"),
+            (frag) => copy(`${window.location.origin}${window.location.pathname}#${frag}`, t("app.linkCopied"), () => dispatch({ type: "markSaved", doc })),
+            () => notify(t("app.linkFailed")),
           );
         }}
         onToggleDebug={() => setDebug((d) => !d)}
@@ -342,7 +338,7 @@ export function App() {
                 const v = info.resolved.find((r) => r.id === canvasLayer?.id)?.values;
                 const margin = Number(v?.["margin"] ?? 0);
                 const corner = Number(v?.["cornerRadius"] ?? 0);
-                return margin > 0 || corner > 0 ? "Set the Canvas margin and corner radius to 0 for a seamless repeat" : null;
+                return margin > 0 || corner > 0 ? t("app.seamHint") : null;
               })()}
             />
           )}
@@ -351,9 +347,9 @@ export function App() {
             className={`absolute bottom-3 right-3 z-20 rounded px-2 py-1 text-[11px] ring-1 ${tiled ? "bg-sky-700 text-white ring-sky-500" : "bg-zinc-900/80 text-zinc-300 ring-zinc-700 hover:bg-zinc-800"}`}
             aria-pressed={tiled}
             onClick={() => setTiled((x) => !x)}
-            title="Repeat the piece 3x3 to check that edges join (T)"
+            title={t("app.tileHint")}
           >
-            Tile 3x3
+            {t("app.tile")}
           </button>
           {debug && <DebugPanel hash={state.hash} info={info} />}
           {info.error && !debug && (
@@ -380,7 +376,7 @@ export function App() {
                 adopt(doc, hash);
                 dispatch({ type: "markSaved" });
                 setOverlay("none");
-                notify(`Loaded ${doc.name}`);
+                notify(t("app.loaded", { name: doc.name }));
               }}
               onSaved={() => dispatch({ type: "markSaved" })}
               onClose={() => setOverlay("none")}
@@ -388,7 +384,7 @@ export function App() {
             />
           )}
           {overlay === "shortcuts" && <ShortcutsHelp onClose={() => setOverlay("none")} />}
-          {overlay === "lessons" && <LessonPicker lang={lang} onLang={setLang} onStart={(l) => void startLesson(l)} onClose={() => setOverlay("none")} />}
+          {overlay === "lessons" && <LessonPicker onStart={(l) => void startLesson(l)} onClose={() => setOverlay("none")} />}
           {overlay === "code" && codeOf && (
             <CodeView
               moduleId={codeOf.id}
@@ -402,7 +398,7 @@ export function App() {
                       dispatch({ type: "remixLayer", layerId: codeOf.layerId, script });
                       setOverlay("none");
                       setEditingId(codeOf.layerId);
-                      notify(`${codeOf.label} is now a script layer: same picture, your code`, 3000);
+                      notify(t("app.remixed", { label: codeOf.label }), 3000);
                     },
                   }
                 : {})}
@@ -411,23 +407,22 @@ export function App() {
           </Suspense>
           {overlay === "welcome" && <Welcome onClose={() => setOverlay("none")} onPresets={() => setOverlay("library")} />}
           {untrusted.length > 0 && untrustedKey !== keptHidden && (
-            <div role="region" aria-label="Code in this piece" className="absolute inset-x-3 top-3 z-20 mx-auto max-w-xl rounded-lg border border-amber-500/40 bg-zinc-900/95 p-3 text-xs text-zinc-200 shadow-xl shadow-black/50">
-              <p className="font-semibold text-amber-200">This piece contains code</p>
+            <div role="region" aria-label={t("app.codeRegion")} className="absolute inset-x-3 top-3 z-20 mx-auto max-w-xl rounded-lg border border-amber-500/40 bg-zinc-900/95 p-3 text-xs text-zinc-200 shadow-xl shadow-black/50">
+              <p className="font-semibold text-amber-200">{t("app.codeTitle")}</p>
               <p className="mt-1 leading-relaxed text-zinc-300">
-                {untrusted.length === 1 ? "A script layer" : `${untrusted.length} script layers`} came with this piece, written by whoever made it. The picture leaves{" "}
-                {untrusted.length === 1 ? "it" : "them"} out until you choose. Code runs in a sandbox with no access to your saved pieces or the internet.
+                {untrusted.length === 1 ? t("app.codeOne") : t("app.codeMany", { n: untrusted.length })}
               </p>
               <div className="mt-2 flex flex-wrap gap-2">
                 <button type="button" className="rounded bg-sky-700 px-2.5 py-1 text-white hover:bg-sky-600" onClick={() => approveScripts(untrusted)}>
-                  Run the code
+                  {t("app.runCode")}
                 </button>
                 {firstUntrusted && (
                   <button type="button" className="rounded bg-zinc-800 px-2.5 py-1 hover:bg-zinc-700" onClick={() => setEditingId(firstUntrusted.id)}>
-                    Show the code
+                    {t("app.showCode")}
                   </button>
                 )}
                 <button type="button" className="rounded px-2.5 py-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100" onClick={() => setKeptHidden(untrustedKey)}>
-                  Keep hidden
+                  {t("app.keepHidden")}
                 </button>
               </div>
             </div>
@@ -452,9 +447,7 @@ export function App() {
                         <LessonPanel
                           lesson={lesson.lesson}
                           step={lesson.step}
-                          lang={lang}
                           busy={lessonBusy}
-                          onLang={setLang}
                           onStep={(step) => setLesson({ ...lesson, step: Math.max(0, Math.min(lesson.lesson.steps.length, step)) })}
                           onShowMe={(code) => void showMe(lesson.layerId, code)}
                           onEnd={() => setLesson(null)}
@@ -499,11 +492,11 @@ export function App() {
           />
           <ScrollHints />
         </aside>
-        <nav inert={behind} aria-label="Panels" className="order-4 flex shrink-0 border-t border-zinc-800 bg-zinc-900 md:hidden">
+        <nav inert={behind} aria-label={t("app.panels")} className="order-4 flex shrink-0 border-t border-zinc-800 bg-zinc-900 md:hidden">
           {(
             [
-              ["layers", "Layers", "sheet-layers"],
-              ["params", selected ? (layerDef(defaultRegistry, selected)?.label ?? selected.module) : "Params", "sheet-params"],
+              ["layers", t("app.panelLayers"), "sheet-layers"],
+              ["params", selected ? (layerDef(defaultRegistry, selected)?.label ?? selected.module) : t("app.panelParams"), "sheet-params"],
             ] as const
           ).map(([id, label, controls]) => (
             <button

@@ -8,14 +8,15 @@ import { MintTab } from "./MintTab.tsx";
 import { PlotterTab } from "./PlotterTab.tsx";
 import { SheetTab } from "./SheetTab.tsx";
 import { TraitsTab } from "./TraitsTab.tsx";
+import { useLang } from "../../i18n/i18n.tsx";
 
 const TABS = [
-  ["traits", "Traits & rarity"],
-  ["census", "Census"],
-  ["sheet", "Contact sheet"],
-  ["batch", "Batch export"],
-  ["plotter", "Plotter"],
-  ["mint", "Mint export"],
+  ["traits", "edition.traits"],
+  ["census", "edition.census"],
+  ["sheet", "edition.sheet"],
+  ["batch", "edition.batch"],
+  ["plotter", "edition.plotter"],
+  ["mint", "edition.mint"],
 ] as const;
 type Tab = (typeof TABS)[number][0];
 
@@ -29,6 +30,7 @@ interface Props {
 
 /** Long-form tools: what an edition of this piece looks like across many seeds. */
 export function EditionPanel({ doc, hash, dispatch, onClose, notify }: Props) {
+  const { t } = useLang();
   const [tab, setTab] = useState<Tab>("traits");
   // Tabs mount on first visit and then stay mounted (hidden), so switching tabs
   // never cancels a running census or batch, nor drops their results.
@@ -69,11 +71,11 @@ export function EditionPanel({ doc, hash, dispatch, onClose, notify }: Props) {
       tabIndex={-1}
       role="dialog"
       aria-modal="true"
-      aria-label="Edition"
+      aria-label={t("toolbar.edition")}
       className="absolute inset-0 z-30 flex flex-col gap-3 overflow-auto bg-zinc-950 p-4 outline-none"
     >
       <div className="flex flex-wrap items-center gap-1 text-xs">
-        <span className="mr-2 font-semibold text-white">Edition</span>
+        <span className="mr-2 font-semibold text-white">{t("toolbar.edition")}</span>
         <div role="tablist" className="flex gap-1">
           {TABS.map(([id, label]) => (
             <button
@@ -87,15 +89,17 @@ export function EditionPanel({ doc, hash, dispatch, onClose, notify }: Props) {
               onClick={() => open(id)}
               className={`rounded px-2 py-0.5 ${tab === id ? "bg-zinc-200 text-zinc-900" : "text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100"}`}
             >
-              {label}
+              {t(label)}
             </button>
           ))}
         </div>
         <div className="flex-1" />
         <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 text-zinc-300 hover:bg-zinc-700" onClick={close}>
-          Done (Esc)
+          {t("common.doneEsc")}
         </button>
       </div>
+      {/* Advanced on purpose: none of this is needed to make a picture and save it. */}
+      <p className="text-[11px] leading-snug text-zinc-500">{t("edition.intro")}</p>
       {TABS.map(([id]) =>
         visited.has(id) ? (
           <div

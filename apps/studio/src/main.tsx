@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App.tsx";
+import { LangProvider } from "./i18n/i18n.tsx";
 import { ErrorBoundary, missingFeatures, Unsupported } from "./ui/Fallbacks.tsx";
 import "./styles.css";
 
@@ -13,7 +14,9 @@ createRoot(root).render(
       <Unsupported missing={missing} />
     ) : (
       <ErrorBoundary>
-        <App />
+        <LangProvider>
+          <App />
+        </LangProvider>
       </ErrorBoundary>
     )}
   </StrictMode>,

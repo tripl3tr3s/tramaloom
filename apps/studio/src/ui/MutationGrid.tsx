@@ -7,6 +7,7 @@ import { listPresets } from "../state/library.ts";
 import { MAX_LAYERS } from "../state/limits.ts";
 import { useThumbnails } from "../render/useThumbnails.ts";
 import { randomHash } from "../state/store.ts";
+import { useLang } from "../i18n/i18n.tsx";
 
 interface Props {
   readonly doc: ArtDocument;
@@ -44,6 +45,7 @@ function changes(a: ArtDocument, b: ArtDocument): string[] {
  * through the space of a piece by clicking.
  */
 export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props) {
+  const { t } = useLang();
   const [amount, setAmount] = useState(0.35);
   // The slider updates instantly; the expensive grid follows once it settles.
   const [settled, setSettled] = useState(amount);
@@ -99,11 +101,11 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
   const { urls, fresh, busy, error } = useThumbnails(tiles, THUMB);
 
   const pick = (i: number) => {
-    const t = tiles[i];
+    const tile = tiles[i];
     // Only adopt what is on screen: while a new batch renders the old images are stale.
-    if (!t || !fresh || amount !== settled || share !== settledShare) return;
+    if (!tile || !fresh || amount !== settled || share !== settledShare) return;
     if (i === CENTER) return onClose();
-    onAdopt(t.doc, t.hash);
+    onAdopt(tile.doc, tile.hash);
     setSeed(randomHash());
   };
 
@@ -131,10 +133,10 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
       className="absolute inset-0 z-30 flex flex-col items-center gap-3 overflow-auto bg-zinc-950 p-4 outline-none"
       role="dialog"
       aria-modal="true"
-      aria-label="Mutation grid"
+      aria-label={t("mutation.title")}
     >
       <div className="flex flex-wrap items-center gap-3 text-xs text-zinc-300">
-        <div role="group" aria-label="Mode" className="flex rounded bg-zinc-900 p-0.5">
+        <div role="group" aria-label={t("mutation.mode")} className="flex rounded bg-zinc-900 p-0.5">
           {(["mutate", "breed"] as const).map((m) => (
             <button
               key={m}
@@ -146,7 +148,7 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
               }}
               className={`rounded px-2 py-0.5 capitalize ${mode === m ? "bg-zinc-200 font-semibold text-zinc-900" : "text-zinc-400 hover:text-zinc-100"}`}
             >
-              {m}
+              {t(m === "mutate" ? "mutation.mutate" : "mutation.breed")}
             </button>
           ))}
         </div>
@@ -159,10 +161,10 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
                 setPartnerKey(e.target.value);
                 e.currentTarget.blur();
               }}
-              aria-label="Partner"
+              aria-label={t("mutation.partner")}
             >
               {userPartners.length > 0 && (
-                <optgroup label="Yours">
+                <optgroup label={t("library.yours")}>
                   {userPartners.map((p) => (
                     <option key={p.key} value={p.key}>
                       {p.name}
@@ -170,7 +172,7 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
                   ))}
                 </optgroup>
               )}
-              <optgroup label="Built in">
+              <optgroup label={t("mutation.builtIn")}>
                 {BUILTIN_PARTNERS.map((p) => (
                   <option key={p.key} value={p.key}>
                     {p.name}
@@ -178,15 +180,15 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
                 ))}
               </optgroup>
             </select>
-            <label className="flex items-center gap-2" title="Chance that each setting comes from the partner">
-              Partner share
-              <input type="range" min={0.05} max={0.95} step={0.05} value={share} onChange={(e) => setShare(Number(e.target.value))} onPointerUp={blur} aria-label="Partner share" />
+            <label className="flex items-center gap-2" title={t("mutation.shareHint")}>
+              {t("mutation.share")}
+              <input type="range" min={0.05} max={0.95} step={0.05} value={share} onChange={(e) => setShare(Number(e.target.value))} onPointerUp={blur} aria-label={t("mutation.share")} />
               <span className="w-8 tabular-nums">{share.toFixed(2)}</span>
             </label>
           </>
         )}
         <label className={`flex items-center gap-2 ${mode === "breed" ? "hidden" : ""}`}>
-          Amount
+          {t("mutation.amount")}
           <input
             type="range"
             min={0.05}
@@ -195,7 +197,7 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
             value={amount}
             onChange={(e) => setAmount(Number(e.target.value))}
             onPointerUp={blur}
-            aria-label="Mutation amount"
+            aria-label={t("mutation.amountLabel")}
           />
           <span className="w-8 tabular-nums">{amount.toFixed(2)}</span>
         </label>
@@ -206,14 +208,14 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
             setScope(e.target.value === "layer" ? "layer" : "all");
             e.currentTarget.blur();
           }}
-          aria-label="Layers to mutate"
+          aria-label={t("mutation.scope")}
         >
-          <option value="all">All layers</option>
+          <option value="all">{t("mutation.all")}</option>
           <option value="layer" disabled={!selectedId}>
-            Selected layer only
+            {t("mutation.selected")}
           </option>
         </select>
-        <label className="flex items-center gap-1" title="Give each variation its own seed as well">
+        <label className="flex items-center gap-1" title={t("mutation.reseedHint")}>
           <input
             type="checkbox"
             checked={reseed}
@@ -222,27 +224,27 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
               e.currentTarget.blur();
             }}
           />
-          New seeds
+          {t("mutation.reseed")}
         </label>
         <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" onClick={() => setSeed(randomHash())}>
-          Shuffle (R)
+          {t("mutation.shuffle")}
         </button>
         <button type="button" className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700" onClick={onClose}>
-          Done (Esc)
+          {t("common.doneEsc")}
         </button>
         <span className="min-w-16 text-zinc-500" aria-live="polite">
-          {error ?? (busy ? "rendering" : "")}
+          {error ?? (busy ? t("mutation.rendering") : "")}
         </span>
       </div>
       <div className="grid w-full max-w-[min(56rem,calc((100dvh-10rem)*0.75))] grid-cols-3 gap-3">
-        {tiles.map((t, i) => {
-          const diff = i === CENTER ? [] : changes(doc, t.doc);
+        {tiles.map((tile, i) => {
+          const diff = i === CENTER ? [] : changes(doc, tile.doc);
           const title =
             i === CENTER
-              ? "Current piece (5 or Esc to keep)"
+              ? t("mutation.current")
               : diff.length
                 ? `${i + 1}: ${diff.slice(0, 6).join(", ")}${diff.length > 6 ? ` +${diff.length - 6}` : ""}`
-                : `${i + 1}: same settings${t.hash !== hash ? ", new seed" : ""}`;
+                : t(tile.hash !== hash ? "mutation.sameNewSeed" : "mutation.same", { n: i + 1 });
           return (
             <button
               type="button"
@@ -266,8 +268,8 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
       </div>
       <p className="text-[11px] text-zinc-500">
         {mode === "breed"
-          ? `Each tile is a child of this piece and ${partner?.name ?? "the partner"}: every setting comes from one parent. Adopt one to keep breeding.`
-          : "Click or press 1-9 to adopt a variation; it becomes the new centre. Locked settings never change."}
+          ? t("mutation.breedHelp", { partner: partner?.name ?? t("mutation.thePartner") })
+          : t("mutation.help")}
       </p>
     </div>
   );

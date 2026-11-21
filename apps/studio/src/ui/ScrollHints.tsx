@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { useLang } from "../i18n/i18n.tsx";
 
 interface Hints {
   readonly above: boolean;
@@ -17,6 +18,7 @@ const FADE = 64;
  * by their [data-section] title.
  */
 export function ScrollHints() {
+  const { t } = useLang();
   const ref = useRef<HTMLDivElement | null>(null);
   const [hints, setHints] = useState<Hints>({ above: false, below: null });
 
@@ -74,7 +76,7 @@ export function ScrollHints() {
               onClick={showNext}
               className="pointer-events-auto flex items-center gap-1 rounded-full bg-zinc-800 px-2.5 py-1 text-[11px] text-zinc-200 shadow-lg shadow-black/50 ring-1 ring-zinc-700 hover:bg-zinc-700 focus-visible:outline-none focus-visible:ring-sky-500"
             >
-              {hints.below ? `More: ${hints.below}` : "More below"}
+              {hints.below ? t("scroll.more", { name: hints.below }) : t("scroll.below")}
               <span aria-hidden="true">↓</span>
             </button>
           </div>

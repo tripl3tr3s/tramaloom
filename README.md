@@ -139,7 +139,8 @@ layer({
 - **Helpers** are the ones the built-in layers use: `addItems`, `dsin`, `dcos`, `TAU`, `makeNoise2D`, `chance`, `int`, `shuffled`, `pickColor` and more. The editor lists them. Use `dsin` and `dcos` rather than `Math.sin` and `Math.cos`: the editor warns about math that can differ slightly between browsers.
 - **Remix a built-in layer.** In any drawing layer's **Code** view, **Remix** turns that layer into a script layer with the module's own code, comments included. It draws exactly the same picture until you change something, and undo turns it back.
 - **Mistakes are safe.** An error shows its line, and the last working version keeps drawing until the code works again.
-- **Isolated.** Scripts run in a sandbox: a separate, locked-down page with no network access and no way to see your Library or other saved data. A script that runs too long is stopped. This also covers scripts inside share links and files from other people.
+- **Isolated.** Scripts run in a sandbox: a separate, locked-down page with no network access and no way to see your Library or other saved data. A script that runs too long is stopped.
+- **Code from other people waits for a yes.** When a share link, an opened file or an imported Library entry brings script code you have not run before, the picture leaves those layers out and a notice offers **Run the code**, **Show the code** (to read it first) or **Keep hidden**. Code you write or remix, and code you have approved, runs without asking in this browser.
 - **Not yet:** batch export and mint export of pieces with script layers. Hide the script layers to use them on the rest.
 
 ## Shortcuts

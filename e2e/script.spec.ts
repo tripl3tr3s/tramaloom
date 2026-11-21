@@ -143,3 +143,79 @@ test("Remix turns a layer into a script that draws the same picture", async ({ p
   await page.keyboard.press("ControlOrMeta+z");
   await expect(page.getByRole("button", { name: /^Cell fill remix/ })).toHaveCount(0);
 });
+
+test.describe("code that arrives with a piece", () => {
+  // A script that covers the frame in black, so whether it ran is plain to see.
+  const COVER = 'layer({ label: "Cover", apply(scene) { const f = scene.frame; return addItems(scene, [{ type: "rect", x: f.x, y: f.y, w: f.w, h: f.h, fill: "#000000" }]); } });\n';
+
+  /** Makes a piece with that script in this browser and returns its share link. */
+  async function sharedLink(page: Page): Promise<string> {
+    await addScriptLayer(page);
+    const before = await page.evaluate(() => location.hash);
+    await setCode(page, COVER);
+    await expect(page.getByRole("button", { name: /^Cover/ }).first()).toBeVisible();
+    // Written by this person: no prompt here.
+    await expect(page.getByRole("region", { name: "Code in this piece" })).toHaveCount(0);
+    // The address bar follows the edit a moment later; wait until it holds the new code and settles.
+    await expect.poll(() => page.evaluate(() => location.hash)).not.toBe(before);
+    let link = "";
+    await expect
+      .poll(async () => {
+        const now = page.url();
+        const settled = now === link;
+        link = now;
+        return settled;
+      }, { intervals: [400] })
+      .toBe(true);
+    return link;
+  }
+
+  const centre = (page: Page) =>
+    page.locator("main canvas").evaluate((c: HTMLCanvasElement) => {
+      const copy = document.createElement("canvas");
+      copy.width = c.width;
+      copy.height = c.height;
+      const ctx = copy.getContext("2d");
+      ctx?.drawImage(c, 0, 0);
+      const d = ctx?.getImageData(Math.floor(c.width / 2), Math.floor(c.height / 2), 1, 1).data;
+      return d ? `${d[0]},${d[1]},${d[2]}` : "";
+    });
+
+  test("is not run until the visitor says so, and the choice is remembered", async ({ page, browser }) => {
+    const link = await sharedLink(page);
+    const visitor = await (await browser.newContext()).newPage();
+    await visitor.addInitScript(() => localStorage.setItem("gridloom.welcomed", "1"));
+    await visitor.goto(link);
+    const banner = visitor.getByRole("region", { name: "Code in this piece" });
+    await expect(banner).toBeVisible();
+    await expect(visitor.locator("main canvas")).toBeVisible();
+    await visitor.waitForTimeout(500);
+    expect(await centre(visitor)).not.toBe("0,0,0");
+
+    await banner.getByRole("button", { name: "Run the code" }).click();
+    await expect(banner).toHaveCount(0);
+    await expect.poll(() => centre(visitor), { timeout: 10_000 }).toBe("0,0,0");
+
+    await visitor.reload();
+    await expect(visitor.locator("main canvas")).toBeVisible();
+    await expect.poll(() => centre(visitor), { timeout: 10_000 }).toBe("0,0,0");
+    await expect(visitor.getByRole("region", { name: "Code in this piece" })).toHaveCount(0);
+    await visitor.context().close();
+  });
+
+  test("Keep hidden leaves the script out, and Show the code opens it without running it", async ({ page, browser }) => {
+    const link = await sharedLink(page);
+    const visitor = await (await browser.newContext()).newPage();
+    await visitor.addInitScript(() => localStorage.setItem("gridloom.welcomed", "1"));
+    await visitor.goto(link);
+    const banner = visitor.getByRole("region", { name: "Code in this piece" });
+    await banner.getByRole("button", { name: "Show the code" }).click();
+    await expect(visitor.getByRole("textbox", { name: "Script code" })).toContainText('label: "Cover"');
+    await expect(visitor.getByRole("status").filter({ hasText: "Not running" })).toBeVisible();
+    await banner.getByRole("button", { name: "Keep hidden" }).click();
+    await expect(banner).toHaveCount(0);
+    await visitor.waitForTimeout(800);
+    expect(await centre(visitor)).not.toBe("0,0,0");
+    await visitor.context().close();
+  });
+});

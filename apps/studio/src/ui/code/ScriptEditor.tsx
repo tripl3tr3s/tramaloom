@@ -17,6 +17,8 @@ interface Props {
   readonly layer: Layer;
   /** The main view's last error, which includes errors thrown while the script draws. */
   readonly renderError: string | null;
+  /** False while the code came from elsewhere and is not approved: it is shown but not run. */
+  readonly running: boolean;
   readonly onApply: (layerId: string, script: LayerScript) => void;
   readonly onClose: () => void;
 }
@@ -70,7 +72,7 @@ const HELPERS: readonly (readonly [string, string])[] = [
  * here, then its top level in the sandbox, then the params it declares. Only code that passes
  * replaces the layer's script, so the last working version keeps drawing until then.
  */
-export function ScriptEditor({ layer, renderError, onApply, onClose }: Props) {
+export function ScriptEditor({ layer, running, renderError, onApply, onClose }: Props) {
   const script = layer.script;
   const host = useRef<HTMLDivElement | null>(null);
   const viewRef = useRef<EditorView | null>(null);
@@ -216,7 +218,8 @@ export function ScriptEditor({ layer, renderError, onApply, onClose }: Props) {
             {drawError}
           </p>
         )}
-        {status.kind === "ok" && !drawError && <p className="text-emerald-300/80">Drawing with this code.</p>}
+        {status.kind === "ok" && !drawError && running && <p className="text-emerald-300/80">Drawing with this code.</p>}
+        {status.kind === "ok" && !running && <p className="text-amber-200/80">Not running: this code came with the piece. Read it, then choose Run the code above, or edit it to make it yours.</p>}
         {warnings.slice(0, 3).map((w) => (
           <p key={w.line} className="text-amber-200/80">
             <button type="button" className="mr-1.5 rounded bg-amber-950/60 px-1.5 hover:bg-amber-900/60" onClick={() => goTo(w.line)}>

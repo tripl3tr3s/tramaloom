@@ -8,6 +8,7 @@ import type { ArtDocument, Drawing } from "@gridloom/core";
 import { checkDrawing } from "@gridloom/core";
 import sandboxSource from "@gridloom/runtime/sandbox.js?raw";
 import type { SandboxRequest, SandboxResponse } from "@gridloom/runtime/sandboxProtocol";
+import { unapprovedScripts } from "./trust.ts";
 
 /** A script failed: its message, and the script line when the browser reports one. */
 export class SandboxError extends Error {
@@ -206,6 +207,8 @@ export async function compileInSandbox(code: string): Promise<{ readonly label: 
 
 /** Draws a document that has script layers. The drawing is checked before it is returned. */
 export async function drawInSandbox(doc: ArtDocument, hash: string): Promise<Drawing> {
+  // Backstop for the consent prompt: callers draw drawable(doc), so this should never trigger.
+  if (unapprovedScripts(doc).length > 0) throw new SandboxError("This piece's code has not been approved to run");
   const r = await sandbox().run({ op: "draw", doc, hash }, DRAW_TIMEOUT_MS);
   if (r.op !== "draw") throw new SandboxError("The script sandbox answered something else");
   try {

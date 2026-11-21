@@ -19,6 +19,7 @@ import { TilePreview } from "./ui/TilePreview.tsx";
 import { Toolbar } from "./ui/Toolbar.tsx";
 import { isFirstVisit, Welcome } from "./ui/Welcome.tsx";
 import { REMIXABLE } from "./ui/code/remixLayer.ts";
+import { approveScripts, unapprovedScripts, useTrustVersion } from "./sandbox/trust.ts";
 
 // Overlays load on demand, so the first paint does not wait for them. The Edition panel is the
 // heaviest: its Mint tab carries the whole player. All are fetched once the page is idle.
@@ -51,7 +52,17 @@ export function App() {
   const [codeOf, setCodeOf] = useState<{ readonly id: string; readonly label: string; readonly layerId: string } | null>(null);
   // The script layer whose code is open in the editor under the canvas.
   const [editingId, setEditingId] = useState<string | null>(null);
-  const applyScript = useCallback((layerId: string, script: LayerScript) => dispatch({ type: "setScript", layerId, script }), []);
+  // Code written or remixed here is the person's own: it runs without asking.
+  const applyScript = useCallback((layerId: string, script: LayerScript) => {
+    approveScripts([script.code]);
+    dispatch({ type: "setScript", layerId, script });
+  }, []);
+  // Code that arrived from elsewhere (a link, a file, an import) waits for a yes.
+  useTrustVersion();
+  const untrusted = unapprovedScripts(state.doc);
+  const untrustedKey = untrusted.join("\u0000");
+  const [keptHidden, setKeptHidden] = useState("");
+  const firstUntrusted = state.doc.layers.find((l) => l.enabled && l.script && untrusted.includes(l.script.code));
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const viewportRef = useRef<HTMLDivElement | null>(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
@@ -328,6 +339,7 @@ export function App() {
               {...(REMIXABLE.has(codeOf.id)
                 ? {
                     onRemix: (script: LayerScript) => {
+                      approveScripts([script.code]);
                       dispatch({ type: "remixLayer", layerId: codeOf.layerId, script });
                       setOverlay("none");
                       setEditingId(codeOf.layerId);
@@ -339,6 +351,28 @@ export function App() {
           )}
           </Suspense>
           {overlay === "welcome" && <Welcome onClose={() => setOverlay("none")} onPresets={() => setOverlay("library")} />}
+          {untrusted.length > 0 && untrustedKey !== keptHidden && (
+            <div role="region" aria-label="Code in this piece" className="absolute inset-x-3 top-3 z-20 mx-auto max-w-xl rounded-lg border border-amber-500/40 bg-zinc-900/95 p-3 text-xs text-zinc-200 shadow-xl shadow-black/50">
+              <p className="font-semibold text-amber-200">This piece contains code</p>
+              <p className="mt-1 leading-relaxed text-zinc-300">
+                {untrusted.length === 1 ? "A script layer" : `${untrusted.length} script layers`} came with this piece, written by whoever made it. The picture leaves{" "}
+                {untrusted.length === 1 ? "it" : "them"} out until you choose. Code runs in a sandbox with no access to your saved pieces or the internet.
+              </p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <button type="button" className="rounded bg-sky-700 px-2.5 py-1 text-white hover:bg-sky-600" onClick={() => approveScripts(untrusted)}>
+                  Run the code
+                </button>
+                {firstUntrusted && (
+                  <button type="button" className="rounded bg-zinc-800 px-2.5 py-1 hover:bg-zinc-700" onClick={() => setEditingId(firstUntrusted.id)}>
+                    Show the code
+                  </button>
+                )}
+                <button type="button" className="rounded px-2.5 py-1 text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100" onClick={() => setKeptHidden(untrustedKey)}>
+                  Keep hidden
+                </button>
+              </div>
+            </div>
+          )}
           {toast && (
             <div className="absolute top-3 z-40 rounded-full bg-zinc-800/95 px-3 py-1 text-xs text-zinc-200 shadow">{toast}</div>
           )}
@@ -346,7 +380,14 @@ export function App() {
         {editingLayer && (
           <div inert={behind} className="contents">
             <Suspense fallback={null}>
-              <ScriptEditor key={editingLayer.id} layer={editingLayer} renderError={info.error} onApply={applyScript} onClose={() => setEditingId(null)} />
+              <ScriptEditor
+                key={editingLayer.id}
+                layer={editingLayer}
+                running={!untrusted.includes(editingLayer.script?.code ?? "")}
+                renderError={info.error}
+                onApply={applyScript}
+                onClose={() => setEditingId(null)}
+              />
             </Suspense>
           </div>
         )}

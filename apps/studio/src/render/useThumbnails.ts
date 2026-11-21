@@ -1,6 +1,7 @@
 import { hasScripts } from "@gridloom/core";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { drawInSandbox } from "../sandbox/host.ts";
+import { drawable, useTrustVersion } from "../sandbox/trust.ts";
 import type { ThumbJob, ThumbRequest, ThumbResponse } from "./protocol.ts";
 
 export interface Thumbnails {
@@ -28,6 +29,7 @@ interface Internal {
  */
 export function useThumbnails(jobs: readonly ThumbJob[], size: number, keys?: readonly string[]): Thumbnails {
   const [state, setState] = useState<Internal>({ jobs: null, keys: [], urls: [], busy: true, error: null });
+  const trust = useTrustVersion();
   const workerRef = useRef<Worker | null>(null);
   const latest = useRef(0);
   const batches = useRef(new Map<number, { jobs: readonly ThumbJob[]; keys: readonly string[] }>());
@@ -78,14 +80,16 @@ export function useThumbnails(jobs: readonly ThumbJob[], size: number, keys?: re
     batches.current.set(id, { jobs, keys: k });
     setState((s) => ({ ...s, busy: true }));
     const px = Math.round(size * (window.devicePixelRatio || 1));
-    if (!jobs.some((j) => hasScripts(j.doc))) {
-      workerRef.current?.postMessage({ id, jobs, size: px } satisfies ThumbRequest);
+    // Script layers whose code is not approved yet are left out.
+    const allowed = jobs.map((j) => ({ ...j, doc: drawable(j.doc) }));
+    if (!allowed.some((j) => hasScripts(j.doc))) {
+      workerRef.current?.postMessage({ id, jobs: allowed, size: px } satisfies ThumbRequest);
       return;
     }
     // Script layers are drawn in the sandbox first, one job at a time.
     void (async () => {
       const drawn: ThumbJob[] = [];
-      for (const job of jobs) {
+      for (const job of allowed) {
         if (latest.current !== id) return; // superseded
         if (!hasScripts(job.doc)) drawn.push(job);
         else {
@@ -95,7 +99,7 @@ export function useThumbnails(jobs: readonly ThumbJob[], size: number, keys?: re
       }
       if (latest.current === id) workerRef.current?.postMessage({ id, jobs: drawn, size: px } satisfies ThumbRequest);
     })();
-  }, [jobs, size]);
+  }, [jobs, size, trust]);
 
   const fresh = state.jobs === jobs;
   const byKey = new Map(state.keys.map((k, i) => [k, state.urls[i] ?? null] as const));

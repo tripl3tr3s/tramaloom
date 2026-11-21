@@ -1,6 +1,7 @@
 import type { ArtDocument, Drawing, Paper, PlotterOptions } from "@gridloom/core";
 import { DEFAULT_PLOTTER, generate, hasScripts, PAPERS, toPlotterSVG } from "@gridloom/core";
 import { drawInSandbox } from "../../sandbox/host.ts";
+import { drawable, useTrustVersion } from "../../sandbox/trust.ts";
 import { useEffect, useMemo, useState } from "react";
 import { download, slug } from "../../render/export.ts";
 import { entryFromBytes, zip } from "../../render/zip.ts";
@@ -19,7 +20,12 @@ const minutes = (mm: number, lifts: number) => {
 };
 
 /** Pen-plotter export: outlines only, one layer (or file) per color, on a real paper size. */
-export function PlotterTab({ doc, hash, notify }: { readonly doc: ArtDocument; readonly hash: string; readonly notify: (m: string) => void }) {
+export function PlotterTab({ doc: piece, hash, notify }: { readonly doc: ArtDocument; readonly hash: string; readonly notify: (m: string) => void }) {
+  // Script layers whose code is not approved yet are left out, as on the canvas.
+  const trust = useTrustVersion();
+  // eslint-free note: trust is read so an approval redraws.
+  // `trust` changes when code is approved, so the plot redraws with it.
+  const doc = useMemo(() => drawable(piece), [piece, trust]);
   const [opts, setOpts] = useState<PlotterOptions>(DEFAULT_PLOTTER);
   const set = <K extends keyof PlotterOptions>(k: K, v: PlotterOptions[K]) => setOpts((o) => ({ ...o, [k]: v }));
 

@@ -1,6 +1,7 @@
 import type { ArtDocument, ResolvedLayer } from "@gridloom/core";
 import { hasScripts } from "@gridloom/core";
 import { drawInSandbox, SandboxError } from "../sandbox/host.ts";
+import { drawable, useTrustVersion } from "../sandbox/trust.ts";
 import { useEffect, useRef, useState } from "react";
 import type { RenderRequest, RenderResponse } from "./protocol.ts";
 
@@ -31,6 +32,7 @@ export function useRenderer(
   box: { readonly width: number; readonly height: number },
 ): RenderInfo {
   const [info, setInfo] = useState<RenderInfo>(EMPTY);
+  const trust = useTrustVersion();
   const workerRef = useRef<Worker | null>(null);
   const busy = useRef(false);
   const pending = useRef<Job | null>(null);
@@ -146,15 +148,16 @@ export function useRenderer(
   useEffect(() => {
     if (box.width < 1 || box.height < 1) return;
     const dpr = window.devicePixelRatio || 1;
+    // Script layers whose code is not approved yet are left out.
     const job: Job = {
-      doc,
+      doc: drawable(doc),
       hash,
       boxWidth: Math.floor(box.width * dpr),
       boxHeight: Math.floor(box.height * dpr),
     };
     latest.current = job;
     sendRef.current(job);
-  }, [doc, hash, box.width, box.height]);
+  }, [doc, hash, box.width, box.height, trust]);
 
   return info;
 }

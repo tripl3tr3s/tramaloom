@@ -234,6 +234,118 @@ const seeds: Lesson = {
   ],
 };
 
-export const LESSONS: readonly Lesson[] = [firstGrid, seeds];
+// ---------------------------------------------------------------------------
+// Lesson 3: smooth noise
+
+interface NoiseStage {
+  readonly smooth: boolean;
+  readonly scale: boolean;
+  readonly colors: boolean;
+  readonly lines: boolean;
+}
+
+function noiseCode(lang: Lang, stage: NoiseStage): string {
+  const es = lang === "es";
+  const c = (en: string, sp: string) => (es ? sp : en);
+  const scaleParam = stage.scale
+    ? `
+    scale: { kind: "number", label: "${c("Scale", "Escala")}", help: "${c("Low: wide, gentle waves. High: busy, small ones", "Baja: ondas amplias y suaves. Alta: pequeñas y agitadas")}", min: 0.5, max: 12, step: 0.5, default: 4 },
+  `
+    : "";
+  const zoom = stage.scale ? "v.scale" : "4";
+  const source = stage.smooth
+    ? `    // ${c("Smooth noise: nearby points get nearby values, from 0 to 1.", "Ruido suave: puntos cercanos dan valores cercanos, de 0 a 1.")}
+    const noise = makeNoise2D(ctx.rng("noise"));
+`
+    : `    const rng = ctx.rng("size");
+`;
+  const value = stage.smooth
+    ? `      const n = noise(cx * ${zoom}, cy * ${zoom});`
+    : `      // ${c("A random number per cell: neighbours have nothing in common.", "Un número al azar por celda: las vecinas no tienen nada en común.")}
+      const n = rng();`;
+  const pick = stage.colors
+    ? `      // ${c("Noise mostly stays between 0.2 and 0.8: stretch that part to the whole palette.", "El ruido casi siempre queda entre 0.2 y 0.8: estira esa parte a toda la paleta.")}
+      const t = Math.min(0.999, Math.max(0, (n - 0.2) / 0.6));
+      const color = colors[Math.floor(t * colors.length)];
+`
+    : "";
+  const ink = stage.colors ? "color" : `"#264653"`;
+  const draw = stage.lines
+    ? `      // ${c("A short line through the centre, turned by the noise: a flow field.", "Una línea corta por el centro, girada por el ruido: un campo de flujo.")}
+      const a = n * TAU;
+      const h = Math.min(cell.w, cell.h) * 0.45;
+      items.push({ type: "polyline", points: [[cx - dcos(a) * h, cy - dsin(a) * h], [cx + dcos(a) * h, cy + dsin(a) * h]], stroke: ${ink}, strokeWidth: 0.003 });`
+    : `      const s = Math.min(cell.w, cell.h) * n;
+      items.push({ type: "rect", x: cx - s / 2, y: cy - s / 2, w: s, h: s, fill: ${ink} });`;
+  return `// ${c("Lesson: smooth noise. Press R to see other seeds.", "Lección: ruido suave. Presiona R para ver otras semillas.")}
+layer({
+  label: "${c("Noise", "Ruido")}",
+  params: {${scaleParam}},
+  apply(scene, v, ctx) {
+    const items = [];
+    const colors = scene.palette ? scene.palette.colors : ["#264653"];
+${source}    for (const cell of scene.cells) {
+      const cx = cell.x + cell.w / 2;
+      const cy = cell.y + cell.h / 2;
+${value}
+${pick}${draw}
+    }
+    return addItems(scene, items);
+  },
+});
+`;
+}
+
+const NOISE_START: NoiseStage = { smooth: false, scale: false, colors: false, lines: false };
+const NOISE_1: NoiseStage = { ...NOISE_START, smooth: true };
+const NOISE_2: NoiseStage = { ...NOISE_1, scale: true };
+const NOISE_3: NoiseStage = { ...NOISE_2, colors: true };
+const NOISE_4: NoiseStage = { ...NOISE_3, lines: true };
+
+const noise: Lesson = {
+  id: "noise",
+  title: t("Smooth noise", "Ruido suave"),
+  summary: t(
+    "Replace scattered randomness with noise that flows across the canvas, then let it pick colors and turn lines.",
+    "Cambia el azar disperso por un ruido que fluye por el lienzo, y deja que elija colores y gire líneas.",
+  ),
+  start: (lang) => noiseCode(lang, NOISE_START),
+  steps: [
+    {
+      title: t("Smooth instead of random", "Suave en vez de al azar"),
+      body: t(
+        "Right now every cell asks `rng()` for its size, so neighbours have nothing in common: it looks like static.\n\n`makeNoise2D(rng)` gives a function `noise(x, y)` that returns 0 to 1 too, but nearby points get nearby values. Show me sizes each square by the noise at its centre, and the sizes start to flow.",
+        "Ahora cada celda le pide su tamaño a `rng()`, así que las vecinas no tienen nada en común: parece estática de televisión.\n\n`makeNoise2D(rng)` da una función `noise(x, y)` que también devuelve de 0 a 1, pero puntos cercanos dan valores cercanos. Muéstrame da a cada cuadrado el tamaño del ruido en su centro, y los tamaños empiezan a fluir.",
+      ),
+      code: (lang) => noiseCode(lang, NOISE_1),
+    },
+    {
+      title: t("Zoom in and out", "Acercar y alejar"),
+      body: t(
+        "Multiplying the position before asking the noise (`cx * 4`) zooms it. A small number spreads one gentle wave across the canvas; a large one packs many small waves in.\n\nShow me turns the 4 into a Scale setting. Slide it from one end to the other.",
+        "Multiplicar la posición antes de preguntarle al ruido (`cx * 4`) es como hacer zoom. Un número pequeño reparte una onda suave por todo el lienzo; uno grande mete muchas ondas pequeñas.\n\nMuéstrame convierte el 4 en un control Escala. Deslízalo de un extremo al otro.",
+      ),
+      code: (lang) => noiseCode(lang, NOISE_2),
+    },
+    {
+      title: t("Noise picks the colors", "El ruido elige los colores"),
+      body: t(
+        "Noise spends most of its time between about 0.2 and 0.8 and seldom reaches 0 or 1. Show me stretches that middle part to cover 0 to 1, then uses it to pick a palette color, so colors form smooth regions too.\n\n`Math.max` and `Math.min` keep the stretched number inside 0 to 1.",
+        "El ruido pasa la mayor parte del tiempo entre 0.2 y 0.8 más o menos, y casi nunca llega a 0 o a 1. Muéstrame estira esa parte central para que cubra de 0 a 1 y la usa para elegir un color de la paleta, así que los colores también forman regiones suaves.\n\n`Math.max` y `Math.min` mantienen el número estirado entre 0 y 1.",
+      ),
+      code: (lang) => noiseCode(lang, NOISE_3),
+    },
+    {
+      title: t("Noise turns lines", "El ruido gira líneas"),
+      body: t(
+        "Noise can drive anything, not only size. Show me draws a short line through each cell, turned by the noise: `a = n * TAU` is an angle (TAU is a full turn), and `dcos(a)` and `dsin(a)` give its direction.\n\nThe result is a flow field, and lines are what a pen plotter draws. Use `dsin` and `dcos` rather than `Math.sin` and `Math.cos`: they give the same picture in every browser.\n\nTip: hide the Cell fill layer (its eye, in the layer list) to see your lines on their own.",
+        "El ruido puede mover cualquier cosa, no solo el tamaño. Muéstrame dibuja una línea corta en cada celda, girada por el ruido: `a = n * TAU` es un ángulo (TAU es una vuelta completa), y `dcos(a)` y `dsin(a)` dan su dirección.\n\nEl resultado es un campo de flujo, y las líneas son lo que dibuja un plotter. Usa `dsin` y `dcos` en vez de `Math.sin` y `Math.cos`: dan la misma imagen en todos los navegadores.\n\nConsejo: oculta la capa Cell fill (su ojo, en la lista de capas) para ver tus líneas solas.",
+      ),
+      code: (lang) => noiseCode(lang, NOISE_4),
+    },
+  ],
+};
+
+export const LESSONS: readonly Lesson[] = [firstGrid, seeds, noise];
 
 export const lessonById = (id: string): Lesson | undefined => LESSONS.find((l) => l.id === id);

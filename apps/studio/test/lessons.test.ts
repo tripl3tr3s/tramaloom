@@ -1,5 +1,5 @@
 import type { ArtDocument } from "@gridloom/core";
-import { generate, setScriptRunner, starterDocument } from "@gridloom/core";
+import { generate, makeNoise2D, setScriptRunner, starterDocument, stream } from "@gridloom/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 // Test-only: the studio page itself never imports the compiler.
 import { compileScript, scriptRunner } from "../../../packages/runtime/src/compile.ts";
@@ -89,5 +89,46 @@ describe("lessons", () => {
 
   it("seeds lesson, step 3: with one stream per decision, Fill leaves sizes still", () => {
     expect(keptSizesChange(2)).toBe(false);
+  });
+
+  it("no lesson code uses math the editor warns about", () => {
+    const risky = /Math\.(?:a?sinh?|a?cosh?|a?tanh?|atan2|exp|expm1|log1p|log2|log10|log|pow|cbrt|hypot)\b|\*\*|\bDate\b|performance\.now/;
+    for (const lesson of LESSONS) {
+      for (const code of [lesson.start, ...lesson.steps.flatMap((st) => (st.code ? [st.code] : []))]) {
+        for (const lang of ["en", "es"] as const) expect(code(lang).replace(/\/\/.*$/gm, ""), lesson.id).not.toMatch(risky);
+      }
+    }
+  });
+
+  // What the noise lesson says must be true of the noise and of its code.
+  it("noise lesson: noise stays between about 0.2 and 0.8 most of the time", () => {
+    for (const seed of ["a", "b", "c", "d"]) {
+      const noise = makeNoise2D(stream(H, seed));
+      let inside = 0;
+      let total = 0;
+      for (let i = 0; i < 120; i++) {
+        for (let j = 0; j < 120; j++) {
+          const n = noise(i * 0.037, j * 0.041);
+          expect(n).toBeGreaterThanOrEqual(0);
+          expect(n).toBeLessThanOrEqual(1);
+          if (n >= 0.2 && n <= 0.8) inside++;
+          total++;
+        }
+      }
+      expect(inside / total, seed).toBeGreaterThan(0.7);
+    }
+  });
+
+  it("noise lesson, step 1: neighbouring cells get closer sizes than with plain randomness", () => {
+    const lesson = LESSONS.find((l) => l.id === "noise");
+    const step1 = lesson?.steps[0]?.code;
+    if (!lesson || !step1) throw new Error("no lesson");
+    // Mean size difference between side-by-side squares on the same row.
+    const jump = (code: string) => {
+      const rects = draw(code).flatMap((it) => (it.type === "rect" ? [{ cy: (it.y + it.h / 2).toFixed(6), w: it.w }] : []));
+      const diffs = rects.slice(1).flatMap((r, i) => (rects[i]?.cy === r.cy ? [Math.abs(r.w - (rects[i]?.w ?? 0))] : []));
+      return diffs.reduce((a, b) => a + b, 0) / diffs.length;
+    };
+    expect(jump(step1("en"))).toBeLessThan(jump(lesson.start("en")) * 0.7);
   });
 });

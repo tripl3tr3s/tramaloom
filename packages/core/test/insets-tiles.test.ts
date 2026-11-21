@@ -41,6 +41,44 @@ describe("insets", () => {
   });
 });
 
+describe("insets wobble", () => {
+  const rings = (wobble: number, shape = "circle") =>
+    withModule("insets", { chance: { value: 1 }, rings: { value: 6 }, shape: { value: shape }, style: { value: "stroke" }, wobble: { value: wobble } });
+
+  it("at 0 draws exactly what Insets drew before", () => {
+    const { wobble: _w, ...withoutWobble } = rings(0).layers.at(-1)?.params ?? {};
+    const before = withModule("insets", withoutWobble);
+    expect(added(rings(0))).toEqual(added(before));
+  });
+
+  it("moves shapes off centre but keeps their size, paint and cells", () => {
+    const still = added(rings(0));
+    const moved = added(rings(1));
+    expect(moved.length).toBe(still.length);
+    let shifted = 0;
+    moved.forEach((it, i) => {
+      const was = still[i];
+      if (it.type !== "circle" || was?.type !== "circle") throw new Error("expected circles");
+      expect(it.r).toBe(was.r);
+      expect(it.stroke).toBe(was.stroke);
+      if (it.cx !== was.cx || it.cy !== was.cy) shifted++;
+    });
+    expect(shifted).toBeGreaterThan(moved.length / 2);
+  });
+
+  it("never pushes a shape past its cell edge", () => {
+    for (const shape of ["circle", "square"]) {
+      const d = rings(1, shape);
+      const cells = generate(d, A).scene.cells;
+      const inside = (x0: number, y0: number, x1: number, y1: number) => cells.some((c) => x0 >= c.x - 1e-9 && y0 >= c.y - 1e-9 && x1 <= c.x + c.w + 1e-9 && y1 <= c.y + c.h + 1e-9);
+      added(d).forEach((it) => {
+        if (it.type === "circle") expect(inside(it.cx - it.r, it.cy - it.r, it.cx + it.r, it.cy + it.r), shape).toBe(true);
+        if (it.type === "rect") expect(inside(it.x, it.y, it.x + it.w, it.y + it.h), shape).toBe(true);
+      });
+    }
+  });
+});
+
 describe("tiles", () => {
   it("keeps per-cell output stable when chance changes (fixed draws per cell)", () => {
     const all = new Set(added(withModule("tiles", { chance: { value: 1 } })).map(key));

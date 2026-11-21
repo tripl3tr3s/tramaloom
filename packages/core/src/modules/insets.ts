@@ -30,6 +30,16 @@ export const insetsModule = defineModule({
     offset: { kind: "number", group: "Shape", label: "First inset", help: "Distance of the first inset from the cell edge, as a share of the cell", min: 0, max: 0.45, step: 0.01, default: 0.12 },
     spacing: { kind: "number", group: "Shape", label: "Spacing", help: "Distance between nested shapes, as a share of the cell", min: 0.02, max: 0.3, step: 0.01, default: 0.1 },
     roundness: { kind: "number", group: "Shape", label: "Roundness", showIf: { param: "shape", not: ["circle"] }, help: "Corner rounding of square insets", min: 0, max: 0.5, step: 0.01, default: 0 },
+    wobble: {
+      kind: "number",
+      group: "Shape",
+      label: "Wobble",
+      help: "Nudges each nested shape off centre, never past the cell edge; 0 keeps them concentric",
+      min: 0,
+      max: 1,
+      step: 0.01,
+      default: 0,
+    },
     lineWidth: { kind: "number", group: "Shape", label: "Line width", min: 0.01, max: 0.2, step: 0.005, default: 0.04, help: "stroke style" },
     colorRule: { kind: "enum", group: "Color", label: "Color", help: colorHelp(), options: COLOR_RULES, default: "contrast" },
     color: { kind: "color", group: "Color", label: "Single color", help: "Used when Color is set to single", showIf: { param: "colorRule", is: ["single"] }, default: "#f4f1ea" },
@@ -37,6 +47,8 @@ export const insetsModule = defineModule({
   apply(scene, v, ctx) {
     // Exactly three draws per cell (chance, color, shape) so no setting reshuffles other cells.
     const rng = ctx.rng("cell");
+    // Its own stream, read only when wobble is on: the shapes above keep every draw they had.
+    const wob = v.wobble > 0 ? ctx.rng("wobble") : null;
     const under = colorLookup(scene);
     const items: Item[] = scene.cells.flatMap((c): Item[] => {
       const hit = rng() < v.chance;
@@ -63,9 +75,12 @@ export const insetsModule = defineModule({
         const h = c.h - 2 * off;
         if (w <= lw || h <= lw) return null;
         const paint = stroke ? { stroke: picked, strokeWidth: lw } : { fill: k % 2 === 0 ? picked : base };
-        if (circle) return { type: "circle", cx, cy, r: Math.min(w, h) / 2, ...paint };
+        // A shape may move by up to its own distance from the cell edge, so it never leaves the cell.
+        const x = wob ? cx + (wob() * 2 - 1) * v.wobble * off : cx;
+        const y = wob ? cy + (wob() * 2 - 1) * v.wobble * off : cy;
+        if (circle) return { type: "circle", cx: x, cy: y, r: Math.min(w, h) / 2, ...paint };
         const r = Math.min(w, h) * v.roundness;
-        return { type: "rect", x: cx - w / 2, y: cy - h / 2, w, h, ...(r > 0 ? { r } : {}), ...paint };
+        return { type: "rect", x: x - w / 2, y: y - h / 2, w, h, ...(r > 0 ? { r } : {}), ...paint };
       }).filter((it): it is Item => it !== null);
     });
     return addItems(scene, items);

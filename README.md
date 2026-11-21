@@ -66,7 +66,7 @@ Add layers with **+ Add**. Settings for each module are grouped, explained by th
 | Module | What it draws |
 |---|---|
 | Cell fill | Fills cells with palette colors: squares, rounded squares or circles. |
-| Insets | Concentric squares or circles nested inside cells. |
+| Insets | Concentric squares or circles nested inside cells, filled or as outlines. **Wobble** nudges each one off centre for a hand-drawn look. |
 | Tiles | Truchet tiles (arcs, diagonals, triangles, quarter discs) rotated per cell. Arcs join up into continuous curves. |
 | Circuits | Circuit-board wires routed along the grid, capped with terminals. |
 | Maze | A maze carved through the grid, drawn as walls or as the corridors. |

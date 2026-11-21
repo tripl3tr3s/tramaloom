@@ -46,6 +46,7 @@ const DOCS: Record<string, ArtDocument> = {
   ),
   insets: withLayer({ id: "i", module: "insets", enabled: true, params: { shape: { value: "mixed" }, roundness: { value: 0.2 } } }),
   insetsStroke: withLayer({ id: "i", module: "insets", enabled: true, params: { style: { value: "stroke" }, cells: { value: "large" } } }),
+  insetsWobble: withLayer({ id: "i", module: "insets", enabled: true, params: { shape: { value: "circle" }, style: { value: "stroke" }, rings: { value: 5 }, wobble: { value: 0.6 } } }),
   tilesArcs: withLayer({ id: "t", module: "tiles", enabled: true, params: { lines: { value: 3 } } }),
   tilesMixed: withLayer({
     id: "t",

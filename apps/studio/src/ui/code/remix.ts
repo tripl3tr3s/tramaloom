@@ -47,6 +47,16 @@ function cuts(src: string): Range[] {
         out.push(statement ? [n.from, lineEnd(src, n.to)] : [n.from, n.to]);
         return false;
       }
+      // An optional parameter's marker: f(a?: number) becomes f(a).
+      if (name === "Optional" && n.node.parent?.name === "ParamList") {
+        out.push([n.from, n.to]);
+        return false;
+      }
+      // A non-null assertion: x!.y becomes x.y.
+      if (name === "PostfixExpression") {
+        const last = n.node.lastChild;
+        if (last && src.slice(last.from, last.to) === "!") out.push([last.from, last.to]);
+      }
       // Type arguments of an expression, as in new Map<number, string>().
       if (name === "TypeArgList" && n.node.parent?.name === "InstantiationExpression") {
         out.push([n.from, n.to]);

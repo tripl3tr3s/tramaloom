@@ -64,4 +64,25 @@ describe("remixSource", () => {
     expect(code).toContain("const colorFor = (cx, cy) => {");
     expect(code).toContain('label: "Cell fill remix"');
   });
+
+  it("removes optional parameter marks and non-null assertions", () => {
+    const src = `import { addItems } from "../scene.ts";
+function size(a: number, b?: number): number {
+  const box = { w: a } as { w: number } | null;
+  return box!.w + (b ?? 0);
+}
+export const demoModule = defineModule({
+  id: "demo",
+  label: "Demo",
+  params: {},
+  apply(scene, v, ctx) {
+    return addItems(scene, [{ type: "circle", cx: 0.5, cy: 0.5, r: size(0.1), fill: "#000000" }]);
+  },
+});
+`;
+    const code = remixSource(src, "demo", "Demo");
+    expect(code).toContain("function size(a, b) {");
+    expect(code).toContain("return box.w + (b ?? 0);");
+    expect(() => compileScript(code)).not.toThrow();
+  });
 });

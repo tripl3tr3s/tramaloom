@@ -103,3 +103,27 @@ describe("ridgelines", () => {
     expect(edgeRise("even")).toBeGreaterThan(0);
   });
 });
+
+describe("cell fill shapes", () => {
+  const fill = (shape: string) => withModule("cellFill", { shape: { value: shape }, fillChance: { value: 1 }, inset: { value: 0.1 } });
+  const SIDES: Record<string, number> = { triangle: 3, hexagon: 6, star: 10 };
+
+  for (const shape of ["triangle", "hexagon", "star"]) {
+    it(`${shape}: closed shapes with the same cells and colors as squares, each inside its cell`, () => {
+      const squares = added(fill("square"));
+      const shapes = added(fill(shape));
+      expect(shapes).toHaveLength(squares.length);
+      const cells = generate(fill(shape), A).scene.cells;
+      shapes.forEach((it, i) => {
+        if (it.type !== "polyline") throw new Error("expected a polygon");
+        expect(it.closed).toBe(true);
+        expect(it.points).toHaveLength(SIDES[shape] ?? 0);
+        expect(it.fill).toBe(squares[i]?.fill);
+        const xs = it.points.map((p) => p[0]);
+        const ys = it.points.map((p) => p[1]);
+        const fits = cells.some((c) => Math.min(...xs) >= c.x - 1e-9 && Math.max(...xs) <= c.x + c.w + 1e-9 && Math.min(...ys) >= c.y - 1e-9 && Math.max(...ys) <= c.y + c.h + 1e-9);
+        expect(fits).toBe(true);
+      });
+    });
+  }
+});

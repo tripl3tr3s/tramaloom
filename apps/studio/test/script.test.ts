@@ -6,7 +6,7 @@ import { afterEach, describe, expect, it } from "vitest";
 // Test-only: the studio page itself never imports the compiler (see the guard below).
 import { compileScript, scriptRunner } from "../../../packages/runtime/src/compile.ts";
 import { initialState, reducer } from "../src/state/store.ts";
-import { blankScript, STARTER_SCRIPT } from "../src/ui/code/starter.ts";
+import { blankScript, STARTER_SCRIPT, starterScript } from "../src/ui/code/starter.ts";
 import { MAX_SCRIPT_CHARS } from "../src/state/limits.ts";
 import { parseDocument, parseScriptParams } from "../src/state/schema.ts";
 
@@ -89,6 +89,15 @@ describe("the starter script", () => {
     expect(c.label).toBe(STARTER_SCRIPT.label);
     expect(c.params).toEqual(STARTER_SCRIPT.params);
     expect(parseScriptParams(c.params)).toEqual({ ok: true, params: STARTER_SCRIPT.params });
+  });
+
+  it("in Spanish, declares the same params with Spanish names, and they validate", () => {
+    const es = starterScript("es");
+    const c = compileScript(es.code);
+    expect(c.label).toBe("Anillos");
+    expect(c.params).toEqual(es.params);
+    expect(Object.keys(es.params)).toEqual(Object.keys(STARTER_SCRIPT.params));
+    expect(parseScriptParams(c.params)).toEqual({ ok: true, params: es.params });
   });
 
   it("draws outlines in every grid cell, and in the frame without a grid", () => {

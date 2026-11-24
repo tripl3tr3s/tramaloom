@@ -14,6 +14,7 @@ import { parseScriptParams } from "../../state/schema.ts";
 import { codeLook } from "./theme.ts";
 import { useLang } from "../../i18n/i18n.tsx";
 import type { MessageKey } from "../../i18n/messages.ts";
+import { errorText } from "../../i18n/errors.ts";
 
 interface Props {
   /** A script layer (module "script", with its script). */
@@ -152,7 +153,7 @@ export function ScriptEditor({ layer, running, renderError, onApply, onClose, as
           const state = viewRef.current?.state;
           const syntaxLine = state ? syntaxErrorLine(state) : null;
           const line = err instanceof SandboxError ? (err.line ?? syntaxLine) : syntaxLine;
-          setStatus({ kind: "error", message: err instanceof Error ? err.message : String(err), line });
+          setStatus({ kind: "error", message: errorText(err, t), line });
         }
       })();
     }, 500);

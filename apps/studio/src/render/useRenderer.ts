@@ -1,8 +1,12 @@
 import type { ArtDocument, ResolvedLayer } from "@tramaloom/core";
 import { hasScripts } from "@tramaloom/core";
+import { errorText } from "../i18n/errors.ts";
+import type { Vars } from "../i18n/i18n.tsx";
+import { translate, useLang } from "../i18n/i18n.tsx";
+import type { MessageKey } from "../i18n/messages.ts";
 import { drawInSandbox, SandboxError } from "../sandbox/host.ts";
 import { drawable, useTrustVersion } from "../sandbox/trust.ts";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import type { RenderRequest, RenderResponse } from "./protocol.ts";
 
 export interface RenderInfo {
@@ -32,6 +36,13 @@ export function useRenderer(
   box: { readonly width: number; readonly height: number },
 ): RenderInfo {
   const [info, setInfo] = useState<RenderInfo>(EMPTY);
+  // Failures arrive from long-lived worker callbacks: they read the language at that moment.
+  const { lang } = useLang();
+  const langRef = useRef(lang);
+  useLayoutEffect(() => {
+    langRef.current = lang;
+  });
+  const say = (key: MessageKey, vars?: Vars) => translate(langRef.current, key, vars);
   const trust = useTrustVersion();
   const workerRef = useRef<Worker | null>(null);
   const busy = useRef(false);
@@ -52,7 +63,7 @@ export function useRenderer(
     watchdog.current = setTimeout(() => {
       if (workerRef.current !== worker) return;
       hung.current = job;
-      setInfo((prev) => ({ ...prev, error: "Drawing this piece took too long and was stopped. Change a setting or the seed to try again." }));
+      setInfo((prev) => ({ ...prev, error: say("render.tooLong") }));
       setGeneration((g) => g + 1);
     }, RENDER_TIMEOUT_MS);
     worker.postMessage(req);
@@ -78,7 +89,7 @@ export function useRenderer(
       },
       (err: unknown) => {
         if (workerRef.current !== worker) return;
-        failRef.current(scriptErrorText(err));
+        failRef.current(scriptErrorText(err, say));
       },
     );
   };
@@ -128,9 +139,9 @@ export function useRenderer(
     failRef.current = fail;
     worker.onerror = (e) => {
       e.preventDefault();
-      fail(`Render worker failed: ${e.message || "could not load"}. Try reloading the page.`);
+      fail(say("render.workerFailed", { error: e.message || say("render.couldNotLoad") }));
     };
-    worker.onmessageerror = () => fail("Render worker sent an unreadable message");
+    worker.onmessageerror = () => fail(say("render.unreadable"));
 
     // Re-issue the newest job on a fresh worker (StrictMode remount, hot reload), unless it is the one that hung.
     if (latest.current && latest.current !== hung.current) sendRef.current(latest.current);
@@ -163,7 +174,7 @@ export function useRenderer(
 }
 
 /** "Script, line 5: x is not defined" for the error banner. */
-export const scriptErrorText = (err: unknown): string => {
-  if (err instanceof SandboxError) return `Script${err.line ? `, line ${err.line}` : ""}: ${err.message}`;
-  return `Script: ${err instanceof Error ? err.message : String(err)}`;
+export const scriptErrorText = (err: unknown, t: (key: MessageKey, vars?: Vars) => string): string => {
+  const error = errorText(err, t);
+  return err instanceof SandboxError && err.line ? t("render.scriptLine", { line: err.line, error }) : t("render.script", { error });
 };

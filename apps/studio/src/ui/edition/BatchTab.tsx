@@ -7,6 +7,7 @@ import { runScriptBatch, runTool } from "../../render/runTool.ts";
 import { drawable } from "../../sandbox/trust.ts";
 import { randomHash } from "../../state/store.ts";
 import { useLang } from "../../i18n/i18n.tsx";
+import { errorText } from "../../i18n/errors.ts";
 
 const field = "rounded bg-zinc-800 px-1.5 py-0.5 text-xs text-zinc-100 outline-none focus:ring-1 focus:ring-sky-500";
 /** Pieces per batch by long side: every PNG is held until the zip is written. */
@@ -49,7 +50,7 @@ export function BatchTab({ doc, hash, notify, onBusy }: Props) {
         notify(t("batch.exported", { n }));
       },
       (e: unknown) => {
-        if (!(e instanceof Error && e.message === "cancelled")) notify(t("batch.failed", { error: e instanceof Error ? e.message : String(e) }));
+        if (!(e instanceof Error && e.message === "cancelled")) notify(t("batch.failed", { error: errorText(e, t) }));
       },
     ).finally(() => {
       if (run.current === r) {

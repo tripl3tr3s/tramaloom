@@ -5,9 +5,10 @@ import { useDialog } from "../../hooks/useDialog.ts";
 import { useLang } from "../../i18n/i18n.tsx";
 import { parseScriptParams } from "../../state/schema.ts";
 import { loadModuleSource } from "./moduleSource.ts";
-import { remixSource } from "./remix.ts";
+import { remixLabel, remixSource } from "./remix.ts";
 import { REMIXABLE } from "./remixLayer.ts";
-import { blankScript, STARTER_SCRIPT } from "./starter.ts";
+import { blankScript, starterScript } from "./starter.ts";
+import { errorText } from "../../i18n/errors.ts";
 
 interface Props {
   /** Adds a script layer with this code. */
@@ -43,9 +44,10 @@ export function ScriptStart({ onCreate, onLearn, onClose }: Props) {
       if (!source) throw new Error(t("code.none"));
       const params = parseScriptParams(JSON.parse(JSON.stringify(def.params)));
       if (!params.ok) throw new Error(params.error);
-      onCreate({ api: SCRIPT_API, label: `${def.label} remix`.slice(0, 40), code: remixSource(source, id, def.label), params: params.params });
+      const label = def.label;
+      onCreate({ api: SCRIPT_API, label: remixLabel(label, lang), code: remixSource(source, id, label, lang), params: params.params });
     } catch (err) {
-      setError(t("code.remixFailed", { label: def.label, error: err instanceof Error ? err.message : String(err) }));
+      setError(t("code.remixFailed", { label: def.label, error: errorText(err, t) }));
       setBusy(null);
     }
   };
@@ -86,7 +88,7 @@ export function ScriptStart({ onCreate, onLearn, onClose }: Props) {
                 <span className="font-semibold text-zinc-100">{t("start.builtin")}</span>
                 <span className="leading-snug text-zinc-400">{t("start.builtinDesc")}</span>
               </button>
-              <button type="button" className={card} onClick={() => onCreate(STARTER_SCRIPT)}>
+              <button type="button" className={card} onClick={() => onCreate(starterScript(lang))}>
                 <span className="font-semibold text-zinc-100">{t("start.rings")}</span>
                 <span className="leading-snug text-zinc-400">{t("start.ringsDesc")}</span>
               </button>

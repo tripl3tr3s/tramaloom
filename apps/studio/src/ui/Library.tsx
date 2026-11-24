@@ -8,6 +8,7 @@ import type { UserPreset } from "../state/library.ts";
 import { deletePreset, libraryFile, listPresets, parseLibraryFile, presetId, requestPersistence, savePreset } from "../state/library.ts";
 import { download } from "../render/export.ts";
 import { useLang } from "../i18n/i18n.tsx";
+import { errorText } from "../i18n/errors.ts";
 
 interface Props {
   readonly doc: ArtDocument;
@@ -71,7 +72,7 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
       notify(t("library.saved", { name: label }));
       refresh();
     } catch (e) {
-      notify(e instanceof Error ? e.message : t("library.saveFailed"));
+      notify(errorText(e, t));
     } finally {
       setSaving(false);
     }
@@ -88,7 +89,7 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
           await savePreset(p); // same id overwrites, so importing twice does not duplicate
           saved++;
         } catch (e) {
-          stopped = e instanceof Error ? e.message : t("library.saveFailed");
+          stopped = errorText(e, t);
           break;
         }
       }

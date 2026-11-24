@@ -1,5 +1,6 @@
 import type { ArtDocument } from "@tramaloom/core";
 import { z } from "zod";
+import { LocalizedError } from "../i18n/errors.ts";
 import { ArtDocumentSchema, parseDocument } from "./schema.ts";
 
 /** A preset saved by the user in this browser. */
@@ -92,8 +93,8 @@ export async function savePreset(p: UserPreset): Promise<void> {
         store.put(valid);
       };
       tx.oncomplete = () => resolve();
-      tx.onabort = () => reject(full ? new Error(`Library is full (${MAX_USER_PRESETS} presets)`) : (tx.error ?? new Error("Save aborted")));
-      tx.onerror = () => reject(tx.error ?? new Error("Save failed"));
+      tx.onabort = () => reject(full ? new LocalizedError("library.full", { max: MAX_USER_PRESETS }) : (tx.error ?? new LocalizedError("library.saveFailed")));
+      tx.onerror = () => reject(tx.error ?? new LocalizedError("library.saveFailed"));
     });
   } finally {
     db.close();

@@ -6,6 +6,7 @@ import type { ThumbJob } from "../../render/protocol.ts";
 import { useThumbnails } from "../../render/useThumbnails.ts";
 import { randomHash } from "../../state/store.ts";
 import { useLang } from "../../i18n/i18n.tsx";
+import { errorText } from "../../i18n/errors.ts";
 
 interface Props {
   readonly doc: ArtDocument;
@@ -64,7 +65,7 @@ export function SheetTab({ doc, hash, onPick, notify }: Props) {
     try {
       await exportSheet(doc, ready, hashes, traits, n);
     } catch (e) {
-      notify(t("sheet.failed", { error: e instanceof Error ? e.message : String(e) }));
+      notify(t("sheet.failed", { error: errorText(e, t) }));
     } finally {
       setExporting(false);
     }

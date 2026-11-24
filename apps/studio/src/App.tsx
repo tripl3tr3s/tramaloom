@@ -25,6 +25,7 @@ import { compileInSandbox } from "./sandbox/host.ts";
 import { parseScriptParams } from "./state/schema.ts";
 import { MAX_LAYERS } from "./state/limits.ts";
 import { approveScripts, unapprovedScripts, useTrustVersion } from "./sandbox/trust.ts";
+import { errorText } from "./i18n/errors.ts";
 
 // Overlays load on demand, so the first paint does not wait for them. The Edition panel is the
 // heaviest: its Mint tab carries the whole player. All are fetched once the page is idle.
@@ -93,7 +94,7 @@ export function App() {
       setLesson({ lesson: chosen, step: 0, layerId: id });
       setEditingId(id);
     } catch (err) {
-      notify(t("app.lessonFailed", { error: err instanceof Error ? err.message : String(err) }), 4000);
+      notify(t("app.lessonFailed", { error: errorText(err, t) }), 4000);
     }
   };
   /** A new script layer from code the person chose (an example, blank, or a built-in layer's): theirs, so approved. */
@@ -110,7 +111,7 @@ export function App() {
     try {
       applyScript(layerId, await scriptFrom(code));
     } catch (err) {
-      notify(t("app.stepFailed", { error: err instanceof Error ? err.message : String(err) }), 4000);
+      notify(t("app.stepFailed", { error: errorText(err, t) }), 4000);
     } finally {
       setLessonBusy(false);
     }
@@ -172,7 +173,7 @@ export function App() {
   const png = useCallback(
     (size: number) => {
       notify(t("app.renderingPng", { size }));
-      exportPNG(state.doc, state.hash, size).catch((e: unknown) => notify(t("app.exportFailed", { error: e instanceof Error ? e.message : String(e) })));
+      exportPNG(state.doc, state.hash, size).catch((e: unknown) => notify(t("app.exportFailed", { error: errorText(e, t) })));
     },
     [state.doc, state.hash, notify],
   );
@@ -299,9 +300,9 @@ export function App() {
         onExportPNG={png}
         onExportSVG={() => {
           try {
-            exportSVG(state.doc, state.hash).catch((e: unknown) => notify(t("app.exportFailed", { error: e instanceof Error ? e.message : String(e) })));
+            exportSVG(state.doc, state.hash).catch((e: unknown) => notify(t("app.exportFailed", { error: errorText(e, t) })));
           } catch (e) {
-            notify(t("app.exportFailed", { error: e instanceof Error ? e.message : String(e) }));
+            notify(t("app.exportFailed", { error: errorText(e, t) }));
           }
         }}
         onExportJSON={() => {

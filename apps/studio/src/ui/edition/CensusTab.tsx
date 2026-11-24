@@ -7,6 +7,7 @@ import { randomHash } from "../../state/store.ts";
 import { pct, ShareBar } from "./ShareBar.tsx";
 import { useLang } from "../../i18n/i18n.tsx";
 import type { MessageKey } from "../../i18n/messages.ts";
+import { errorText } from "../../i18n/errors.ts";
 
 const FLAG_TEXT: Record<CensusFlag, MessageKey> = {
   never: "census.never",
@@ -39,7 +40,7 @@ export function CensusTab({ doc }: { readonly doc: ArtDocument }) {
         if (run.current === r) setResult({ root, data, ms: performance.now() - t0 });
       },
       (e: unknown) => {
-        if (run.current === r && !(e instanceof Error && e.message === "cancelled")) setError(String(e));
+        if (run.current === r && !(e instanceof Error && e.message === "cancelled")) setError(errorText(e, t));
       },
     ).finally(() => run.current === r && setRunning(false));
   };

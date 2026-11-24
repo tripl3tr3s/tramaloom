@@ -8,9 +8,10 @@ import { parseScriptParams } from "../../state/schema.ts";
 import { useEffect, useRef, useState } from "react";
 import { useDialog } from "../../hooks/useDialog.ts";
 import { loadModuleSource } from "./moduleSource.ts";
-import { remixSource } from "./remix.ts";
+import { remixLabel, remixSource } from "./remix.ts";
 import { codeLook } from "./theme.ts";
 import { useLang } from "../../i18n/i18n.tsx";
+import { errorText } from "../../i18n/errors.ts";
 
 interface Props {
   readonly moduleId: string;
@@ -27,7 +28,7 @@ interface Props {
  * The first rung of learning to code here: every built-in look is a small, commented file.
  */
 export function CodeView({ moduleId, label, onClose, notify, onRemix }: Props) {
-  const { t } = useLang();
+  const { lang, t } = useLang();
   /** A sentence with `backticks` shown as code. Text only, never HTML. */
   const prose = (text: string) => text.split(/`([^`]+)`/).map((part, i) => (i % 2 === 1 ? <Code key={i}>{part}</Code> : part));
   const ref = useDialog<HTMLDivElement>((e) => {
@@ -75,13 +76,13 @@ export function CodeView({ moduleId, label, onClose, notify, onRemix }: Props) {
     const def = getModule(defaultRegistry, moduleId);
     if (!source || !def || !onRemix) return;
     try {
-      const code = remixSource(source, moduleId, label);
+      const code = remixSource(source, moduleId, label, lang);
       // The module's own params, as data: the same settings keep the same values.
       const params = parseScriptParams(JSON.parse(JSON.stringify(def.params)));
       if (!params.ok) throw new Error(params.error);
-      onRemix({ api: SCRIPT_API, label: `${label} remix`.slice(0, 40), code, params: params.params });
+      onRemix({ api: SCRIPT_API, label: remixLabel(label, lang), code, params: params.params });
     } catch (err) {
-      notify(t("code.remixFailed", { label, error: err instanceof Error ? err.message : String(err) }));
+      notify(t("code.remixFailed", { label, error: errorText(err, t) }));
     }
   };
 

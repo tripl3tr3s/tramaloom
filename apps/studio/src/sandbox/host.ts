@@ -8,15 +8,30 @@ import type { ArtDocument, Drawing } from "@tramaloom/core";
 import { checkDrawing } from "@tramaloom/core";
 import sandboxSource from "@tramaloom/runtime/sandbox.js?raw";
 import type { SandboxRequest, SandboxResponse } from "@tramaloom/runtime/sandboxProtocol";
+import type { Vars } from "../i18n/i18n.tsx";
+import { initialLang, translate } from "../i18n/i18n.tsx";
+import type { MessageKey } from "../i18n/messages.ts";
 import { unapprovedScripts } from "./trust.ts";
 
-/** A script failed: its message, and the script line when the browser reports one. */
+/**
+ * A script failed: its message, and the script line when the browser reports one.
+ * Errors the sandbox reports itself carry a message key, so they show in the studio's
+ * language (see errorText); a script's own error is shown as the browser wrote it.
+ */
 export class SandboxError extends Error {
   readonly line: number | null;
-  constructor(message: string, line: number | null = null) {
+  readonly key: MessageKey | undefined;
+  readonly vars: Vars | undefined;
+  constructor(message: string, line: number | null = null, key?: MessageKey, vars?: Vars) {
     super(message);
     this.name = "SandboxError";
     this.line = line;
+    this.key = key;
+    this.vars = vars;
+  }
+
+  static of(key: MessageKey, vars?: Vars): SandboxError {
+    return new SandboxError(translate("en", key, vars), null, key, vars);
   }
 }
 
@@ -52,10 +67,10 @@ class SandboxHost {
     this.frame.setAttribute("sandbox", "allow-scripts");
     this.frame.setAttribute("aria-hidden", "true");
     this.frame.tabIndex = -1;
-    this.frame.title = "Script sandbox";
+    this.frame.title = translate(initialLang(), "sandbox.frameTitle");
     this.frame.hidden = true;
     this.ready = new Promise<void>((resolve, reject) => {
-      const timer = setTimeout(() => reject(new SandboxError("The script sandbox did not start")), START_TIMEOUT_MS);
+      const timer = setTimeout(() => reject(SandboxError.of("sandbox.noStart")), START_TIMEOUT_MS);
       this.onReady = () => {
         clearTimeout(timer);
         resolve();
@@ -82,7 +97,7 @@ class SandboxHost {
     const req = { ...job, id: this.nextId++ } as SandboxRequest;
     const codes = job.op === "compile" ? [job.code] : job.doc.layers.flatMap((l) => (l.enabled && l.script ? [l.script.code] : []));
     if (codes.some((c) => this.stopped.has(c))) {
-      return Promise.reject(new SandboxError("This script was stopped earlier (too slow, or it crashed). Change its code to try again."));
+      return Promise.reject(SandboxError.of("sandbox.stoppedEarlier"));
     }
     const scripts = JSON.stringify(codes);
     return this.ready.then(
@@ -124,7 +139,7 @@ class SandboxHost {
     const timer = setTimeout(() => {
       this.post({ kind: "reset" });
       this.stop(job);
-      this.finish(job, new SandboxError(`The script ran for more than ${Math.round(job.timeoutMs / 1000)} seconds and was stopped. Is there a loop that never ends?`));
+      this.finish(job, SandboxError.of("sandbox.timeout", { seconds: Math.round(job.timeoutMs / 1000) }));
     }, job.timeoutMs);
     this.current = { job, timer };
     this.post({ kind: "run", req: job.req });
@@ -152,14 +167,14 @@ class SandboxHost {
         this.onReady?.();
         return;
       case "failed":
-        this.onFail?.(new SandboxError(`The script sandbox could not start: ${String(m.error)}`));
+        this.onFail?.(SandboxError.of("sandbox.startFailed", { error: String(m.error) }));
         return;
       case "crash": {
         // The page already restarted its worker.
         const job = this.current?.job;
         if (!job || m.id !== job.req.id) return;
         this.stop(job);
-        this.finish(job, new SandboxError(typeof m.error === "string" ? m.error.slice(0, 500) : "The script sandbox stopped"));
+        this.finish(job, typeof m.error === "string" ? new SandboxError(m.error.slice(0, 500)) : SandboxError.of("sandbox.crashed"));
         return;
       }
       case "result": {
@@ -169,18 +184,18 @@ class SandboxHost {
         try {
           data = JSON.parse(m.data) as Partial<SandboxResponse> | null;
         } catch {
-          this.finish(job, new SandboxError("The script sandbox answered something unreadable"));
+          this.finish(job, SandboxError.of("sandbox.unreadable"));
           return;
         }
         if (typeof data !== "object" || data === null || data.id !== job.req.id) {
-          this.finish(job, new SandboxError("The script sandbox answered something else"));
+          this.finish(job, SandboxError.of("sandbox.mismatch"));
           return;
         }
         if (data.ok === true) this.finish(job, data as Ok);
         else {
           const fail = data as { error?: unknown; line?: unknown };
           const line = typeof fail.line === "number" && Number.isInteger(fail.line) && fail.line > 0 ? fail.line : null;
-          this.finish(job, new SandboxError(typeof fail.error === "string" ? fail.error.slice(0, 500) : "The script failed", line));
+          this.finish(job, typeof fail.error === "string" ? new SandboxError(fail.error.slice(0, 500), line) : new SandboxError(translate("en", "sandbox.failed"), line, "sandbox.failed"));
         }
       }
     }
@@ -204,16 +219,16 @@ const sandbox = (): SandboxHost => {
 /** Runs a script's top level: its label and the params it declares (still to be validated). */
 export async function compileInSandbox(code: string): Promise<{ readonly label: string; readonly params: unknown }> {
   const r = await sandbox().run({ op: "compile", code }, COMPILE_TIMEOUT_MS);
-  if (r.op !== "compile") throw new SandboxError("The script sandbox answered something else");
+  if (r.op !== "compile") throw SandboxError.of("sandbox.mismatch");
   return { label: typeof r.label === "string" ? r.label.trim().slice(0, 40) || "Script" : "Script", params: r.params };
 }
 
 /** Draws a document that has script layers. The drawing is checked before it is returned. */
 export async function drawInSandbox(doc: ArtDocument, hash: string): Promise<Drawing> {
   // Backstop for the consent prompt: callers draw drawable(doc), so this should never trigger.
-  if (unapprovedScripts(doc).length > 0) throw new SandboxError("This piece's code has not been approved to run");
+  if (unapprovedScripts(doc).length > 0) throw SandboxError.of("sandbox.notApproved");
   const r = await sandbox().run({ op: "draw", doc, hash }, DRAW_TIMEOUT_MS);
-  if (r.op !== "draw") throw new SandboxError("The script sandbox answered something else");
+  if (r.op !== "draw") throw SandboxError.of("sandbox.mismatch");
   try {
     return checkDrawing(r.drawing);
   } catch (err) {

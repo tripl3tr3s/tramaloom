@@ -1,5 +1,6 @@
 import { hasScripts } from "@tramaloom/core";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { translate, useLang } from "../i18n/i18n.tsx";
 import { drawInSandbox } from "../sandbox/host.ts";
 import { drawable, useTrustVersion } from "../sandbox/trust.ts";
 import type { ThumbJob, ThumbRequest, ThumbResponse } from "./protocol.ts";
@@ -30,6 +31,11 @@ interface Internal {
 export function useThumbnails(jobs: readonly ThumbJob[], size: number, keys?: readonly string[]): Thumbnails {
   const [state, setState] = useState<Internal>({ jobs: null, keys: [], urls: [], busy: true, error: null });
   const trust = useTrustVersion();
+  const { lang } = useLang();
+  const langRef = useRef(lang);
+  useLayoutEffect(() => {
+    langRef.current = lang;
+  });
   const workerRef = useRef<Worker | null>(null);
   const latest = useRef(0);
   const batches = useRef(new Map<number, { jobs: readonly ThumbJob[]; keys: readonly string[] }>());
@@ -51,11 +57,11 @@ export function useThumbnails(jobs: readonly ThumbJob[], size: number, keys?: re
       revokeLater(owned.current);
       owned.current = urls.filter((u): u is string => u !== null);
       const failed = images.length > 0 && images.every((b) => b === null);
-      setState({ jobs: batch.jobs, keys: batch.keys, urls, busy: false, error: failed ? "Previews could not be rendered" : null });
+      setState({ jobs: batch.jobs, keys: batch.keys, urls, busy: false, error: failed ? translate(langRef.current, "thumbs.failed") : null });
     };
     w.onerror = (e) => {
       e.preventDefault();
-      setState((s) => ({ ...s, busy: false, error: "Previews are unavailable in this browser" }));
+      setState((s) => ({ ...s, busy: false, error: translate(langRef.current, "thumbs.unavailable") }));
     };
     return () => {
       w.terminate();

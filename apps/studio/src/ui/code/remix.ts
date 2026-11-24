@@ -90,19 +90,33 @@ function cut(src: string, ranges: readonly Range[]): string {
  * The script for a built-in module: its own code, as JavaScript, calling layer(...) instead of
  * defineModule(...), labelled "<label> remix". Throws when the source has an unexpected shape.
  */
-export function remixSource(source: string, moduleId: string, label: string): string {
+/** A remixed layer's name: "Tiles remix", "Mosaicos (remezcla)". At most 40 characters, like any layer label. */
+export function remixLabel(label: string, lang: "en" | "es" = "en"): string {
+  return (lang === "es" ? `${label} (remezcla)` : `${label} remix`).slice(0, 40);
+}
+
+export function remixSource(source: string, moduleId: string, label: string, lang: "en" | "es" = "en"): string {
   const js = cut(source, cuts(source));
   const head = new RegExp(`const \\w+Module = defineModule\\(`);
   if (!head.test(js)) throw new Error(`The ${moduleId} module's code has an unexpected shape`);
   const body = js.replace(head, "layer(");
   // The layer's own label is the first one after layer(.
   const start = body.indexOf("layer(");
-  const relabelled = body.slice(0, start) + body.slice(start).replace(/label: "[^"]*"/, () => `label: ${JSON.stringify(`${label} remix`.slice(0, 40))}`);
-  const header = [
-    `// A remix of the built-in ${label} layer: its own code, now yours to change.`,
-    "// It draws exactly like the original until you edit it. The helpers it imported",
-    "// (addItems, dsin, makeNoise2D and the rest) are available to every script.",
-    "",
-  ].join("\n");
+  const relabelled = body.slice(0, start) + body.slice(start).replace(/label: "[^"]*"/, () => `label: ${JSON.stringify(remixLabel(label, lang))}`);
+  const header = (
+    lang === "es"
+      ? [
+          `// Una remezcla de la capa ${label}: su propio código, ahora tuyo para cambiarlo.`,
+          "// Dibuja exactamente como la original hasta que la edites. Las funciones que importaba",
+          "// (addItems, dsin, makeNoise2D y las demás) están disponibles en todos los scripts.",
+          "",
+        ]
+      : [
+          `// A remix of the built-in ${label} layer: its own code, now yours to change.`,
+          "// It draws exactly like the original until you edit it. The helpers it imported",
+          "// (addItems, dsin, makeNoise2D and the rest) are available to every script.",
+          "",
+        ]
+  ).join("\n");
   return header + relabelled.replace(/^\s*\n/, "").replace(/\n{3,}/g, "\n\n");
 }

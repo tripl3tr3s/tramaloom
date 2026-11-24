@@ -2,11 +2,11 @@
 
 A free, open-source studio for generative art built on a grid. You make a piece by stacking layers and moving sliders, not by writing code. Every picture is a **document** (your layers and settings) plus a **seed**, so the same pair always draws exactly the same image, in any browser.
 
-![The Tramaloom studio: the layer stack on the left, the Waterworks preset on the canvas, and the Pipes settings on the right](docs/tramaloom-studio.png)
+**Try it at [tramaloom.com](https://tramaloom.com)**
+
+![The Tramaloom studio on first visit: the welcome card over a blue grid piece, with the layer stack on the left and the Palette settings on the right](docs/tramaloom-onboarding.png)
 
 Tramaloom runs entirely in your browser. There is no account, no server and no tracking. It works offline once loaded and can be installed as an app.
-
-> **Live site:** coming with the first deploy. Until then, run it locally (see [For developers](#for-developers)).
 
 ## Try it in two minutes
 

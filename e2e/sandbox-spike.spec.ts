@@ -119,7 +119,9 @@ test.describe("script sandbox spike", () => {
 
   test.beforeEach(async ({ page }) => {
     outbound = [];
-    await page.route("**/*", (route) => {
+    // Only real network requests. WebKit also routes the Worker's blob: script through here,
+    // and answering that with the secret makes the worker run "SECRET-PIECE" as its code.
+    await page.route((url) => url.protocol === "http:" || url.protocol === "https:", (route) => {
       const url = route.request().url();
       if (url === APP) return route.fulfill({ contentType: "text/html", body: HOST });
       outbound.push(url);

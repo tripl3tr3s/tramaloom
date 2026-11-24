@@ -24,7 +24,7 @@ export const PLOT_GUIDE: { readonly title: Text; readonly summary: Text; readonl
       title: t("Start from lines", "Empieza con líneas"),
       body: t(
         "A pen plotter draws lines, so begin with a piece made of them. Open the Library (`L`) and pick `Currents`, `Topography`, `Knotwork`, `Specimens` or `Resonance`: they are all lines.\n\nAvoid `Chaos` for now: it is thousands of dots, and each dot is a pen tap. It would take hours.",
-        "Un plotter dibuja líneas, así que empieza con una pieza hecha de líneas. Abre la Biblioteca (`L`) y elige `Currents`, `Topography`, `Knotwork`, `Specimens` o `Resonance`: todas son líneas.\n\nPor ahora evita `Chaos`: son miles de puntos, y cada punto es un toque de pluma. Tardaría horas.",
+        "Un plotter dibuja líneas, así que empieza con una pieza hecha de líneas. Abre la Biblioteca (`L`) y elige `Corrientes`, `Topografía`, `Entrelazado`, `Especímenes` o `Resonancia`: todas son líneas.\n\nPor ahora evita `Caos`: son miles de puntos, y cada punto es un toque de pluma. Tardaría horas.",
       ),
     },
     {
@@ -38,7 +38,7 @@ export const PLOT_GUIDE: { readonly title: Text; readonly summary: Text; readonl
       title: t("Check what the pen will draw", "Revisa lo que dibujará la pluma"),
       body: t(
         "Open `Edition`, then `Plotter`. The preview shows the plot on paper: every shape becomes its outline, and each color becomes a separate pen.\n\nFilled areas come out as empty outlines. To shade them, add a `Hatching` layer; to leave them out, hide their layer with its eye.",
-        "Abre `Edición` y luego `Plotter`. La vista previa muestra el trazo sobre el papel: cada figura se vuelve su contorno, y cada color es una pluma distinta.\n\nLas zonas rellenas salen como contornos vacíos. Para sombrearlas, agrega una capa `Hatching`; para quitarlas, oculta su capa con su ojo.",
+        "Abre `Edición` y luego `Plotter`. La vista previa muestra el trazo sobre el papel: cada figura se vuelve su contorno, y cada color es una pluma distinta.\n\nLas zonas rellenas salen como contornos vacíos. Para sombrearlas, agrega una capa `Achurado`; para quitarlas, oculta su capa con su ojo.",
       ),
     },
     {

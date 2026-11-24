@@ -5,6 +5,8 @@ import { MAX_WEIGHT } from "../../state/limits.ts";
 import { MAX_BINS, MAX_TRAITS } from "../../state/schema.ts";
 import type { Action } from "../../state/store.ts";
 import { pct, ShareBar } from "./ShareBar.tsx";
+import type { CoreText } from "../../i18n/coreText.ts";
+import { useCoreText } from "../../i18n/coreText.ts";
 import { useLang } from "../../i18n/i18n.tsx";
 
 interface Props {
@@ -25,7 +27,7 @@ interface Source {
   readonly options?: readonly string[];
 }
 
-function sources(doc: ArtDocument): Source[] {
+function sources(doc: ArtDocument, ct: CoreText): Source[] {
   return doc.layers.flatMap((l) => {
     const def = layerDef(defaultRegistry, l);
     if (!def || l.module === "canvas") return [];
@@ -35,7 +37,7 @@ function sources(doc: ArtDocument): Source[] {
         key: `${l.id}/${param}`,
         layerId: l.id,
         param,
-        label: `${l.id} / ${spec.label}`,
+        label: `${l.id} / ${l.module === "script" ? spec.label : ct.spec(l.module, param, spec).label}`,
         kind: spec.kind,
         varying: !!l.params[param]?.vary && !l.params[param]?.locked,
         ...(spec.kind === "enum" ? { options: spec.options } : {}),
@@ -285,8 +287,9 @@ function TraitEditor({
 
 export function TraitsTab({ doc, hash, dispatch }: Props) {
   const { t } = useLang();
+  const ct = useCoreText();
   const traits = doc.traits ?? [];
-  const all = useMemo(() => sources(doc), [doc]);
+  const all = useMemo(() => sources(doc, ct), [doc, ct]);
   const current = useMemo(() => {
     try {
       return computeTraits(doc, hash);

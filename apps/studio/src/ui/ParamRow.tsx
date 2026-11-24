@@ -23,6 +23,8 @@ interface Props {
   readonly onReset: () => void;
   /** Show the help text under the label (the panel's Help toggle). */
   readonly showHelp?: boolean;
+  /** An enum value's shown name in the studio's language; the value itself is what gets stored. */
+  readonly optionLabel?: (value: string) => string;
 }
 
 
@@ -54,7 +56,7 @@ function defaultVary(spec: ParamSpec, value: ParamValue): Variation | null {
   }
 }
 
-export function ParamRow({ name, spec, setting, resolved, swatches, onChange, onCheckpoint, onReset, showHelp = false }: Props) {
+export function ParamRow({ name, spec, setting, resolved, swatches, onChange, onCheckpoint, onReset, showHelp = false, optionLabel = (o) => o }: Props) {
   const { t } = useLang();
   const distLabel = (d: Distribution): string => {
     const found = DISTRIBUTIONS.find((x) => x.id === d);
@@ -125,7 +127,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
         </span>
         {varying && (
           <span className="font-mono text-[11px] text-sky-400" title={t("vary.seedValue")}>
-            = {format(resolved)}
+            = {typeof resolved === "string" && spec.kind === "enum" ? optionLabel(resolved) : format(resolved)}
           </span>
         )}
         {canVary && (
@@ -223,6 +225,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
             <SwatchPicker
               label={spec.label}
               options={spec.options}
+              optionLabel={optionLabel}
               swatches={swatches}
               value={String(value)}
               drawn={varying && typeof resolved === "string" ? resolved : undefined}
@@ -238,7 +241,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
           >
             {spec.options.map((o) => (
               <option key={o} value={o}>
-                {o}
+                {optionLabel(o)}
               </option>
             ))}
           </select>
@@ -267,15 +270,15 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
               const isDrawn = o === drawn;
               return (
                 // A div, not a label: a tap on the bar must not focus the number box (and open a phone keyboard).
-                <div key={o} className="flex items-center gap-2 text-[11px] text-zinc-400" title={t("param.share", { option: o, pct: Math.round(share * 100) })}>
-                  {swatches?.[o] ? <Swatch colors={swatches[o]} className="h-3 w-16 shrink-0" /> : <span className={`w-16 shrink-0 truncate ${isDrawn ? "text-zinc-100" : ""}`}>{o}</span>}
+                <div key={o} className="flex items-center gap-2 text-[11px] text-zinc-400" title={t("param.share", { option: optionLabel(o), pct: Math.round(share * 100) })}>
+                  {swatches?.[o] ? <Swatch colors={swatches[o]} className="h-3 w-16 shrink-0" /> : <span className={`w-16 shrink-0 truncate ${isDrawn ? "text-zinc-100" : ""}`}>{optionLabel(o)}</span>}
                   <ShareSlider
                     options={options}
                     option={o}
                     weights={vary.weights}
                     share={share}
                     drawn={isDrawn}
-                    label={t("param.chanceOf", { label: spec.label, option: o })}
+                    label={t("param.chanceOf", { label: spec.label, option: optionLabel(o) })}
                     onChange={(weights, record) => onChange(withVary({ kind: "weights", weights }), record)}
                     onCheckpoint={onCheckpoint}
                   />
@@ -287,7 +290,7 @@ export function ParamRow({ name, spec, setting, resolved, swatches, onChange, on
                     max={MAX_WEIGHT}
                     step={1}
                     value={vary.weights[o] ?? 0}
-                    aria-label={t("param.weightOf", { label: spec.label, option: o })}
+                    aria-label={t("param.weightOf", { label: spec.label, option: optionLabel(o) })}
                     onChange={(e) =>
                       onChange(withVary({ kind: "weights", weights: { ...vary.weights, [o]: Math.min(MAX_WEIGHT, Math.max(0, Number(e.target.value) || 0)) } }), true)
                     }

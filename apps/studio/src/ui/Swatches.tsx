@@ -27,6 +27,8 @@ export function Swatch({ colors, className = "h-4" }: { readonly colors: readonl
 interface PickerProps {
   readonly label: string;
   readonly options: readonly string[];
+  /** A palette's shown name in the studio's language. */
+  readonly optionLabel?: (value: string) => string;
   readonly swatches: OptionSwatches;
   readonly value: string;
   /** While the param varies: the option this seed drew, marked separately from the fixed choice. */
@@ -35,7 +37,7 @@ interface PickerProps {
 }
 
 /** Radio group of palettes: arrow keys move between them, as with native radios. */
-export function SwatchPicker({ label, options, swatches, value, drawn, onPick }: PickerProps) {
+export function SwatchPicker({ label, options, optionLabel = (o) => o, swatches, value, drawn, onPick }: PickerProps) {
   const { t } = useLang();
   const name = useId();
   return (
@@ -51,7 +53,7 @@ export function SwatchPicker({ label, options, swatches, value, drawn, onPick }:
             <input type="radio" name={name} value={o} checked={on} onChange={() => onPick(o)} className="sr-only" />
             <Swatch colors={swatches[o] ?? []} />
             <span className={`mt-1 flex items-center gap-1 text-[10px] ${on || isDrawn ? "text-zinc-100" : "text-zinc-400"}`}>
-              <span className="flex-1 truncate">{o}</span>
+              <span className="flex-1 truncate">{optionLabel(o)}</span>
               {isDrawn && <span className="rounded bg-sky-500/20 px-1 text-[9px] text-sky-300">{t("swatch.thisSeed")}</span>}
             </span>
           </label>

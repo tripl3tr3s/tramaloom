@@ -7,6 +7,7 @@ import { useThumbnails } from "../render/useThumbnails.ts";
 import type { UserPreset } from "../state/library.ts";
 import { deletePreset, libraryFile, listPresets, parseLibraryFile, presetId, requestPersistence, savePreset } from "../state/library.ts";
 import { download } from "../render/export.ts";
+import { useCoreText } from "../i18n/coreText.ts";
 import { useLang } from "../i18n/i18n.tsx";
 import { errorText } from "../i18n/errors.ts";
 
@@ -32,6 +33,7 @@ const THUMB = 220;
 
 export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) {
   const { t } = useLang();
+  const ct = useCoreText();
   const [user, setUser] = useState<readonly UserPreset[]>([]);
   const [name, setName] = useState(doc.name);
   const [available, setAvailable] = useState(true);
@@ -52,10 +54,14 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
 
   const entries = useMemo(
     (): readonly Entry[] => [
-      ...builtinPresets.map((p) => ({ key: `b/${p.id}`, name: p.doc.name, doc: p.doc, hash: p.hash })),
+      ...builtinPresets.map((p) => {
+        // A built-in opens under its name in the studio's language; the drawing is the same.
+        const shown = ct.presetName(p.id, p.doc.name);
+        return { key: `b/${p.id}`, name: shown, doc: shown === p.doc.name ? p.doc : { ...p.doc, name: shown }, hash: p.hash };
+      }),
       ...user.map((p) => ({ key: `u/${p.id}`, name: p.name, doc: p.doc, hash: p.hash, userId: p.id })),
     ],
-    [user],
+    [user, ct],
   );
   const jobs = useMemo((): readonly ThumbJob[] => entries.map((e) => ({ doc: e.doc, hash: e.hash })), [entries]);
   const keys = useMemo(() => entries.map((e) => e.key), [entries]);

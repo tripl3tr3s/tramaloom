@@ -9,6 +9,7 @@ import { remixLabel, remixSource } from "./remix.ts";
 import { REMIXABLE } from "./remixLayer.ts";
 import { blankScript, starterScript } from "./starter.ts";
 import { errorText } from "../../i18n/errors.ts";
+import { useCoreText } from "../../i18n/coreText.ts";
 
 interface Props {
   /** Adds a script layer with this code. */
@@ -22,6 +23,7 @@ const card = "flex w-full flex-col items-start gap-0.5 rounded-md border border-
 /** Where a new script layer starts: an example, a blank layer, a built-in layer's code, or the lessons. */
 export function ScriptStart({ onCreate, onLearn, onClose }: Props) {
   const { lang, t } = useLang();
+  const ct = useCoreText();
   const [view, setView] = useState<"choices" | "builtins">("choices");
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -44,10 +46,10 @@ export function ScriptStart({ onCreate, onLearn, onClose }: Props) {
       if (!source) throw new Error(t("code.none"));
       const params = parseScriptParams(JSON.parse(JSON.stringify(def.params)));
       if (!params.ok) throw new Error(params.error);
-      const label = def.label;
+      const label = ct.moduleLabel(id, def.label);
       onCreate({ api: SCRIPT_API, label: remixLabel(label, lang), code: remixSource(source, id, label, lang), params: params.params });
     } catch (err) {
-      setError(t("code.remixFailed", { label: def.label, error: errorText(err, t) }));
+      setError(t("code.remixFailed", { label: ct.moduleLabel(id, def.label), error: errorText(err, t) }));
       setBusy(null);
     }
   };
@@ -105,8 +107,8 @@ export function ScriptStart({ onCreate, onLearn, onClose }: Props) {
                 return (
                   <li key={id}>
                     <button type="button" className={card} disabled={busy !== null} onClick={() => void fromBuiltIn(id)}>
-                      <span className="font-semibold text-zinc-100">{def.label}</span>
-                      <span className="leading-snug text-zinc-400">{def.description}</span>
+                      <span className="font-semibold text-zinc-100">{ct.moduleLabel(id, def.label)}</span>
+                      <span className="leading-snug text-zinc-400">{ct.moduleDescription(id, def.description)}</span>
                     </button>
                   </li>
                 );

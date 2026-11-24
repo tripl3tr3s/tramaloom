@@ -1,0 +1,212 @@
+import { colorRule, NOISE_SCALE, SHARE_OF_CELL, singleColor } from "./shared.es.ts";
+import type { ModuleTexts } from "./types.ts";
+
+/** The modules that draw in the cells of a Cuadrícula above them. */
+export const GRID_ES: ModuleTexts = {
+  cellFill: {
+    label: "Relleno de celdas",
+    description: "Rellena las celdas de la cuadrícula con colores de la paleta.",
+    params: {
+      fillChance: { label: "Probabilidad de relleno", help: "Probabilidad de que cada celda se rellene" },
+      source: {
+        label: "Origen del color",
+        help: "zona: los colores de la región de la celda; paleta: cualquier color; ruido: un campo de color suave",
+        options: { zone: "zona", palette: "paleta", noise: "ruido" },
+      },
+      shape: {
+        label: "Forma",
+        help: "Forma dibujada en cada celda; triángulo, hexágono y estrella apuntan hacia arriba",
+        options: { square: "cuadrado", rounded: "redondeado", circle: "círculo", triangle: "triángulo", hexagon: "hexágono", star: "estrella" },
+      },
+      roundness: { label: "Redondez", help: "Redondeo de las esquinas de los cuadrados redondeados" },
+      inset: { label: "Sangría", help: "Encoge cada figura dentro de su celda, como parte de la celda" },
+      outline: { label: "Contorno", help: "Dibuja un contorno alrededor de cada figura" },
+      outlineColor: { label: "Color del contorno", help: "Color de los contornos" },
+      outlineWidth: { label: "Grosor del contorno", help: "Grosor del contorno, como parte del lado corto" },
+    },
+  },
+  insets: {
+    label: "Anidados",
+    description: "Anida cuadrados o círculos concéntricos dentro de las celdas.",
+    params: {
+      chance: { label: "Probabilidad", help: "Probabilidad de que una celda tenga anidados" },
+      cells: {
+        label: "Celdas",
+        help: "grandes: solo celdas sin partir; chicas: solo celdas subdivididas (necesita subdivisión en la cuadrícula)",
+        options: { all: "todas", large: "grandes", small: "chicas" },
+      },
+      shape: {
+        label: "Forma",
+        help: "Forma de los anidados; mezcla elige en cada celda",
+        options: { square: "cuadrado", circle: "círculo", mixed: "mezcla" },
+      },
+      style: {
+        label: "Estilo",
+        help: "relleno alterna el color elegido con el color de abajo",
+        options: { fill: "relleno", stroke: "contorno" },
+      },
+      rings: { label: "Anillos", help: "Cuántas figuras anidadas por celda" },
+      offset: { label: "Primer anidado", help: "Distancia del primer anidado al borde de la celda, como parte de la celda" },
+      spacing: { label: "Espaciado", help: "Distancia entre figuras anidadas, como parte de la celda" },
+      roundness: { label: "Redondez", help: "Redondeo de las esquinas de los anidados cuadrados" },
+      wobble: { label: "Temblor", help: "Mueve cada figura anidada fuera del centro, sin pasar el borde de la celda; 0 las deja concéntricas" },
+      lineWidth: { label: "Grosor de línea", help: "Estilo contorno" },
+      colorRule: colorRule(),
+      color: singleColor,
+    },
+  },
+  tiles: {
+    label: "Mosaicos",
+    description: "Mosaicos de Truchet: arcos, diagonales, triángulos y cuartos de disco, girados en cada celda. Los arcos se unen sin huecos entre celdas del mismo tamaño.",
+    params: {
+      motif: {
+        label: "Motivo",
+        help: "El mosaico que se dibuja en cada celda; mezcla elige en cada celda",
+        options: { arcs: "arcos", diagonal: "diagonal", triangle: "triángulo", quarter: "cuarto de disco", mixed: "mezcla" },
+      },
+      chance: { label: "Probabilidad", help: "Probabilidad de que una celda tenga mosaico" },
+      lines: { label: "Líneas", help: "Arcos paralelos por esquina" },
+      lineWidth: { label: "Grosor de línea", help: "Grosor del trazo, como parte de la celda" },
+      rotation: {
+        label: "Giro",
+        help: "ruido: las celdas vecinas tienden a coincidir; ajedrez: patrón fijo según la posición en la cuadrícula",
+        options: { random: "al azar", noise: "ruido", checker: "ajedrez" },
+      },
+      noiseScale: NOISE_SCALE,
+      colorRule: colorRule(),
+      color: singleColor,
+    },
+  },
+  circuits: {
+    label: "Circuitos",
+    description: "Traza cables en ángulo recto por la cuadrícula y les pone terminales.",
+    params: {
+      style: {
+        label: "Trazado",
+        help: "recorrido: cables separados; árbol: redes que se ramifican desde raíces",
+        options: { walk: "recorrido", tree: "árbol" },
+      },
+      nodes: {
+        label: "Pasar por",
+        help: "centros: por en medio de las celdas; esquinas: por los bordes de las celdas",
+        options: { centers: "centros", corners: "esquinas" },
+      },
+      resolution: { label: "Resolución", help: "Pasos de trazado por celda" },
+      wires: { label: "Cables / raíces", help: "Cables separados (recorrido) o raíces que se ramifican (árbol)" },
+      minLength: { label: "Largo mínimo", help: "El cable más corto, en pasos de trazado" },
+      maxLength: { label: "Largo máximo", help: "El cable más largo, en pasos de trazado" },
+      turnChance: { label: "Probabilidad de giro", help: "Probabilidad de girar en cada paso; baja da tramos largos y rectos" },
+      maxTurns: { label: "Giros máximos", help: "Solo recorrido" },
+      coverage: { label: "Cobertura", help: "Solo árbol" },
+      corner: {
+        label: "Esquinas",
+        help: "Cómo da vuelta un cable",
+        options: { sharp: "en punta", chamfer: "biselada", round: "redonda" },
+      },
+      cornerSize: { label: "Tamaño de esquina", help: "Tamaño de las esquinas biseladas y redondas" },
+      wireWidth: { label: "Grosor del cable", help: "Grosor del cable" },
+      startTerminal: {
+        label: "Terminal inicial",
+        help: "Remate al inicio de cada cable; mezcla elige en cada cable",
+        options: { none: "ninguna", dot: "punto", ring: "anillo", square: "cuadrado", frame: "marco", mixed: "mezcla" },
+      },
+      endTerminal: {
+        label: "Terminal final",
+        help: "Remate al final de cada cable; mezcla elige en cada cable",
+        options: { none: "ninguna", dot: "punto", ring: "anillo", square: "cuadrado", frame: "marco", mixed: "mezcla" },
+      },
+      terminalSize: { label: "Tamaño de terminal", help: "Tamaño de los remates" },
+      junctions: { label: "Puntos de unión", help: "Solo árbol" },
+      colorRule: colorRule(),
+      wireColor: singleColor,
+    },
+  },
+  maze: {
+    label: "Laberinto",
+    description: "Un laberinto tallado en la cuadrícula, dibujado como muros o como los pasillos mismos. Sigue la máscara de la cuadrícula.",
+    params: {
+      style: {
+        label: "Dibujar",
+        help: "muros: los muros del laberinto; pasillos: líneas por los pasillos",
+        options: { walls: "muros", paths: "pasillos" },
+      },
+      braid: { label: "Trenzado", help: "Parte de los callejones sin salida que se abren en bucles" },
+      border: { label: "Muro exterior", help: "Solo muros: dibuja también el contorno" },
+      lineWidth: { label: "Grosor de línea", help: SHARE_OF_CELL },
+      colorRule: colorRule(),
+      color: singleColor,
+    },
+  },
+  halftone: {
+    label: "Semitono",
+    description: "Un punto o cuadrado en cada celda, con el tamaño que marca un campo: ruido, distancia al centro, un degradado o el azar.",
+    params: {
+      field: {
+        label: "Campo",
+        help: "Lo que decide el tamaño de cada punto",
+        options: { noise: "ruido", radial: "radial", horizontal: "horizontal", vertical: "vertical", random: "al azar" },
+      },
+      noiseScale: NOISE_SCALE,
+      invert: { label: "Invertir", help: "Puntos grandes donde serían chicos, y al revés" },
+      shape: {
+        label: "Forma",
+        help: "Forma de cada punto",
+        options: { circle: "círculo", square: "cuadrado", diamond: "rombo" },
+      },
+      minSize: { label: "Más chico", help: "Parte de la celda" },
+      maxSize: { label: "Más grande", help: "Parte de la celda; arriba de 1 los puntos se enciman" },
+      colorRule: colorRule(),
+      color: singleColor,
+    },
+  },
+  hatch: {
+    label: "Achurado",
+    description: "Líneas paralelas dentro de cada celda, en cuatro direcciones. Hecho de trazos sencillos, así que va bien con un plotter.",
+    params: {
+      direction: {
+        label: "Dirección",
+        help: "ruido: las celdas vecinas tienden a coincidir; cruzado: ambas diagonales",
+        options: { random: "al azar", noise: "ruido", horizontal: "horizontal", vertical: "vertical", diagonal: "diagonal", cross: "cruzado" },
+      },
+      chance: { label: "Probabilidad", help: "Probabilidad de que una celda se sombree" },
+      lines: { label: "Líneas", help: "Líneas por celda" },
+      lineWidth: { label: "Grosor de línea", help: SHARE_OF_CELL },
+      inset: { label: "Sangría", help: "Margen dentro de cada celda, como parte de la celda" },
+      noiseScale: NOISE_SCALE,
+      colorRule: colorRule(),
+      color: singleColor,
+    },
+  },
+  knot: {
+    label: "Nudo celta",
+    description: "Entrelazado tejido por la cuadrícula, por encima y por debajo. Los cortes convierten la trenza simple en nudos. Sigue la máscara de la cuadrícula.",
+    params: {
+      breaks: { label: "Cortes", help: "Parte de los enlaces que se quitan; más cortes, más nudos separados" },
+      width: { label: "Grosor de hebra", help: SHARE_OF_CELL },
+      outline: { label: "Contorno", help: "Una orilla oscura alrededor de cada hebra, para que los cruces se lean bien" },
+      outlineColor: { label: "Color del contorno", help: "Color de las orillas de las hebras" },
+      colorRule: colorRule({ after: "Se elige una vez por hebra." }),
+      color: singleColor,
+    },
+  },
+  pipes: {
+    label: "Tuberías",
+    description: "Tubería industrial por la cuadrícula: tramos rectos, codos, tes, cruces y tapones, un color por red. Sigue la máscara de la cuadrícula.",
+    params: {
+      density: { label: "Densidad", help: "Qué tan pocas celdas quedan vacías" },
+      straight: { label: "Rectitud", help: "Tramos rectos contra codos" },
+      branching: { label: "Ramificación", help: "Tes y cruces" },
+      ends: { label: "Tapones", help: "Tubos que terminan en un tapón" },
+      width: { label: "Grosor del tubo", help: SHARE_OF_CELL },
+      style: {
+        label: "Estilo",
+        help: "tubo: un contorno alrededor de cada tubo",
+        options: { tube: "tubo", flat: "plano" },
+      },
+      flanges: { label: "Bridas", help: "Collarines donde se unen los tubos entre celdas" },
+      outlineColor: { label: "Color del contorno", help: "Color de los contornos de los tubos, los tapones y las orillas de las bridas" },
+      colorRule: colorRule({ after: "Se elige una vez por red." }),
+      color: singleColor,
+    },
+  },
+};

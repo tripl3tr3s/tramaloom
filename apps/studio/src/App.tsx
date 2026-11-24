@@ -20,7 +20,8 @@ import { Toolbar } from "./ui/Toolbar.tsx";
 import { isFirstVisit, Welcome } from "./ui/Welcome.tsx";
 import { REMIXABLE } from "./ui/code/remixLayer.ts";
 import type { Lesson } from "./lessons/lessons.ts";
-import { useLang } from "./i18n/i18n.tsx";
+import { coreText } from "./i18n/coreText.ts";
+import { initialLang, useLang } from "./i18n/i18n.tsx";
 import { compileInSandbox } from "./sandbox/host.ts";
 import { parseScriptParams } from "./state/schema.ts";
 import { MAX_LAYERS } from "./state/limits.ts";
@@ -52,7 +53,10 @@ const preloadOverlays = () => {
 };
 
 export function App() {
-  const [state, dispatch] = useReducer(reducer, undefined, () => initialState(starterDocument, randomHash()));
+  // The starter piece opens under its name in the studio's language ("Inicio"); it draws the same.
+  const [state, dispatch] = useReducer(reducer, undefined, () =>
+    initialState({ ...starterDocument, name: coreText(initialLang()).presetName("starter", starterDocument.name) }, randomHash()),
+  );
   const [debug, setDebug] = useState(false);
   const [overlay, setOverlay] = useState<"none" | "mutate" | "library" | "edition" | "shortcuts" | "welcome" | "code" | "lessons" | "scriptStart">(() => (isFirstVisit() ? "welcome" : "none"));
   const [toast, setToast] = useState<string | null>(null);

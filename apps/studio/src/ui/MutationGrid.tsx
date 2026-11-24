@@ -7,6 +7,8 @@ import { listPresets } from "../state/library.ts";
 import { MAX_LAYERS } from "../state/limits.ts";
 import { useThumbnails } from "../render/useThumbnails.ts";
 import { randomHash } from "../state/store.ts";
+import type { CoreText } from "../i18n/coreText.ts";
+import { useCoreText } from "../i18n/coreText.ts";
 import { useLang } from "../i18n/i18n.tsx";
 
 interface Props {
@@ -26,7 +28,8 @@ interface Partner {
   readonly hash: string;
 }
 
-const BUILTIN_PARTNERS: readonly Partner[] = builtinPresets.map((p) => ({ key: `builtin:${p.id}`, name: p.doc.name, doc: p.doc, hash: p.hash }));
+const builtinPartners = (ct: CoreText): readonly Partner[] =>
+  builtinPresets.map((p) => ({ key: `builtin:${p.id}`, name: ct.presetName(p.id, p.doc.name), doc: p.doc, hash: p.hash }));
 const THUMB = 360;
 
 /** Names of the settings that differ, as "layer.param", for the tile tooltip. */
@@ -46,6 +49,7 @@ function changes(a: ArtDocument, b: ArtDocument): string[] {
  */
 export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props) {
   const { t } = useLang();
+  const ct = useCoreText();
   const [amount, setAmount] = useState(0.35);
   // The slider updates instantly; the expensive grid follows once it settles.
   const [settled, setSettled] = useState(amount);
@@ -73,7 +77,8 @@ export function MutationGrid({ doc, hash, selectedId, onAdopt, onClose }: Props)
       live = false;
     };
   }, []);
-  const partners = useMemo(() => [...userPartners, ...BUILTIN_PARTNERS], [userPartners]);
+  const BUILTIN_PARTNERS = useMemo(() => builtinPartners(ct), [ct]);
+  const partners = useMemo(() => [...userPartners, ...BUILTIN_PARTNERS], [userPartners, BUILTIN_PARTNERS]);
   const [partnerKey, setPartnerKey] = useState<string>(BUILTIN_PARTNERS[1]?.key ?? BUILTIN_PARTNERS[0]?.key ?? "");
   const partner = partners.find((p) => p.key === partnerKey) ?? partners[0];
   const [reseed, setReseed] = useState(false);

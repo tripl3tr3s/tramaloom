@@ -1,6 +1,7 @@
 import type { Layer, ParamSetting, ResolvedLayer } from "@tramaloom/core";
 import { defaultRegistry, layerDef, SCRIPT_MODULE } from "@tramaloom/core";
 import { useState } from "react";
+import { useCoreText } from "../i18n/coreText.ts";
 import { useLang } from "../i18n/i18n.tsx";
 import { ChevronIcon } from "./icons.tsx";
 import { groupParams, isDefaultSetting, isRelevant } from "./params.ts";
@@ -73,16 +74,20 @@ function useShowHelp(): readonly [boolean, () => void] {
 
 export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetParam, onResetLayer, onViewCode, onEditScript, problem }: Props) {
   const { t } = useLang();
+  const ct = useCoreText();
   const [collapsed, toggle] = useCollapsed();
   const [showHelp, toggleHelp] = useShowHelp();
   if (!layer) return <p className="p-3 text-xs text-zinc-500">{t("panel.selectLayer")}</p>;
   const def = layerDef(defaultRegistry, layer);
   if (!def) return <p className="p-3 text-xs text-red-400">{t("panel.unknownModule", { module: layer.module })}</p>;
   const changed = Object.entries(def.params).some(([name, spec]) => !isDefaultSetting(spec, layer.params[name]));
+  // A script layer's name and settings are its author's own words; a built-in's follow the studio's language.
+  const builtin = layer.module !== SCRIPT_MODULE;
+  const heading = builtin ? ct.moduleLabel(def.id, def.label) : def.label;
   return (
     <div className="pb-24 pl-4 pr-3">
       <div className="flex items-baseline justify-between gap-2 pt-3">
-        <h2 className="text-sm font-semibold text-zinc-100">{def.label}</h2>
+        <h2 className="text-sm font-semibold text-zinc-100">{heading}</h2>
         <span className="flex-1" />
         <button
           type="button"
@@ -96,7 +101,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
         <button
           type="button"
           className="rounded px-1.5 py-0.5 text-[11px] text-zinc-400 hover:bg-zinc-800 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
-          onClick={() => (layer.module === SCRIPT_MODULE ? onEditScript(layer.id) : onViewCode(def.id, def.label, layer.id))}
+          onClick={() => (layer.module === SCRIPT_MODULE ? onEditScript(layer.id) : onViewCode(def.id, heading, layer.id))}
           title={layer.module === SCRIPT_MODULE ? t("panel.editCodeHint") : t("panel.codeHint")}
         >
           {layer.module === SCRIPT_MODULE ? t("panel.editCode") : t("panel.code")}
@@ -112,7 +117,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
           {t("panel.resetAll")}
         </button>
       </div>
-      <p className="mb-2 text-[11px] leading-snug text-zinc-500">{def.description}</p>
+      <p className="mb-2 text-[11px] leading-snug text-zinc-500">{ct.moduleDescription(def.id, def.description)}</p>
       {problem && (
         <div role="status" className="mb-2 flex flex-col items-start gap-1.5 rounded border border-amber-500/30 bg-amber-500/10 px-2 py-1.5 text-[11px] leading-snug text-amber-200">
           {problem.message}
@@ -135,7 +140,8 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
               <ParamRow
                 key={`${layer.id}:${name}`}
                 name={name}
-                spec={spec}
+                spec={builtin ? ct.spec(layer.module, name, spec) : spec}
+                optionLabel={(o) => ct.optionLabel(layer.module, name, o)}
                 setting={layer.params[name]}
                 resolved={resolved?.values[name]}
                 swatches={swatchesFor(layer.module, name)}
@@ -156,7 +162,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
           return spec && !isDefaultSetting(spec, layer.params[n]);
         }).length;
         return (
-          <section key={title} className="mt-1 scroll-mt-2" data-section={title}>
+          <section key={title} className="mt-1 scroll-mt-2" data-section={ct.group(title)}>
             <button
               type="button"
               className="flex w-full items-center gap-1.5 rounded py-1.5 text-left text-[11px] font-semibold uppercase tracking-wider text-zinc-500 hover:text-zinc-200 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500"
@@ -167,7 +173,7 @@ export function ParamPanel({ layer, resolved, onChange, onCheckpoint, onResetPar
               <span className={`transition-transform ${open ? "" : "-rotate-90"}`}>
                 <ChevronIcon />
               </span>
-              <span className="flex-1">{title}</span>
+              <span className="flex-1">{ct.group(title)}</span>
               {!open && changedCount > 0 && (
                 <span className="rounded bg-zinc-800 px-1.5 py-px text-[10px] font-normal normal-case tracking-normal text-sky-300">
                   {t("panel.changed", { n: changedCount })}

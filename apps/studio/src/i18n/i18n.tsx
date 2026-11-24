@@ -1,6 +1,7 @@
 /**
  * The studio's language: English or Spanish. One choice, remembered per browser, for the
- * whole interface and the lessons. Module names and their settings stay in English for now.
+ * whole interface and the lessons. Module, setting and preset names come from core in English
+ * and are shown in Spanish through ./coreText.ts (display only: documents keep the English ids).
  */
 import type { ReactNode } from "react";
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react";

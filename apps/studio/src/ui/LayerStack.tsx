@@ -7,6 +7,8 @@ import { needsGrid, zones } from "../state/layerOrder.ts";
 import { MAX_LAYERS } from "../state/limits.ts";
 import type { Action } from "../state/store.ts";
 import { CopyIcon, DownIcon, EyeIcon, EyeOffIcon, GripIcon, PinIcon, PlusIcon, TrashIcon, UpIcon } from "./icons.tsx";
+import type { CoreText } from "../i18n/coreText.ts";
+import { useCoreText } from "../i18n/coreText.ts";
 import { useLang } from "../i18n/i18n.tsx";
 import type { MessageKey } from "../i18n/messages.ts";
 import { Menu } from "./Menu.tsx";
@@ -26,24 +28,30 @@ const iconBtn =
 const ADDABLE = Object.values(defaultRegistry).filter((m) => m.id !== "canvas");
 const DRAG_TYPE = "application/x-tramaloom-layer";
 
-const labelOf = (layer: Layer): string => layerDef(defaultRegistry, layer)?.label ?? layer.module;
+type Say = (key: MessageKey) => string;
 
-/** Free copies of the setup modules do a different job mid-stack, so they get their own names. */
-// Names stay in English, like module names; descriptions follow the studio's language.
-const FREE_ROLE: Readonly<Record<string, { readonly label: string; readonly description: MessageKey }>> = {
-  grid: { label: "Re-grid", description: "layers.regridDesc" },
-  palette: { label: "Re-palette", description: "layers.repaletteDesc" },
-  symmetry: { label: "Mirror", description: "layers.mirrorDesc" },
+/** A script layer keeps the name its code gives it; a built-in follows the studio's language. */
+const labelOf = (layer: Layer, ct: CoreText): string => {
+  const def = layerDef(defaultRegistry, layer);
+  if (!def) return layer.module;
+  return layer.module === SCRIPT_MODULE ? def.label : ct.moduleLabel(def.id, def.label);
 };
 
-const roleLabel = (l: Layer, i: number, z: Zones): string => {
+/** Free copies of the setup modules do a different job mid-stack, so they get their own names. */
+const FREE_ROLE: Readonly<Record<string, { readonly label: MessageKey; readonly description: MessageKey }>> = {
+  grid: { label: "layers.regrid", description: "layers.regridDesc" },
+  palette: { label: "layers.repalette", description: "layers.repaletteDesc" },
+  symmetry: { label: "layers.mirror", description: "layers.mirrorDesc" },
+};
+
+const roleLabel = (l: Layer, i: number, z: Zones, t: Say, ct: CoreText): string => {
   const free = i >= z.head && i < z.tail ? FREE_ROLE[l.module] : undefined;
-  return free?.label ?? labelOf(l);
+  return free ? t(free.label) : labelOf(l, ct);
 };
 
 /** "Cell fill", or "Cell fill 2" when more than one layer shares that name. */
-function displayNames(layers: readonly Layer[], z: Zones): ReadonlyMap<string, string> {
-  const labels = layers.map((l, i) => roleLabel(l, i, z));
+function displayNames(layers: readonly Layer[], z: Zones, t: Say, ct: CoreText): ReadonlyMap<string, string> {
+  const labels = layers.map((l, i) => roleLabel(l, i, z, t, ct));
   return new Map(
     layers.map((l, i) => {
       const label = labels[i] ?? l.module;
@@ -58,23 +66,26 @@ function displayNames(layers: readonly Layer[], z: Zones): ReadonlyMap<string, s
 function addItems(
   layers: readonly Layer[],
   z: Zones,
-  t: (key: MessageKey) => string,
+  t: Say,
+  ct: CoreText,
 ): readonly { readonly id: string; readonly label: string; readonly description: string; readonly disabled?: boolean }[] {
   const inHead = (m: string) => layers.slice(0, z.head).some((l) => l.module === m);
   const inTail = (m: string) => layers.slice(z.tail).some((l) => l.module === m);
   return ADDABLE.flatMap((m) => {
     // Kept in the list, greyed, so it never looks missing; one Post finishes the picture.
-    if (m.id === "post" && inTail("post")) return [{ id: m.id, label: m.label, description: t("layers.postTaken"), disabled: true }];
+    const label = ct.moduleLabel(m.id, m.label);
+    if (m.id === "post" && inTail("post")) return [{ id: m.id, label, description: t("layers.postTaken"), disabled: true }];
     const taken = m.id === "symmetry" ? inTail("symmetry") : (m.id === "grid" || m.id === "palette") && inHead(m.id);
     const free = taken ? FREE_ROLE[m.id] : undefined;
-    return [{ id: m.id, label: free?.label ?? m.label, description: free ? t(free.description) : m.description }];
+    return [{ id: m.id, label: free ? t(free.label) : label, description: free ? t(free.description) : ct.moduleDescription(m.id, m.description) }];
   });
 }
 
 export function LayerStack({ doc, selectedId, dispatch, notRunning, onAddScript }: Props) {
   const { t } = useLang();
+  const ct = useCoreText();
   const z = zones(doc.layers);
-  const names = displayNames(doc.layers, z);
+  const names = displayNames(doc.layers, z, t, ct);
   const free = (i: number) => i >= z.head && i < z.tail;
   const [dragId, setDragId] = useState<string | null>(null);
   // Insertion point while dragging: the gap before layer `drop` (doc.layers.length = after the last).
@@ -124,7 +135,7 @@ export function LayerStack({ doc, selectedId, dispatch, notRunning, onAddScript 
               <PlusIcon /> {t("layers.add")}
             </>
           }
-          items={addItems(doc.layers, z, t).map((m) => ({
+          items={addItems(doc.layers, z, t, ct).map((m) => ({
             label: m.label,
             description: m.description,
             ...(m.disabled ? { disabled: true } : {}),

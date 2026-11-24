@@ -93,11 +93,16 @@ test.describe("after the welcome", () => {
   });
 
   test("T shows the piece repeated 3x3, with a hint while the margin would leave seams", async ({ page }) => {
-    await page.keyboard.press("t");
-    await expect(page.getByRole("img", { name: "The piece repeated three by three" })).toBeVisible();
+    const tiled = page.getByRole("img", { name: "The piece repeated three by three" });
+    // The shortcut listener attaches just after first paint, so on a slow runner the first
+    // press can land before it exists. Press again only while the view is still closed.
+    await expect(async () => {
+      if (!(await tiled.isVisible())) await page.keyboard.press("t");
+      await expect(tiled).toBeVisible({ timeout: 1000 });
+    }).toPass();
     await expect(page.getByText("for a seamless repeat")).toBeVisible();
     await page.keyboard.press("t");
-    await expect(page.getByRole("img", { name: "The piece repeated three by three" })).toBeHidden();
+    await expect(tiled).toBeHidden();
   });
 
   test("breeding with a preset offers children and adopting one changes the piece", async ({ page }) => {

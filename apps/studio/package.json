@@ -1,12 +1,12 @@
 {
-  "name": "@gridloom/studio",
+  "name": "@tramaloom/studio",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "pnpm --filter @gridloom/runtime build && vite",
-    "build": "pnpm --filter @gridloom/runtime build && tsc -p . && vite build",
+    "dev": "pnpm --filter @tramaloom/runtime build && vite",
+    "build": "pnpm --filter @tramaloom/runtime build && tsc -p . && vite build",
     "preview": "vite preview",
     "test": "vitest run",
     "typecheck": "tsc -p ."
@@ -17,8 +17,8 @@
     "@codemirror/language": "^6.13.1",
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.15",
-    "@gridloom/core": "workspace:*",
-    "@gridloom/runtime": "workspace:*",
+    "@tramaloom/core": "workspace:*",
+    "@tramaloom/runtime": "workspace:*",
     "@lezer/highlight": "^1.2.5",
     "@lezer/javascript": "^1.5.6",
     "react": "^19.3.1",

@@ -1,8 +1,8 @@
 import { javascript } from "@codemirror/lang-javascript";
 import { EditorState } from "@codemirror/state";
 import { EditorView, lineNumbers } from "@codemirror/view";
-import type { LayerScript } from "@gridloom/core";
-import { defaultRegistry, getModule, SCRIPT_API } from "@gridloom/core";
+import type { LayerScript } from "@tramaloom/core";
+import { defaultRegistry, getModule, SCRIPT_API } from "@tramaloom/core";
 import type { ReactNode } from "react";
 import { parseScriptParams } from "../../state/schema.ts";
 import { useEffect, useRef, useState } from "react";

@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { builtinPresets, mutateDocument, starterDocument, stepHash, stream } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { builtinPresets, mutateDocument, starterDocument, stepHash, stream } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
 import { parseUserPreset } from "../src/state/library.ts";
 import { parseDocument } from "../src/state/schema.ts";

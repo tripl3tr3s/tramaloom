@@ -1,9 +1,9 @@
-import type { ArtDocument } from "@gridloom/core";
-import { generate, pixelSize, SCRIPT_MODULE } from "@gridloom/core";
-import { assembleMint } from "@gridloom/runtime/assemble";
-import modulesSource from "@gridloom/runtime/modules.json?raw";
-import runtimeSource from "@gridloom/runtime/runtime.js?raw";
-import scriptsSource from "@gridloom/runtime/scripts.js?raw";
+import type { ArtDocument } from "@tramaloom/core";
+import { generate, pixelSize, SCRIPT_MODULE } from "@tramaloom/core";
+import { assembleMint } from "@tramaloom/runtime/assemble";
+import modulesSource from "@tramaloom/runtime/modules.json?raw";
+import runtimeSource from "@tramaloom/runtime/runtime.js?raw";
+import scriptsSource from "@tramaloom/runtime/scripts.js?raw";
 import { useMemo, useState } from "react";
 import { download } from "../../render/export.ts";
 import { unapprovedCode, useTrustVersion } from "../../sandbox/trust.ts";
@@ -54,7 +54,7 @@ export function MintTab({ doc, hash, notify }: { readonly doc: ArtDocument; read
     const preview = window.open(new URL("preview.html", document.baseURI).href, "_blank");
     if (!preview) return notify(t("mint.popups"));
     const onReady = (e: MessageEvent) => {
-      if (e.source !== preview || e.origin !== location.origin || (e.data as { kind?: unknown } | null)?.kind !== "gridloom-preview-ready") return;
+      if (e.source !== preview || e.origin !== location.origin || (e.data as { kind?: unknown } | null)?.kind !== "tramaloom-preview-ready") return;
       window.removeEventListener("message", onReady);
       preview.postMessage({ html, hash }, location.origin);
     };

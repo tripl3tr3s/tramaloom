@@ -50,7 +50,7 @@ export class ErrorBoundary extends Component<{ readonly children: ReactNode }, S
   }
 
   override componentDidCatch(_error: Error, _info: ErrorInfo): void {
-    // Nothing is sent anywhere: Gridloom has no server. The message is shown below.
+    // Nothing is sent anywhere: Tramaloom has no server. The message is shown below.
   }
 
   override render() {

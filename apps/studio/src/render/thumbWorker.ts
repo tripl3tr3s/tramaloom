@@ -1,4 +1,4 @@
-import { drawScene, generate, pixelSize } from "@gridloom/core";
+import { drawScene, generate, pixelSize } from "@tramaloom/core";
 import type { ThumbJob, ThumbRequest, ThumbResponse } from "./protocol.ts";
 
 interface WorkerScope {

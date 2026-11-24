@@ -4,7 +4,7 @@ import { expect, test } from "@playwright/test";
 
 test("the welcome card shows once, then stays dismissed", async ({ page }) => {
   await page.goto("/");
-  const welcome = page.getByRole("dialog", { name: "Welcome to Gridloom" });
+  const welcome = page.getByRole("dialog", { name: "Welcome to Tramaloom" });
   await expect(welcome).toBeVisible();
   await page.getByRole("button", { name: "Start making" }).click();
   await expect(welcome).toBeHidden();
@@ -15,7 +15,7 @@ test("the welcome card shows once, then stays dismissed", async ({ page }) => {
 
 test.describe("after the welcome", () => {
   test.beforeEach(async ({ page }) => {
-    await page.addInitScript(() => localStorage.setItem("gridloom.welcomed", "1"));
+    await page.addInitScript(() => localStorage.setItem("tramaloom.welcomed", "1"));
     await page.goto("/");
     await expect(page.locator("main canvas")).toBeVisible();
   });

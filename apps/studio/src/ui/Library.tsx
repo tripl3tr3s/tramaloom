@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { builtinPresets } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { builtinPresets } from "@tramaloom/core";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { isTypingTarget, useDialog } from "../hooks/useDialog.ts";
 import type { ThumbJob } from "../render/protocol.ts";
@@ -195,7 +195,7 @@ export function Library({ doc, hash, onLoad, onSaved, onClose, notify }: Props) 
           type="button"
           className="rounded bg-zinc-800 px-2 py-0.5 hover:bg-zinc-700 disabled:opacity-40"
           disabled={user.length === 0}
-          onClick={() => download(libraryFile(user), "gridloom-library.json")}
+          onClick={() => download(libraryFile(user), "tramaloom-library.json")}
           title={t("library.exportAllHint")}
         >
           {t("library.exportAll")}

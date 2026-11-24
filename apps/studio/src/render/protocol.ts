@@ -1,4 +1,4 @@
-import type { ArtDocument, CensusResult, Drawing, ResolvedLayer } from "@gridloom/core";
+import type { ArtDocument, CensusResult, Drawing, ResolvedLayer } from "@tramaloom/core";
 
 export interface RenderRequest {
   readonly id: number;

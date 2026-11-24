@@ -1,4 +1,4 @@
-import { ENGINE_VERSION, starterDocument } from "@gridloom/core";
+import { ENGINE_VERSION, starterDocument } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
 import { parseDocument } from "../src/state/schema.ts";
 import { decodeState, encodeState } from "../src/state/url.ts";

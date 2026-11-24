@@ -1,6 +1,6 @@
 <!doctype html>
 <!--
-  Gridloom's script sandbox. The studio loads this page in an iframe with sandbox="allow-scripts"
+  Tramaloom's script sandbox. The studio loads this page in an iframe with sandbox="allow-scripts"
   (no allow-same-origin), so it has an opaque origin: code running here cannot read the studio's
   storage. The CSP below blocks every network request. Script layers run in a Worker made from
   the engine the studio sends; this page only relays one answer per request and restarts the
@@ -8,7 +8,7 @@
 -->
 <meta charset="utf-8" />
 <meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline' 'unsafe-eval' blob:; worker-src blob:" />
-<title>Gridloom script sandbox</title>
+<title>Tramaloom script sandbox</title>
 <script>
   "use strict";
   // Only ever work with an opaque origin. Anyone can embed this file; embedded without

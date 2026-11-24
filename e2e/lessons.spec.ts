@@ -2,8 +2,8 @@ import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
   await page.addInitScript(() => {
-    localStorage.setItem("gridloom.welcomed", "1");
-    localStorage.setItem("gridloom.lessonLang", "en");
+    localStorage.setItem("tramaloom.welcomed", "1");
+    localStorage.setItem("tramaloom.lessonLang", "en");
   });
   await page.goto("/");
   await expect(page.locator("main canvas")).toBeVisible();

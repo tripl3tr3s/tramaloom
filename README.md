@@ -1,10 +1,10 @@
-# Gridloom
+# Tramaloom
 
 A free, open-source studio for generative art built on a grid. You make a piece by stacking layers and moving sliders, not by writing code. Every picture is a **document** (your layers and settings) plus a **seed**, so the same pair always draws exactly the same image, in any browser.
 
-![The Gridloom studio: the layer stack on the left, the Waterworks preset on the canvas, and the Pipes settings on the right](docs/gridloom-studio.png)
+![The Tramaloom studio: the layer stack on the left, the Waterworks preset on the canvas, and the Pipes settings on the right](docs/tramaloom-studio.png)
 
-Gridloom runs entirely in your browser. There is no account, no server and no tracking. It works offline once loaded and can be installed as an app.
+Tramaloom runs entirely in your browser. There is no account, no server and no tracking. It works offline once loaded and can be installed as an app.
 
 > **Live site:** coming with the first deploy. Until then, run it locally (see [For developers](#for-developers)).
 
@@ -108,11 +108,11 @@ Add layers with **+ Add**. Settings for each module are grouped, explained by th
 - **Tile preview (`T`).** Shows the piece repeated 3x3, to check that a pattern's edges join. Set the Canvas margin and corner radius to 0 for a seamless repeat.
 - **Undo and redo (`Ctrl+Z`, `Ctrl+Shift+Z`).** Every edit, including resets. A dot next to the name means there are changes you have not saved.
 - **Reset.** The circular arrow on a setting returns it to the default; **Reset all** does the whole layer.
-- **Code.** In the settings panel, **Code** shows the source that draws the selected layer, with a short guide to reading it. Every look in Gridloom is a small, commented file: a first step into generative art coding. **Remix** makes that code your own as a script layer.
+- **Code.** In the settings panel, **Code** shows the source that draws the selected layer, with a short guide to reading it. Every look in Tramaloom is a small, commented file: a first step into generative art coding. **Remix** makes that code your own as a script layer.
 - **Script layers.** **Add > Script** makes a layer drawn by your own code. See [Write your own layer](#write-your-own-layer).
 - **Learn, in English and Spanish.** Four short lessons in writing your own layer (**Your first grid**, **Seeds and randomness**, **Smooth noise**, **Lines for the plotter**), each adding a script layer and explaining its code beside the editor, with **Show me** to see a step done. Learn also has **Plot your first piece**, a no-code guide from a preset to paper, and a **Glossary** of the words the studio uses.
 - **English and Spanish.** The whole studio switches language (in Welcome, Learn, the `?` shortcuts list, or **More** on phones); a Spanish browser starts in Spanish. Module names and their settings are still in English.
-- **Export.** PNG at 2000 or 4000 px (re-rendered, never upscaled), SVG, the document as a `.gridloom.json` file, and a share link.
+- **Export.** PNG at 2000 or 4000 px (re-rendered, never upscaled), SVG, the document as a `.tramaloom.json` file, and a share link.
 - **Edition (`E`), advanced.** Optional tools you do not need to make or export a picture. For long-form editions: traits and rarity, a census over many seeds, a contact sheet, batch export, pen plotter export and a self-hosted mint export. See [Long-form workflow](#long-form-workflow).
 - **Plotter export (Edition > Plotter).** An SVG for pen plotters on A5, A4, A3 or Letter: every shape becomes its outline, one layer per color (one pen each), with the drawing distance and an estimated plotting time. Filled shapes are outlined, not shaded: add a Hatching layer for shading. Grain is left out unless you ask for it, and dot drawings (Attractor) plot as one pen tap per dot, which can take hours.
 
@@ -196,7 +196,7 @@ layer({
 There is no server. A piece is kept in three ways, and only two of them last:
 
 - **Share link** (Export > Copy share link, or the address bar): the document and seed live in the URL. Lasting.
-- **Saved file** (Export > Save document): a `.gridloom.json` file you keep. Lasting. Open it again with **Open**.
+- **Saved file** (Export > Save document): a `.tramaloom.json` file you keep. Lasting. Open it again with **Open**.
 - **Library, "Yours"**: stored in this browser, for this one site address only. Pieces saved on `localhost` do not appear on the deployed site, and moving the site to another domain leaves them behind. Clearing site data, private windows, or Safari's cleanup of sites you have not visited recently can delete them. Use **Export all** in the Library for a backup, and **Import** to bring them into another browser.
 
 Favourites and preferences (folded sections, the Help toggle) are also kept per browser.
@@ -206,14 +206,14 @@ Favourites and preferences (folded sections, the Help toggle) are also kept per 
 - **Browsers.** A recent Chrome, Edge or Firefox, or Safari 16.4 or later. Older browsers get a notice instead of a broken page.
 - **Phones and tablets.** Usable: the layer and settings panels become bottom sheets. A desktop screen is the comfortable place to work.
 - **Same picture everywhere.** A document and seed produce the same shapes, positions and colors in every browser and on every machine; this is tested on every change. Pixel edges can still differ very slightly between browsers (anti-aliasing), so compare exports from the same browser when that matters.
-- **Links keep settings, not images.** A share link stores your settings and seed and redraws them. If an update ever changes how an existing module draws, older links show a notice that they may look different. Gridloom guards against this with frozen reference outputs; changes are deliberate and announced.
+- **Links keep settings, not images.** A share link stores your settings and seed and redraws them. If an update ever changes how an existing module draws, older links show a notice that they may look different. Tramaloom guards against this with frozen reference outputs; changes are deliberate and announced.
 - **Limits.** Up to 32 layers. Some settings are heavy and slow the preview: Attractor points, Contour and Waves resolution, Circle packing attempts, many cells with Spirograph or Phyllotaxis in cell mode.
 - **Mint export** writes a self-hosted `index.html`. Adapters for specific platforms (Art Blocks, fx(hash) and others) are not available yet.
 
 ## Privacy and licence
 
 - **Privacy.** Nothing you make leaves your device unless you share it: no accounts, analytics or cookies. Opening a share link sends nothing anywhere either; the piece is decoded in your browser.
-- **Your work is yours.** Images, documents and exports you make with Gridloom belong to you; use them however you like, including commercially.
+- **Your work is yours.** Images, documents and exports you make with Tramaloom belong to you; use them however you like, including commercially.
 - **The code** is MIT licensed. **The palettes** are original and released as CC0.
 
 ## Long-form workflow
@@ -230,11 +230,11 @@ For an edition (many outputs of one design, one per seed), open **Edition** with
 
 Exports one file named `index.html` (about 35 to 50 KB) with the player engine, only the modules the piece uses, the document frozen as it is, and a header documenting the seed format, traits and weights, licences and the suggested capture size. It follows a minimal contract that most tools understand:
 
-- **Seed in:** `?hash=` (exactly 64 hex, optional `0x`), or `#hash=`. Without one, a random seed is chosen and written into the address bar. Anything else is rejected, never padded: `window.gridloomError` is set and a `genart:error` event fires.
+- **Seed in:** `?hash=` (exactly 64 hex, optional `0x`), or `#hash=`. Without one, a random seed is chosen and written into the address bar. Anything else is rejected, never padded: `window.tramaloomError` is set and a `genart:error` event fires.
 - **Size:** `?width=` or `?height=` fixes that side in pixels and the other follows the aspect; both together fit the piece inside that box. Without them it fits the window, and resizes redraw the same piece. Capped at 8192 px a side and 16.7 megapixels so every current browser can draw it.
 - **Features out:** `window.$features`, computed from the seed before anything is drawn.
 - **Done:** `window.rendered` (the canvas) and a `genart:done` event, once per seed, when its frame is complete.
-- **Entry point:** `window.render(hash)`, and `window.gridloom.svg()` for the same piece as SVG.
+- **Entry point:** `window.render(hash)`, and `window.tramaloom.svg()` for the same piece as SVG.
 - **Offline:** a Content-Security-Policy blocks every network request. The e2e test opens the file with the network disabled and checks that features and the display list match the studio byte for byte, plus an A-B-A render, the error signal, sizing, and non-ASCII names.
 
 Host it somewhere permanent (IPFS with a pinning service you pay for, or Arweave); a personal domain is mortal. Freeze the rarity table before exporting.
@@ -246,7 +246,7 @@ Host it somewhere permanent (IPFS with a pinning service you pay for, or Arweave
 ```
 pnpm install
 pnpm build && pnpm preview                   # production build served locally
-pnpm --filter @gridloom/studio exec vite     # dev server with hot reload
+pnpm --filter @tramaloom/studio exec vite     # dev server with hot reload
 pnpm -r test                                 # unit tests, including the frozen reference outputs
 pnpm typecheck
 pnpm e2e                                     # Chromium, Firefox and WebKit, incl. cross-engine determinism

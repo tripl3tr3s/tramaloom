@@ -1,4 +1,4 @@
-import { hasScripts } from "@gridloom/core";
+import { hasScripts } from "@tramaloom/core";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { drawInSandbox } from "../sandbox/host.ts";
 import { drawable, useTrustVersion } from "../sandbox/trust.ts";

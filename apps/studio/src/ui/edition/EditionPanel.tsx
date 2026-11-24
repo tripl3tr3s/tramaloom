@@ -1,4 +1,4 @@
-import type { ArtDocument } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
 import { useCallback, useState } from "react";
 import { isTypingTarget, useDialog } from "../../hooks/useDialog.ts";
 import type { Action } from "../../state/store.ts";

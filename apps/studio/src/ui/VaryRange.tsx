@@ -1,6 +1,6 @@
 import { useLang } from "../i18n/i18n.tsx";
 import type { MessageKey } from "../i18n/messages.ts";
-import type { Distribution, IntSpec, NumberSpec, Variation } from "@gridloom/core";
+import type { Distribution, IntSpec, NumberSpec, Variation } from "@tramaloom/core";
 import { useMemo, useRef } from "react";
 import { densityCurve, SLIDER_KEYS } from "./vary.ts";
 

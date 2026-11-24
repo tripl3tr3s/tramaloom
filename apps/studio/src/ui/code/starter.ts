@@ -1,5 +1,5 @@
-import type { LayerScript } from "@gridloom/core";
-import { SCRIPT_API } from "@gridloom/core";
+import type { LayerScript } from "@tramaloom/core";
+import { SCRIPT_API } from "@tramaloom/core";
 
 /**
  * The code a new Script layer starts with. It must run as it is, teach through its comments,

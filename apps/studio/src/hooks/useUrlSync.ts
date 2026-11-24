@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { ENGINE_VERSION } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { ENGINE_VERSION } from "@tramaloom/core";
 import { useEffect, useRef, useState } from "react";
 import { decodeState, encodeState } from "../state/url.ts";
 

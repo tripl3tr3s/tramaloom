@@ -1,5 +1,5 @@
-import type { Drawing, ResolvedLayer } from "@gridloom/core";
-import { drawScene, generate, resolveDocument } from "@gridloom/core";
+import type { Drawing, ResolvedLayer } from "@tramaloom/core";
+import { drawScene, generate, resolveDocument } from "@tramaloom/core";
 import type { RenderRequest, RenderResponse } from "./protocol.ts";
 
 interface WorkerScope {

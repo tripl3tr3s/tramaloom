@@ -1,5 +1,5 @@
-import type { ArtDocument, CensusFlag, CensusResult } from "@gridloom/core";
-import { censusFlags } from "@gridloom/core";
+import type { ArtDocument, CensusFlag, CensusResult } from "@tramaloom/core";
+import { censusFlags } from "@tramaloom/core";
 import { useEffect, useRef, useState } from "react";
 import type { ToolRun } from "../../render/runTool.ts";
 import { runTool } from "../../render/runTool.ts";

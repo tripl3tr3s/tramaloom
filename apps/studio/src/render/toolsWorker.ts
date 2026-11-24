@@ -1,4 +1,4 @@
-import { census, generate, seedSeries } from "@gridloom/core";
+import { census, generate, seedSeries } from "@tramaloom/core";
 import { batchZip } from "./batch.ts";
 import type { ToolRequest, ToolResponse } from "./protocol.ts";
 

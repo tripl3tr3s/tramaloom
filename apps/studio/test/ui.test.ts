@@ -1,6 +1,6 @@
-import { starterDocument } from "@gridloom/core";
+import { starterDocument } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
-import type { ParamSpec } from "@gridloom/core";
+import type { ParamSpec } from "@tramaloom/core";
 import { MAX_FAVORITES, parseFavorites, toggleFavorite } from "../src/state/favorites.ts";
 import { insertIndex, needsGrid, zones } from "../src/state/layerOrder.ts";
 import { initialState, reducer } from "../src/state/store.ts";

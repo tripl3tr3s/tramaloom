@@ -1,10 +1,10 @@
 {
-  "name": "@gridloom/runtime",
+  "name": "@tramaloom/runtime",
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
   "type": "module",
-  "description": "Self-contained player for exported Gridloom pieces, plus the HTML assembler.",
+  "description": "Self-contained player for exported Tramaloom pieces, plus the HTML assembler.",
   "exports": {
     "./assemble": "./src/assemble.ts",
     "./runtime.js": "./dist/runtime.js",
@@ -19,7 +19,7 @@
     "typecheck": "tsc -p ."
   },
   "dependencies": {
-    "@gridloom/core": "workspace:*"
+    "@tramaloom/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^26.6.6",

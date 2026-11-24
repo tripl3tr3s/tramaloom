@@ -1,5 +1,5 @@
-import type { ArtDocument, Layer } from "@gridloom/core";
-import { defaultRegistry, layerDef, SCRIPT_MODULE } from "@gridloom/core";
+import type { ArtDocument, Layer } from "@tramaloom/core";
+import { defaultRegistry, layerDef, SCRIPT_MODULE } from "@tramaloom/core";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useState } from "react";
 import type { Zones } from "../state/layerOrder.ts";
@@ -24,7 +24,7 @@ interface Props {
 const iconBtn =
   "grid size-6 place-items-center rounded text-zinc-500 hover:bg-zinc-700 hover:text-zinc-100 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-sky-500 disabled:pointer-events-none disabled:opacity-30 aria-disabled:cursor-default aria-disabled:opacity-30 aria-disabled:hover:bg-transparent";
 const ADDABLE = Object.values(defaultRegistry).filter((m) => m.id !== "canvas");
-const DRAG_TYPE = "application/x-gridloom-layer";
+const DRAG_TYPE = "application/x-tramaloom-layer";
 
 const labelOf = (layer: Layer): string => layerDef(defaultRegistry, layer)?.label ?? layer.module;
 

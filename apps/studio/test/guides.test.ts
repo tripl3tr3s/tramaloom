@@ -1,4 +1,4 @@
-import { builtinPresets, generate } from "@gridloom/core";
+import { builtinPresets, generate } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
 import { GLOSSARY, PLOT_GUIDE } from "../src/lessons/guides.ts";
 

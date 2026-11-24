@@ -16,7 +16,7 @@
  * The helpers in scope are the ones the built-in modules use, so a built-in module's code
  * works as a script once its imports and types are gone.
  */
-import type { ModuleContext, ParamValue, Scene, ScriptRunner } from "@gridloom/core";
+import type { ModuleContext, ParamValue, Scene, ScriptRunner } from "@tramaloom/core";
 import { addItems } from "../../core/src/scene.ts";
 import { COLOR_RULES, colorHelp, colorLookup, extent, pickColor, rampColors } from "../../core/src/modules/color.ts";
 import { sampleField } from "../../core/src/modules/trace.ts";

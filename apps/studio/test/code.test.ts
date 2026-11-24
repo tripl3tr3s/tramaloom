@@ -1,4 +1,4 @@
-import { defaultRegistry } from "@gridloom/core";
+import { defaultRegistry } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
 import { loadModuleSource } from "../src/ui/code/moduleSource.ts";
 

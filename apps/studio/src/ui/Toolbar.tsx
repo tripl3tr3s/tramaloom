@@ -1,4 +1,4 @@
-import { normaliseHash } from "@gridloom/core";
+import { normaliseHash } from "@tramaloom/core";
 import { useEffect, useRef, useState } from "react";
 import { ChevronIcon, StarIcon } from "./icons.tsx";
 import { useLang } from "../i18n/i18n.tsx";
@@ -58,7 +58,7 @@ export function Toolbar(p: Props) {
 
   return (
     <header className="flex flex-wrap items-center gap-1 border-b border-zinc-800 bg-zinc-900 px-3 py-1.5 max-md:gap-y-1.5 max-md:px-2">
-      <span className="mr-2 text-sm font-semibold tracking-tight text-white max-xl:hidden">Gridloom</span>
+      <span className="mr-2 text-sm font-semibold tracking-tight text-white max-xl:hidden">Tramaloom</span>
       <input
         className="w-24 lg:w-28 xl:w-32 rounded bg-transparent max-md:min-w-0 max-md:flex-1 px-1.5 py-0.5 text-xs text-zinc-300 outline-none hover:bg-zinc-800 focus:bg-zinc-800"
         value={p.name}

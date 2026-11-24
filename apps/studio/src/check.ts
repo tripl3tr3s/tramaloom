@@ -1,10 +1,10 @@
-import { checkCases, checkPayload } from "@gridloom/core";
+import { checkCases, checkPayload } from "@tramaloom/core";
 
 declare global {
   interface Window {
     /** Read by the Playwright determinism test. */
-    __gridloomCheck?: Readonly<Record<string, string>>;
-    __gridloomCheckError?: string;
+    __tramaloomCheck?: Readonly<Record<string, string>>;
+    __tramaloomCheckError?: string;
   }
 }
 
@@ -22,12 +22,12 @@ async function main(): Promise<void> {
     out.className = "ok";
     out.textContent = [`${navigator.userAgent}`, "", ...entries.map(([k, v]) => `${k.padEnd(14)} ${v}`)].join("\n");
   }
-  window.__gridloomCheck = results;
+  window.__tramaloomCheck = results;
 }
 
 main().catch((e: unknown) => {
   const msg = e instanceof Error ? e.message : String(e);
-  window.__gridloomCheckError = msg;
+  window.__tramaloomCheckError = msg;
   const out = document.getElementById("out");
   if (out) out.textContent = `check failed: ${msg}`;
 });

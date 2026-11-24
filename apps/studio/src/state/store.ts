@@ -1,5 +1,5 @@
-import type { ArtDocument, Layer, LayerScript, ParamSetting, TraitDef } from "@gridloom/core";
-import { SCRIPT_MODULE, stepHash } from "@gridloom/core";
+import type { ArtDocument, Layer, LayerScript, ParamSetting, TraitDef } from "@tramaloom/core";
+import { SCRIPT_MODULE, stepHash } from "@tramaloom/core";
 import { REMIXABLE } from "../ui/code/remixLayer.ts";
 import { STARTER_SCRIPT } from "../ui/code/starter.ts";
 import { insertIndex, promoteIndex, zones } from "./layerOrder.ts";

@@ -3,7 +3,7 @@ import { expect, test } from "@playwright/test";
 test.use({ viewport: { width: 390, height: 844 }, hasTouch: true });
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("gridloom.welcomed", "1"));
+  await page.addInitScript(() => localStorage.setItem("tramaloom.welcomed", "1"));
   await page.goto("/");
   await expect(page.locator("main canvas")).toBeVisible();
 });

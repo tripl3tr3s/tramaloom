@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { seedSeries, starterDocument, stepHash } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { seedSeries, starterDocument, stepHash } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
 import { parseLibraryFile } from "../src/state/library.ts";
 import { parseDocument } from "../src/state/schema.ts";
@@ -43,10 +43,15 @@ describe("library file", () => {
   const preset = { id: "abc", name: "Mine", doc: starterDocument as ArtDocument, hash: H, createdAt: 1 };
 
   it("round-trips valid presets and skips invalid ones", () => {
-    const file = { format: "gridloom-library", version: 1, presets: [preset, { ...preset, id: "../bad" }] };
+    const file = { format: "tramaloom-library", version: 1, presets: [preset, { ...preset, id: "../bad" }] };
     const parsed = parseLibraryFile(JSON.parse(JSON.stringify(file)));
     expect(parsed?.presets).toEqual([preset]);
     expect(parsed?.skipped).toBe(1);
+  });
+
+  it("still imports backups exported under the old Gridloom name", () => {
+    const parsed = parseLibraryFile({ format: "gridloom-library", version: 1, presets: [preset] });
+    expect(parsed?.presets).toEqual([preset]);
   });
 
   it("rejects files that are not library files", () => {

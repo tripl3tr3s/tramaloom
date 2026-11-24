@@ -2,7 +2,7 @@
  * Builds the mint player in pieces, so an exported page carries only what it uses:
  * - dist/runtime.js: the engine (generation, rendering, traits, the player) with no modules
  * - dist/modules/<id>.js and dist/modules.json: one small script per module; each calls
- *   GridloomRuntime.registerModule, and reads every shared helper from that global.
+ *   TramaloomRuntime.registerModule, and reads every shared helper from that global.
  * Help text is stripped from both: a minted piece never shows it.
  * Anything that would only break at view time (a helper the engine lacks, a module the
  * registry parse missed, help that survived) fails the build instead.
@@ -26,7 +26,7 @@ const clean = (id: string): string => normalizePath(id.split("?")[0] ?? "");
 
 const HELP = /\s*\bhelp:\s*(?:"(?:[^"\\]|\\.)*"|colorHelp\([^)]*\)),?/g;
 const stripHelp = (): Plugin => ({
-  name: "gridloom-strip-help",
+  name: "tramaloom-strip-help",
   enforce: "pre",
   transform(code, id) {
     return clean(id).includes("/packages/core/src/modules/") ? { code: code.replace(HELP, ""), map: null } : null;
@@ -35,7 +35,7 @@ const stripHelp = (): Plugin => ({
 
 /** The engine registers modules at run time: give it a registry module with none built in. */
 const emptyRegistry = (): Plugin => ({
-  name: "gridloom-empty-registry",
+  name: "tramaloom-empty-registry",
   enforce: "pre",
   load(id) {
     if (clean(id) !== registryFile) return null;
@@ -56,7 +56,7 @@ await build({
   root,
   logLevel: "warn",
   plugins: [stripHelp(), emptyRegistry()],
-  build: { outDir: dist, emptyOutDir: true, target: "es2020", minify: true, lib: lib(join(root, "src/runtime.ts"), "GridloomRuntime", "runtime.js") },
+  build: { outDir: dist, emptyOutDir: true, target: "es2020", minify: true, lib: lib(join(root, "src/runtime.ts"), "TramaloomRuntime", "runtime.js") },
 });
 
 // The script sandbox's worker: the whole engine with every module, plus the script compiler.
@@ -66,7 +66,7 @@ await build({
   root,
   logLevel: "warn",
   plugins: [stripHelp()],
-  build: { outDir: dist, emptyOutDir: false, target: "es2020", minify: true, lib: lib(join(root, "src/sandbox.ts"), "GridloomSandbox", "sandbox.js") },
+  build: { outDir: dist, emptyOutDir: false, target: "es2020", minify: true, lib: lib(join(root, "src/sandbox.ts"), "TramaloomSandbox", "sandbox.js") },
 });
 const sandboxCode = readFileSync(join(dist, "sandbox.js"), "utf8");
 if (!sandboxCode.includes("layer(...)")) fail("the sandbox build lost the script compiler");
@@ -75,7 +75,7 @@ if (!sandboxCode.includes("layer(...)")) fail("the sandbox build lost the script
 // scripts can use these and nothing else. Loading defines the global and runs nothing.
 const engineCode = readFileSync(join(dist, "runtime.js"), "utf8");
 const sandbox: Record<string, unknown> = {};
-runInNewContext(`${engineCode}\nthis.__exports = Object.keys(GridloomRuntime);`, sandbox);
+runInNewContext(`${engineCode}\nthis.__exports = Object.keys(TramaloomRuntime);`, sandbox);
 const exported = new Set(sandbox["__exports"] as string[]);
 for (const name of ["registerModule", "start"]) if (!exported.has(name)) fail(`the engine does not export ${name}`);
 if (/\bhelp:/.test(engineCode)) fail("help text survived in the engine");
@@ -98,7 +98,7 @@ const registered = (source.match(/asDef\(\w+\)/g) ?? []).length;
 if (!entries.length || entries.length !== registered) fail(`read ${entries.length} of the ${registered} modules in registry.ts; is an entry formatted unusually?`);
 
 mkdirSync(join(dist, "modules"), { recursive: true });
-const tmp = join(root, "node_modules/.gridloom-entries");
+const tmp = join(root, "node_modules/.tramaloom-entries");
 mkdirSync(tmp, { recursive: true });
 const out: Record<string, string> = {};
 try {
@@ -114,10 +114,10 @@ try {
     if (missing.length) fail(`module ${id} needs ${missing.join(", ")} from the engine; re-export them from src/runtime.ts`);
 
     const entry = join(tmp, `${id}.ts`);
-    writeFileSync(entry, `import { ${name} } from ${JSON.stringify(file)};\nGridloomRuntime.registerModule(${JSON.stringify(id)}, ${name});\n`);
+    writeFileSync(entry, `import { ${name} } from ${JSON.stringify(file)};\nTramaloomRuntime.registerModule(${JSON.stringify(id)}, ${name});\n`);
     // Shared core files stay outside the module script and resolve to the engine's global.
     const shared = (): Plugin => ({
-      name: "gridloom-shared-from-engine",
+      name: "tramaloom-shared-from-engine",
       enforce: "pre",
       resolveId(spec, importer) {
         if (!importer || !spec.startsWith(".") || clean(importer) !== file) return null;
@@ -138,8 +138,8 @@ try {
         target: "es2020",
         minify: true,
         write: false,
-        lib: lib(entry, `GridloomModule_${id}`, `${id}.js`),
-        rollupOptions: { output: { globals: () => "GridloomRuntime" } },
+        lib: lib(entry, `TramaloomModule_${id}`, `${id}.js`),
+        rollupOptions: { output: { globals: () => "TramaloomRuntime" } },
       },
     });
     const chunk = (Array.isArray(result) ? result[0] : result) as { output: readonly { type: string; code?: string }[] };
@@ -162,7 +162,7 @@ const scriptsResult = await build({
   logLevel: "warn",
   plugins: [
     {
-      name: "gridloom-scripts-from-engine",
+      name: "tramaloom-scripts-from-engine",
       enforce: "pre",
       resolveId(spec, importer) {
         if (!importer || !spec.startsWith(".")) return null;
@@ -179,8 +179,8 @@ const scriptsResult = await build({
     target: "es2020",
     minify: true,
     write: false,
-    lib: lib(installer, "GridloomScripts", "scripts.js"),
-    rollupOptions: { output: { globals: () => "GridloomRuntime" } },
+    lib: lib(installer, "TramaloomScripts", "scripts.js"),
+    rollupOptions: { output: { globals: () => "TramaloomRuntime" } },
   },
 });
 const scriptsChunk = (Array.isArray(scriptsResult) ? scriptsResult[0] : scriptsResult) as { output: readonly { type: string; code?: string }[] };

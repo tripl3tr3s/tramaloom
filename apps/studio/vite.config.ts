@@ -27,7 +27,7 @@ function contentSecurityPolicy(sandboxUrl: string | undefined): Plugin {
     "form-action 'none'",
   ].join("; ");
   return {
-    name: "gridloom-csp",
+    name: "tramaloom-csp",
     apply: "build",
     transformIndexHtml: (html) => html.replace(/(<meta charset="UTF-8" \/>)/i, `$1\n    <meta http-equiv="Content-Security-Policy" content="${policy}" />`),
   };
@@ -54,8 +54,8 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["icon.svg", "apple-touch-icon.png"],
       manifest: {
-        name: "Gridloom",
-        short_name: "Gridloom",
+        name: "Tramaloom",
+        short_name: "Tramaloom",
         description: "Open-source studio for grid and tile generative art.",
         theme_color: "#09090b",
         background_color: "#09090b",

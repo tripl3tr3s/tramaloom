@@ -1,5 +1,5 @@
-import type { ArtDocument, Drawing, Paper, PlotterOptions } from "@gridloom/core";
-import { DEFAULT_PLOTTER, generate, hasScripts, PAPERS, toPlotterSVG } from "@gridloom/core";
+import type { ArtDocument, Drawing, Paper, PlotterOptions } from "@tramaloom/core";
+import { DEFAULT_PLOTTER, generate, hasScripts, PAPERS, toPlotterSVG } from "@tramaloom/core";
 import { drawInSandbox } from "../../sandbox/host.ts";
 import { drawable, useTrustVersion } from "../../sandbox/trust.ts";
 import { useEffect, useMemo, useState } from "react";

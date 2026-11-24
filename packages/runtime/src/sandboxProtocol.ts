@@ -1,5 +1,5 @@
 /** Messages between the studio and the script sandbox's worker. Each response arrives as one JSON string, and is untrusted. */
-import type { ArtDocument, Drawing, ResolvedLayer } from "@gridloom/core";
+import type { ArtDocument, Drawing, ResolvedLayer } from "@tramaloom/core";
 
 export type SandboxRequest =
   | { readonly id: number; readonly op: "compile"; readonly code: string }

@@ -202,18 +202,18 @@ importers:
       '@codemirror/view':
         specifier: ^6.43.15
         version: 6.43.15
-      '@gridloom/core':
-        specifier: workspace:*
-        version: link:../../packages/core
-      '@gridloom/runtime':
-        specifier: workspace:*
-        version: link:../../packages/runtime
       '@lezer/highlight':
         specifier: ^1.2.5
         version: 1.2.5
       '@lezer/javascript':
         specifier: ^1.5.6
         version: 1.5.6
+      '@tramaloom/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@tramaloom/runtime':
+        specifier: workspace:*
+        version: link:../../packages/runtime
       react:
         specifier: ^19.3.1
         version: 19.3.1
@@ -269,7 +269,7 @@ importers:
 
   packages/runtime:
     dependencies:
-      '@gridloom/core':
+      '@tramaloom/core':
         specifier: workspace:*
         version: link:../core
     devDependencies:

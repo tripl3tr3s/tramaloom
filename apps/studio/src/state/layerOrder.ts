@@ -1,4 +1,4 @@
-import type { Layer } from "@gridloom/core";
+import type { Layer } from "@tramaloom/core";
 
 /**
  * The stack has three regions, read from the document's own order so any saved

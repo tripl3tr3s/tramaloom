@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { starterDocument } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { starterDocument } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
 import { createHash } from "node:crypto";
 import { sha256 } from "../src/sandbox/sha256.ts";

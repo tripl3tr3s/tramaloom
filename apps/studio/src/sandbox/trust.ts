@@ -4,14 +4,14 @@
  * entry is not drawn until they say so. Until then its script layers are left out of every
  * drawing. The sandbox is the real protection; this is about consent and not surprising anyone.
  */
-import type { ArtDocument } from "@gridloom/core";
-import { SCRIPT_MODULE } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { SCRIPT_MODULE } from "@tramaloom/core";
 import { useSyncExternalStore } from "react";
 import { STARTER_SCRIPT } from "../ui/code/starter.ts";
 import { sha256 } from "./sha256.ts";
 
 // v2: SHA-256 digests. (A short non-cryptographic fingerprint could be forged to match approved code.)
-const KEY = "gridloom.approvedScripts.v2";
+const KEY = "tramaloom.approvedScripts.v2";
 const MAX_REMEMBERED = 300;
 
 // Each script is hashed once; drawing asks often.

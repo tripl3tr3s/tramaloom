@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { breedDocuments, builtinPresets, mutateDocument, stepHash, stream } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { breedDocuments, builtinPresets, mutateDocument, stepHash, stream } from "@tramaloom/core";
 import { useEffect, useMemo, useState } from "react";
 import { isTypingTarget, useDialog } from "../hooks/useDialog.ts";
 import type { ThumbJob } from "../render/protocol.ts";

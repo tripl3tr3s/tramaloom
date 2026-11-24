@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import { join } from "node:path";
-import type { ArtDocument } from "@gridloom/core";
-import { builtinPresets, defaultRegistry, starterDocument } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { builtinPresets, defaultRegistry, starterDocument } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
 import type { Player } from "../src/assemble.ts";
 import { assembleMint, modulesUsed, scriptSafeCode } from "../src/assemble.ts";
@@ -20,7 +20,7 @@ describe("assembleMint", () => {
 
   it("embeds a document that round-trips exactly", () => {
     const html = assembleMint(RUNTIME, builtinPresets[1]?.doc ?? starterDocument, meta);
-    const json = /<script id="gridloom-document" type="application\/json">(.*)<\/script>/.exec(html)?.[1] ?? "";
+    const json = /<script id="tramaloom-document" type="application\/json">(.*)<\/script>/.exec(html)?.[1] ?? "";
     expect(JSON.parse(json)).toEqual(builtinPresets[1]?.doc);
   });
 
@@ -59,7 +59,7 @@ describe("assembleMint", () => {
     const included = [...html.matchAll(/\/\*module:(\w+)\*\//g)].map((m) => m[1]);
     expect(included).toEqual(["canvas", "palette", "grid", "cellFill"]);
     expect(html.indexOf("window.__ok=1;")).toBeLessThan(html.indexOf("/*module:canvas*/"));
-    expect(html.trimEnd().endsWith("<script>GridloomRuntime.start()</script>\n</body>\n</html>")).toBe(true);
+    expect(html.trimEnd().endsWith("<script>TramaloomRuntime.start()</script>\n</body>\n</html>")).toBe(true);
   });
 
   it("leaves out the modules of hidden layers: they are never drawn", () => {
@@ -87,7 +87,7 @@ describe("assembleMint", () => {
     const html = assembleMint(RUNTIME, named, { ...meta, title: "Ámbar \u{1F3A8}" });
     const body = html.slice(html.indexOf("<title>"));
     expect(/[^\x00-\x7f]/.test(body)).toBe(false);
-    const json = /<script id="gridloom-document" type="application\/json">(.*)<\/script>/.exec(html)?.[1] ?? "";
+    const json = /<script id="tramaloom-document" type="application\/json">(.*)<\/script>/.exec(html)?.[1] ?? "";
     expect(JSON.parse(json).name).toBe(named.name);
     expect(html).toContain("<title>&#193;mbar &#127912;</title>");
   });
@@ -151,7 +151,7 @@ describe("assembleMint with script layers", () => {
     const html = assembleMint(withCompiler, scriptDoc, meta);
     expect(html).toContain("<script>/*compiler*/</script>");
     expect(html).toContain("script-src 'unsafe-inline' 'unsafe-eval'");
-    expect(html.indexOf("/*compiler*/")).toBeLessThan(html.indexOf("GridloomRuntime.start()"));
+    expect(html.indexOf("/*compiler*/")).toBeLessThan(html.indexOf("TramaloomRuntime.start()"));
     expect(html).toContain("includes its artist's own script layers");
 
     const plain = assembleMint(withCompiler, starterDocument, meta);

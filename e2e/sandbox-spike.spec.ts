@@ -7,7 +7,7 @@
  */
 import { expect, test } from "@playwright/test";
 
-const APP = "http://gridloom.test/";
+const APP = "http://tramaloom.test/";
 const SECRET = "SECRET-PIECE";
 
 // Runs inside the Worker. Math.random becomes a seeded stream, so scripts that use it stay repeatable.
@@ -76,7 +76,7 @@ const FRAME = `<!doctype html><meta charset="utf-8">
 const HOST = `<!doctype html><meta charset="utf-8"><title>host</title><body>
 <script>
 window.secretReady = new Promise((res, rej) => {
-  const r = indexedDB.open("gridloom", 1);
+  const r = indexedDB.open("tramaloom", 1);
   r.onupgradeneeded = () => r.result.createObjectStore("library");
   r.onerror = () => rej(r.error);
   r.onsuccess = () => {
@@ -177,7 +177,7 @@ test.describe("script sandbox spike", () => {
       page,
       `return new Promise((res) => {
         try {
-          const o = indexedDB.open("gridloom");
+          const o = indexedDB.open("tramaloom");
           o.onerror = () => res("blocked: open");
           o.onsuccess = () => {
             try {
@@ -200,7 +200,7 @@ test.describe("script sandbox spike", () => {
         () => fetch("https://example.com/leak?fetch"),
         () => new Promise((res, rej) => { const x = new XMLHttpRequest(); x.open("GET", "${APP}leak?xhr"); x.onload = res; x.onerror = rej; x.send(); }),
         () => { importScripts("${APP}leak?import"); },
-        () => { new WebSocket("ws://gridloom.test/leak"); },
+        () => { new WebSocket("ws://tramaloom.test/leak"); },
         () => { new EventSource("${APP}leak?sse"); },
       ];
       const out = [];

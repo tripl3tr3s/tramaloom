@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { defaultRegistry, ENGINE_VERSION, expectedDistribution, SCRIPT_MODULE } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { defaultRegistry, ENGINE_VERSION, expectedDistribution, SCRIPT_MODULE } from "@tramaloom/core";
 
 export interface MintMeta {
   readonly title: string;
@@ -81,11 +81,11 @@ function traitTable(doc: ArtDocument): string[] {
 export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): string {
   const moduleScripts = modulesUsed(doc).map((id) => {
     const code = Object.hasOwn(player.modules, id) ? player.modules[id] : undefined;
-    if (code === undefined) throw new Error(`no player code for module "${id}" (unknown module, or @gridloom/runtime needs a rebuild)`);
+    if (code === undefined) throw new Error(`no player code for module "${id}" (unknown module, or @tramaloom/runtime needs a rebuild)`);
     return `<script>${scriptSafeCode(code)}</script>`;
   });
   const scripted = runsCode(doc);
-  if (scripted && player.scripts === undefined) throw new Error("this piece has script layers, and the player has no script compiler: rebuild @gridloom/runtime");
+  if (scripted && player.scripts === undefined) throw new Error("this piece has script layers, and the player has no script compiler: rebuild @tramaloom/runtime");
   const compiler = scripted && player.scripts !== undefined ? [`<script>${scriptSafeCode(player.scripts)}</script>`] : [];
   const title = meta.title.trim() || doc.name || "Untitled";
   const table = traitTable(doc);
@@ -93,8 +93,8 @@ export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): 
     `${commentSafe(title)}${meta.artist.trim() ? ` by ${commentSafe(meta.artist.trim())}` : ""}`,
     "",
     `Artwork licence: ${commentSafe(meta.licence.trim() || "All rights reserved")}`,
-    "Player code: Gridloom (MIT), https://opensource.org/license/mit",
-    `Gridloom engine: v${ENGINE_VERSION}`,
+    "Player code: Tramaloom (MIT), https://opensource.org/license/mit",
+    `Tramaloom engine: v${ENGINE_VERSION}`,
     "",
     "Seed: ?hash= (or #hash=) with 64 hex characters, optional 0x prefix.",
     "      Without one, a random seed is chosen and written into the address bar.",
@@ -105,8 +105,8 @@ export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): 
     "Signals: window.$features (traits, set before rendering), window.render(hash),",
     "         window.rendered and a 'genart:done' event once per seed when its frame is complete",
     "         (window resizes redraw without firing it again).",
-    "Errors: an invalid seed sets window.gridloomError and fires 'genart:error'.",
-    "Extras: window.gridloom.svg() returns the current piece as SVG.",
+    "Errors: an invalid seed sets window.tramaloomError and fires 'genart:error'.",
+    "Extras: window.tramaloom.svg() returns the current piece as SVG.",
     "Works offline: no network requests. Target: current Chrome, Firefox and Safari.",
     ...(scripted ? ["Code: this piece includes its artist's own script layers, compiled in the page (the reason for 'unsafe-eval')."] : []),
     "",
@@ -128,13 +128,13 @@ export function assembleMint(player: Player, doc: ArtDocument, meta: MintMeta): 
     "<style>html,body{margin:0;height:100%}body{display:flex;align-items:center;justify-content:center;overflow:hidden;background:#111}canvas{display:block}</style>",
     "</head>",
     "<body>",
-    `<script id="gridloom-document" type="application/json">${scriptSafeJson(doc)}</script>`,
+    `<script id="tramaloom-document" type="application/json">${scriptSafeJson(doc)}</script>`,
     `<script>${scriptSafeCode(player.engine)}</script>`,
     // Only the modules this piece uses; each registers itself with the engine above.
     ...moduleScripts,
     // Pieces with script layers: the compiler that runs their code (after the engine, before start).
     ...compiler,
-    "<script>GridloomRuntime.start()</script>",
+    "<script>TramaloomRuntime.start()</script>",
     "</body>",
     "</html>",
     "",

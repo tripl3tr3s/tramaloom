@@ -1,5 +1,5 @@
-import type { ArtDocument, ResolvedLayer } from "@gridloom/core";
-import { hasScripts } from "@gridloom/core";
+import type { ArtDocument, ResolvedLayer } from "@tramaloom/core";
+import { hasScripts } from "@tramaloom/core";
 import { drawInSandbox, SandboxError } from "../sandbox/host.ts";
 import { drawable, useTrustVersion } from "../sandbox/trust.ts";
 import { useEffect, useRef, useState } from "react";

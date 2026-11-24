@@ -26,10 +26,10 @@ jobs:
           cache: pnpm
       - run: pnpm install --frozen-lockfile
       # The studio embeds the built player, and its safety test reads the bundle.
-      - run: pnpm --filter @gridloom/runtime build
+      - run: pnpm --filter @tramaloom/runtime build
       - run: pnpm typecheck
       - run: pnpm -r test
-      - run: pnpm --filter @gridloom/studio build
+      - run: pnpm --filter @tramaloom/studio build
       - if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
         uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0
         with:

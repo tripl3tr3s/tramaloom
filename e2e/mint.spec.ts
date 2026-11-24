@@ -21,7 +21,7 @@ const runtime = {
   modules: JSON.parse(readFileSync(join(built, "modules.json"), "utf8")) as Record<string, string>,
   scripts: readFileSync(join(built, "scripts.js"), "utf8"),
 };
-const dir = mkdtempSync(join(tmpdir(), "gridloom-mint-"));
+const dir = mkdtempSync(join(tmpdir(), "tramaloom-mint-"));
 const meta = { title: "Mint test", artist: "", licence: "CC0 1.0", captureWidth: 1000, captureHeight: 1000 };
 declare global {
   interface Window {
@@ -56,7 +56,7 @@ for (const p of presets) {
     page.on("pageerror", (e) => errors.push(e.message));
     const requests = await openOffline(page, file, `?hash=0x${p.hash}`);
 
-    const result = await page.evaluate(() => ({ features: window.$features, svg: window.gridloom?.svg() ?? "", hash: window.gridloom?.hash }));
+    const result = await page.evaluate(() => ({ features: window.$features, svg: window.tramaloom?.svg() ?? "", hash: window.tramaloom?.hash }));
     expect(requests, "network requests").toEqual([]);
     expect(errors).toEqual([]);
     expect(result.hash).toBe(p.hash);
@@ -67,7 +67,7 @@ for (const p of presets) {
     const [a, b] = seedSeries(stepHash(p.hash, 99), 2);
     const svgs = await page.evaluate(
       ([x, y]) => {
-        const g = window.gridloom;
+        const g = window.tramaloom;
         const out: string[] = [];
         for (const h of [x, y, x]) {
           window.render?.(h ?? "");
@@ -133,8 +133,8 @@ test.describe("player contract", () => {
       });
     });
     await openOffline(page, file, `#hash=${p.hash}`);
-    expect(await page.evaluate(() => window.gridloom?.hash)).toBe(p.hash);
-    expect(await page.evaluate(() => window.gridloom?.doc.name)).toBe("Paleta ámbar, Núñez");
+    expect(await page.evaluate(() => window.tramaloom?.hash)).toBe(p.hash);
+    expect(await page.evaluate(() => window.tramaloom?.doc.name)).toBe("Paleta ámbar, Núñez");
     expect(await page.title()).toBe("Mint test");
     const [a, b] = seedSeries(p.hash, 2);
     await page.evaluate(([x, y]) => [x, y, x].forEach((h) => window.render?.(h ?? "")), [a, b]);
@@ -147,7 +147,7 @@ test.describe("player contract", () => {
   for (const bad of ["abc", "0x" + "g".repeat(64), "f".repeat(65)]) {
     test(`rejects the seed "${bad.slice(0, 12)}..." with an error signal`, async ({ page }) => {
       await page.goto(`${pathToFileURL(file).href}?hash=${bad}`);
-      await page.waitForFunction(() => typeof window.gridloomError === "string");
+      await page.waitForFunction(() => typeof window.tramaloomError === "string");
       expect(await page.evaluate(() => window.rendered)).toBeUndefined();
     });
   }
@@ -155,7 +155,7 @@ test.describe("player contract", () => {
   test("an empty seed counts as no seed", async ({ page }) => {
     await page.goto(`${pathToFileURL(file).href}?hash=`);
     await page.waitForFunction(() => window.rendered instanceof HTMLCanvasElement);
-    expect(await page.evaluate(() => window.gridloom?.hash)).not.toBe("0".repeat(64));
+    expect(await page.evaluate(() => window.tramaloom?.hash)).not.toBe("0".repeat(64));
   });
 
   test("width and height together fit the piece inside the box", async ({ page }) => {
@@ -178,7 +178,7 @@ test("a piece with a script layer runs its code offline and draws what Node draw
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   const requests = await openOffline(page, file, `?hash=0x${hash}`);
-  const result = await page.evaluate(() => ({ features: window.$features, svg: window.gridloom?.svg() ?? "" }));
+  const result = await page.evaluate(() => ({ features: window.$features, svg: window.tramaloom?.svg() ?? "" }));
   expect(requests, "network requests").toEqual([]);
   expect(errors).toEqual([]);
   setScriptRunner(scriptRunner);

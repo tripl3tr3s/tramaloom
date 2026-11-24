@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { hasScripts } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { hasScripts } from "@tramaloom/core";
 import { useEffect, useRef, useState } from "react";
 import { download, slug } from "../../render/export.ts";
 import type { ToolRun } from "../../render/runTool.ts";

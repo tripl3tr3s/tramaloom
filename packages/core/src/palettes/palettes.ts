@@ -1,4 +1,4 @@
-/** Original palettes shipped with Gridloom (CC0). Order matters: zones window into it. */
+/** Original palettes shipped with Tramaloom (CC0). Order matters: zones window into it. */
 export const PALETTES = {
   harbor: ["#0d1b2a", "#1b4b8a", "#2f7fd8", "#6cc3f0", "#f4efe1"],
   ember: ["#1a1414", "#7a1f1f", "#d9472b", "#f2a541", "#f7ebd3"],

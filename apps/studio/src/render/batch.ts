@@ -3,8 +3,8 @@
  * Shared by the tools worker (pieces it can generate itself) and the main thread (pieces with
  * script layers, whose drawings come from the script sandbox one at a time).
  */
-import type { ArtDocument, Drawing } from "@gridloom/core";
-import { drawScene, pixelSize, resolveDocument, seedSeries, traitsFromResolved } from "@gridloom/core";
+import type { ArtDocument, Drawing } from "@tramaloom/core";
+import { drawScene, pixelSize, resolveDocument, seedSeries, traitsFromResolved } from "@tramaloom/core";
 import type { ZipEntry } from "./zip.ts";
 import { entryFromBlob, entryFromBytes, zip } from "./zip.ts";
 
@@ -52,5 +52,5 @@ export async function batchZip(
   }
   const doc = new TextEncoder().encode(JSON.stringify(job.record ?? job.doc, null, 2));
   const list = new TextEncoder().encode(JSON.stringify({ root: job.root, size: job.size, pieces: manifest }, null, 2));
-  return zip([...entries, entryFromBytes("manifest.json", list), entryFromBytes("document.gridloom.json", doc)]);
+  return zip([...entries, entryFromBytes("manifest.json", list), entryFromBytes("document.tramaloom.json", doc)]);
 }

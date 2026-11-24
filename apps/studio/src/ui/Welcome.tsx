@@ -4,7 +4,7 @@ import type { MessageKey } from "../i18n/messages.ts";
 import { MESSAGES } from "../i18n/messages.ts";
 import { LangSwitch } from "./LangSwitch.tsx";
 
-const KEY = "gridloom.welcomed";
+const KEY = "tramaloom.welcomed";
 
 /** First visit in this browser. Storage that throws counts as seen, so a blocked store never nags. */
 export function isFirstVisit(): boolean {

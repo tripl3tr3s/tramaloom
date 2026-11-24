@@ -17,7 +17,7 @@ export default defineConfig({
   ],
   // Serves the production build; run `pnpm build` first (the e2e script does).
   webServer: {
-    command: `pnpm --filter @gridloom/studio exec vite preview --port ${PORT} --strictPort`,
+    command: `pnpm --filter @tramaloom/studio exec vite preview --port ${PORT} --strictPort`,
     url: `http://localhost:${PORT}/check.html`,
     // Never reuse: a stale preview of an old build would make the check pass on old code.
     reuseExistingServer: false,

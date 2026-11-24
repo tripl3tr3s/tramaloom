@@ -2,7 +2,7 @@ import type { Page } from "@playwright/test";
 import { expect, test } from "@playwright/test";
 
 test.beforeEach(async ({ page }) => {
-  await page.addInitScript(() => localStorage.setItem("gridloom.welcomed", "1"));
+  await page.addInitScript(() => localStorage.setItem("tramaloom.welcomed", "1"));
   await page.goto("/");
   await expect(page.locator("main canvas")).toBeVisible();
 });
@@ -116,7 +116,7 @@ try { fetch("/leak-fetch").catch(() => {}); } catch (e) {}
 try { const x = new XMLHttpRequest(); x.open("GET", "/leak-xhr"); x.send(); } catch (e) {}
 try { importScripts("/leak-import.js"); } catch (e) {}
 try { new WebSocket("ws://localhost:1/leak"); } catch (e) {}
-try { indexedDB.open("gridloom"); tries.push("idb"); } catch (e) {}
+try { indexedDB.open("tramaloom"); tries.push("idb"); } catch (e) {}
 layer({ label: "Quiet", apply(scene) { return scene; } });
 `,
   );
@@ -184,7 +184,7 @@ test.describe("code that arrives with a piece", () => {
   test("is not run until the visitor says so, and the choice is remembered", async ({ page, browser }) => {
     const link = await sharedLink(page);
     const visitor = await (await browser.newContext()).newPage();
-    await visitor.addInitScript(() => localStorage.setItem("gridloom.welcomed", "1"));
+    await visitor.addInitScript(() => localStorage.setItem("tramaloom.welcomed", "1"));
     await visitor.goto(link);
     const banner = visitor.getByRole("region", { name: "Code in this piece" });
     await expect(banner).toBeVisible();
@@ -209,7 +209,7 @@ test.describe("code that arrives with a piece", () => {
   test("Keep hidden leaves the script out, and Show the code opens it without running it", async ({ page, browser }) => {
     const link = await sharedLink(page);
     const visitor = await (await browser.newContext()).newPage();
-    await visitor.addInitScript(() => localStorage.setItem("gridloom.welcomed", "1"));
+    await visitor.addInitScript(() => localStorage.setItem("tramaloom.welcomed", "1"));
     await visitor.goto(link);
     const banner = visitor.getByRole("region", { name: "Code in this piece" });
     await banner.getByRole("button", { name: "Show the code" }).click();

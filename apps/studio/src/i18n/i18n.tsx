@@ -10,9 +10,9 @@ import { MESSAGES } from "./messages.ts";
 export type Lang = "en" | "es";
 export type Vars = Readonly<Record<string, string | number>>;
 
-const KEY = "gridloom.lang";
+const KEY = "tramaloom.lang";
 // The lessons' own setting, from before the whole studio could switch.
-const OLD_KEY = "gridloom.lessonLang";
+const OLD_KEY = "tramaloom.lessonLang";
 
 /** The last choice, else Spanish for a Spanish browser, else English. */
 export function initialLang(): Lang {

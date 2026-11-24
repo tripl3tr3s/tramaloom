@@ -1,4 +1,4 @@
-import type { Distribution } from "@gridloom/core";
+import type { Distribution } from "@tramaloom/core";
 
 /** Keys that move a range input; the first press of a run opens an undo checkpoint. */
 export const SLIDER_KEYS: ReadonlySet<string> = new Set(["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "PageUp", "PageDown", "Home", "End"]);

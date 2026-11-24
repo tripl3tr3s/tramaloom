@@ -1,4 +1,4 @@
-import { starterDocument } from "@gridloom/core";
+import { starterDocument } from "@tramaloom/core";
 import { describe, expect, it } from "vitest";
 import type { Action, StudioState } from "../src/state/store.ts";
 import { freshId, initialState, reducer } from "../src/state/store.ts";

@@ -1,4 +1,4 @@
-import type { ArtDocument } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
 import { z } from "zod";
 import { ArtDocumentSchema, parseDocument } from "./schema.ts";
 
@@ -32,7 +32,7 @@ export function parseUserPreset(input: unknown): UserPreset | null {
   return doc ? { ...r.data, doc } : null;
 }
 
-const DB_NAME = "gridloom";
+const DB_NAME = "tramaloom";
 const STORE = "presets";
 
 function open(): Promise<IDBDatabase> {
@@ -118,15 +118,18 @@ export async function requestPersistence(): Promise<boolean> {
   }
 }
 
-const LIBRARY_FILE = "gridloom-library";
+const LIBRARY_FILE = "tramaloom-library";
 
 /** A file holding every user preset, for backups and moving between browsers or domains. */
 export function libraryFile(presets: readonly UserPreset[]): Blob {
   return new Blob([JSON.stringify({ format: LIBRARY_FILE, version: 1, presets }, null, 2)], { type: "application/json" });
 }
 
+// Backups exported before the project was renamed from Gridloom still import.
+const LEGACY_LIBRARY_FILE = "gridloom-library";
+
 const LibraryFileSchema = z.object({
-  format: z.literal(LIBRARY_FILE),
+  format: z.union([z.literal(LIBRARY_FILE), z.literal(LEGACY_LIBRARY_FILE)]),
   version: z.literal(1),
   presets: z.array(z.unknown()).max(MAX_USER_PRESETS),
 });

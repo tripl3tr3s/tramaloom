@@ -1,5 +1,5 @@
-import type { LayerScript } from "@gridloom/core";
-import { defaultRegistry, getModule, SCRIPT_API } from "@gridloom/core";
+import type { LayerScript } from "@tramaloom/core";
+import { defaultRegistry, getModule, SCRIPT_API } from "@tramaloom/core";
 import { useState } from "react";
 import { useDialog } from "../../hooks/useDialog.ts";
 import { useLang } from "../../i18n/i18n.tsx";

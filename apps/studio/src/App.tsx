@@ -1,5 +1,5 @@
-import type { ArtDocument, LayerScript, ParamSetting } from "@gridloom/core";
-import { defaultRegistry, ENGINE_VERSION, layerDef, SCRIPT_API, SCRIPT_MODULE, starterDocument } from "@gridloom/core";
+import type { ArtDocument, LayerScript, ParamSetting } from "@tramaloom/core";
+import { defaultRegistry, ENGINE_VERSION, layerDef, SCRIPT_API, SCRIPT_MODULE, starterDocument } from "@tramaloom/core";
 import { lazy, Suspense, useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useShortcuts } from "./hooks/useShortcuts.ts";
 import { useUrlSync } from "./hooks/useUrlSync.ts";

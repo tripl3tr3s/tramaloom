@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { ENGINE_VERSION, normaliseHash } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { ENGINE_VERSION, normaliseHash } from "@tramaloom/core";
 import { parseDocument } from "./schema.ts";
 
 const MAX_COMPRESSED = 64 * 1024;

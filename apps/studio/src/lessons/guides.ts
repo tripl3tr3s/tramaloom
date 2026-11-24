@@ -113,8 +113,8 @@ export const GLOSSARY: readonly GlossaryEntry[] = [
   {
     term: t("Document", "Documento"),
     meaning: t(
-      "The layers and their settings: everything about a piece except the seed. Saved as a .gridloom.json file or inside a share link.",
-      "Las capas y sus controles: todo de una pieza excepto la semilla. Se guarda como archivo .gridloom.json o dentro de un enlace para compartir.",
+      "The layers and their settings: everything about a piece except the seed. Saved as a .tramaloom.json file or inside a share link.",
+      "Las capas y sus controles: todo de una pieza excepto la semilla. Se guarda como archivo .tramaloom.json o dentro de un enlace para compartir.",
     ),
   },
   {

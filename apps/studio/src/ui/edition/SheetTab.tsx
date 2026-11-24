@@ -1,5 +1,5 @@
-import type { ArtDocument, Traits } from "@gridloom/core";
-import { computeTraits, seedSeries } from "@gridloom/core";
+import type { ArtDocument, Traits } from "@tramaloom/core";
+import { computeTraits, seedSeries } from "@tramaloom/core";
 import { useMemo, useState } from "react";
 import { download, slug } from "../../render/export.ts";
 import type { ThumbJob } from "../../render/protocol.ts";

@@ -1,5 +1,5 @@
-import type { Layer, ParamSetting, ResolvedLayer } from "@gridloom/core";
-import { defaultRegistry, layerDef, SCRIPT_MODULE } from "@gridloom/core";
+import type { Layer, ParamSetting, ResolvedLayer } from "@tramaloom/core";
+import { defaultRegistry, layerDef, SCRIPT_MODULE } from "@tramaloom/core";
 import { useState } from "react";
 import { useLang } from "../i18n/i18n.tsx";
 import { ChevronIcon } from "./icons.tsx";
@@ -22,7 +22,7 @@ interface Props {
   readonly problem?: { readonly message: string; readonly fix: string; readonly onFix: () => void } | null;
 }
 
-const COLLAPSED_KEY = "gridloom.collapsedGroups";
+const COLLAPSED_KEY = "tramaloom.collapsedGroups";
 
 /** Which groups this viewer folded away ("module/Group"). A convenience only, so storage failures are ignored. */
 function useCollapsed(): readonly [ReadonlySet<string>, (key: string) => void] {
@@ -48,7 +48,7 @@ function useCollapsed(): readonly [ReadonlySet<string>, (key: string) => void] {
   return [collapsed, toggle];
 }
 
-const HELP_KEY = "gridloom.showHelp";
+const HELP_KEY = "tramaloom.showHelp";
 
 /** The panel's Help toggle, remembered per browser (a convenience; storage failures are ignored). */
 function useShowHelp(): readonly [boolean, () => void] {

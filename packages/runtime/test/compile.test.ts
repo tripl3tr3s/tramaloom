@@ -1,5 +1,5 @@
-import type { ArtDocument, LayerScript } from "@gridloom/core";
-import { generate, setScriptRunner, starterDocument } from "@gridloom/core";
+import type { ArtDocument, LayerScript } from "@tramaloom/core";
+import { generate, setScriptRunner, starterDocument } from "@tramaloom/core";
 import { afterEach, describe, expect, it } from "vitest";
 import { compileScript, scriptRunner, ScriptError } from "../src/compile.ts";
 

@@ -1,5 +1,5 @@
 {
-  "name": "gridloom",
+  "name": "tramaloom",
   "private": true,
   "license": "MIT",
   "type": "module",
@@ -7,8 +7,8 @@
   "scripts": {
     "test": "pnpm -r test",
     "typecheck": "pnpm -r typecheck && tsc -p tsconfig.e2e.json",
-    "build": "pnpm --filter @gridloom/studio build",
-    "preview": "pnpm --filter @gridloom/studio preview",
+    "build": "pnpm --filter @tramaloom/studio build",
+    "preview": "pnpm --filter @tramaloom/studio preview",
     "e2e": "pnpm build && playwright test"
   },
   "devDependencies": {

@@ -32,13 +32,13 @@ describe("zip", () => {
   it.skipIf(!hasUnzip)("produces an archive that unzip accepts byte for byte", async () => {
     const files = [
       await entryFromBlob("one.png", new Blob([Uint8Array.from({ length: 5000 }, (_, i) => (i * 31) & 255)])),
-      entryFromBytes("two.txt", new TextEncoder().encode("gridloom")),
+      entryFromBytes("two.txt", new TextEncoder().encode("tramaloom")),
     ];
-    const dir = mkdtempSync(join(tmpdir(), "gridloom-zip-"));
+    const dir = mkdtempSync(join(tmpdir(), "tramaloom-zip-"));
     const path = join(dir, "out.zip");
     writeFileSync(path, new Uint8Array(await zip(files).arrayBuffer()));
     expect(execFileSync("unzip", ["-tq", path]).toString()).toMatch(/No errors/);
-    expect(execFileSync("unzip", ["-p", path, "two.txt"]).toString()).toBe("gridloom");
+    expect(execFileSync("unzip", ["-p", path, "two.txt"]).toString()).toBe("tramaloom");
     expect(execFileSync("unzip", ["-l", path]).toString()).toMatch(/1980-01-01/);
   });
 });

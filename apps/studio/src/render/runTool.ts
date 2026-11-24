@@ -1,4 +1,4 @@
-import type { CensusResult } from "@gridloom/core";
+import type { CensusResult } from "@tramaloom/core";
 import { drawInSandbox } from "../sandbox/host.ts";
 import type { BatchJob } from "./batch.ts";
 import { batchZip } from "./batch.ts";

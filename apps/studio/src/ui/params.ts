@@ -1,4 +1,4 @@
-import type { ParamSetting, ParamSpec, ParamSpecs } from "@gridloom/core";
+import type { ParamSetting, ParamSpec, ParamSpecs } from "@tramaloom/core";
 
 /** True when the setting draws exactly what the module default draws: nothing to reset. */
 export function isDefaultSetting(spec: ParamSpec, setting: ParamSetting | undefined): boolean {

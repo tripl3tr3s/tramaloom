@@ -1,13 +1,13 @@
 /**
  * The studio's side of the script sandbox (public/sandbox.html). Script layers are only ever
  * run there: an iframe with an opaque origin and a CSP that blocks the network, running the
- * engine (from @gridloom/runtime) in a Worker. Requests go one at a time; one that runs too
+ * engine (from @tramaloom/runtime) in a Worker. Requests go one at a time; one that runs too
  * long gets its worker restarted. Everything that comes back is untrusted and checked here.
  */
-import type { ArtDocument, Drawing } from "@gridloom/core";
-import { checkDrawing } from "@gridloom/core";
-import sandboxSource from "@gridloom/runtime/sandbox.js?raw";
-import type { SandboxRequest, SandboxResponse } from "@gridloom/runtime/sandboxProtocol";
+import type { ArtDocument, Drawing } from "@tramaloom/core";
+import { checkDrawing } from "@tramaloom/core";
+import sandboxSource from "@tramaloom/runtime/sandbox.js?raw";
+import type { SandboxRequest, SandboxResponse } from "@tramaloom/runtime/sandboxProtocol";
 import { unapprovedScripts } from "./trust.ts";
 
 /** A script failed: its message, and the script line when the browser reports one. */

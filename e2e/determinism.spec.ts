@@ -14,7 +14,7 @@ const expected = Object.fromEntries(
 
 test("display list and traits match Node in this browser", async ({ page }) => {
   await page.goto("/check.html");
-  const handle = await page.waitForFunction(() => window.__gridloomCheck ?? (window.__gridloomCheckError ? { error: window.__gridloomCheckError } : undefined), undefined, {
+  const handle = await page.waitForFunction(() => window.__tramaloomCheck ?? (window.__tramaloomCheckError ? { error: window.__tramaloomCheckError } : undefined), undefined, {
     timeout: 30_000,
   });
   const actual = (await handle.jsonValue()) as Record<string, string>;

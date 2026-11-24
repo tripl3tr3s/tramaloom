@@ -10,11 +10,11 @@
  * script per module the piece uses (each calls registerModule), then calls start().
  * The helpers below are exported so those module scripts can share them.
  */
-import type { ArtDocument, ModuleDef, Registry, Traits } from "@gridloom/core";
-import type { Scene } from "@gridloom/core";
-import { computeTraits, drawScene, ENGINE_VERSION, generate, toSVG } from "@gridloom/core";
+import type { ArtDocument, ModuleDef, Registry, Traits } from "@tramaloom/core";
+import type { Scene } from "@tramaloom/core";
+import { computeTraits, drawScene, ENGINE_VERSION, generate, toSVG } from "@tramaloom/core";
 
-// Shared helpers the module scripts import (their imports become GridloomRuntime.<name>).
+// Shared helpers the module scripts import (their imports become TramaloomRuntime.<name>).
 export { addItems } from "../../core/src/scene.ts";
 export { COLOR_RULES, colorHelp, colorLookup, extent, pickColor, rampColors } from "../../core/src/modules/color.ts";
 export { defineModule } from "../../core/src/modules/types.ts";
@@ -33,7 +33,7 @@ export function registerModule(id: string, def: ModuleDef): void {
   modules[id] = def;
 }
 
-interface GridloomApi {
+interface TramaloomApi {
   readonly engine: number;
   readonly doc: ArtDocument;
   hash: string;
@@ -46,8 +46,8 @@ declare global {
     $features?: Traits;
     rendered?: HTMLCanvasElement;
     render?: (hash: string) => void;
-    gridloom?: GridloomApi;
-    gridloomError?: string;
+    tramaloom?: TramaloomApi;
+    tramaloomError?: string;
   }
 }
 
@@ -62,7 +62,7 @@ export function parseHash(input: string): string | null {
 }
 
 function readDoc(): ArtDocument {
-  const el = document.getElementById("gridloom-document");
+  const el = document.getElementById("tramaloom-document");
   if (!el?.textContent) throw new Error("missing document");
   return JSON.parse(el.textContent) as ArtDocument;
 }
@@ -88,7 +88,7 @@ function sizeParam(name: string): number | null {
 }
 
 function fail(msg: string): void {
-  window.gridloomError = msg;
+  window.tramaloomError = msg;
   document.dispatchEvent(new CustomEvent("genart:error", { detail: { message: msg } }));
   showError(msg);
 }
@@ -109,13 +109,13 @@ function main(): void {
   const fixedW = sizeParam("width");
   const fixedH = sizeParam("height");
 
-  const api: GridloomApi = {
+  const api: TramaloomApi = {
     engine: ENGINE_VERSION,
     doc,
     hash: "",
     svg: () => (current ? toSVG(current.scene) : ""),
   };
-  window.gridloom = api;
+  window.tramaloom = api;
 
   let current: { hash: string; scene: Scene } | null = null;
 

@@ -1,5 +1,5 @@
-import type { ArtDocument, ParamSetting, TraitBin, TraitDef } from "@gridloom/core";
-import { computeTraits, defaultRegistry, expectedDistribution, layerDef, traitLabel } from "@gridloom/core";
+import type { ArtDocument, ParamSetting, TraitBin, TraitDef } from "@tramaloom/core";
+import { computeTraits, defaultRegistry, expectedDistribution, layerDef, traitLabel } from "@tramaloom/core";
 import { useEffect, useMemo, useState } from "react";
 import { MAX_WEIGHT } from "../../state/limits.ts";
 import { MAX_BINS, MAX_TRAITS } from "../../state/schema.ts";

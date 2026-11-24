@@ -1,4 +1,4 @@
-import type { ArtDocument } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
 import { useEffect, useMemo, useState } from "react";
 import type { ThumbJob } from "../render/protocol.ts";
 import { useThumbnails } from "../render/useThumbnails.ts";

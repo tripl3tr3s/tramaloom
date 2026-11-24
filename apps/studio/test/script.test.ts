@@ -1,7 +1,7 @@
 import { readdirSync, readFileSync, statSync } from "node:fs";
 import { join } from "node:path";
-import type { ArtDocument } from "@gridloom/core";
-import { generate, setScriptRunner, starterDocument } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { generate, setScriptRunner, starterDocument } from "@tramaloom/core";
 import { afterEach, describe, expect, it } from "vitest";
 // Test-only: the studio page itself never imports the compiler (see the guard below).
 import { compileScript, scriptRunner } from "../../../packages/runtime/src/compile.ts";

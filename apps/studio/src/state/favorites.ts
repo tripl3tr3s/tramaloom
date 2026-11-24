@@ -2,7 +2,7 @@ import { z } from "zod";
 
 /** Seeds this viewer starred, newest first. Per browser, never part of a document. */
 export const MAX_FAVORITES = 48;
-const KEY = "gridloom.favorites";
+const KEY = "tramaloom.favorites";
 const Hash = z.string().regex(/^[0-9a-f]{64}$/);
 
 /** Star or unstar: a new seed goes to the front, the oldest falls off past the limit. */

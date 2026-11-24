@@ -1,4 +1,4 @@
-import type { Distribution, ParamSetting, ParamSpec, ParamValue, Variation } from "@gridloom/core";
+import type { Distribution, ParamSetting, ParamSpec, ParamValue, Variation } from "@tramaloom/core";
 import { useId, useRef, useState } from "react";
 import { useLang } from "../i18n/i18n.tsx";
 import { MAX_WEIGHT } from "../state/limits.ts";

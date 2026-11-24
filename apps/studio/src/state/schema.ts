@@ -1,5 +1,5 @@
-import type { ArtDocument, ParamSpecs } from "@gridloom/core";
-import { defaultRegistry, getModule } from "@gridloom/core";
+import type { ArtDocument, ParamSpecs } from "@tramaloom/core";
+import { defaultRegistry, getModule } from "@tramaloom/core";
 import { MAX_LAYERS, MAX_SCRIPT_CHARS, MAX_SCRIPT_PARAMS, MAX_WEIGHT } from "./limits.ts";
 import { z } from "zod";
 

@@ -1,4 +1,4 @@
-import { PALETTES } from "@gridloom/core";
+import { PALETTES } from "@tramaloom/core";
 import { useId } from "react";
 import { useLang } from "../i18n/i18n.tsx";
 

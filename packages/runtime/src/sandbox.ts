@@ -3,7 +3,7 @@
  * from a blob URL inside a sandboxed iframe (an opaque origin with a strict CSP), so the code
  * it runs cannot reach the studio's storage or the network. Built to dist/sandbox.js.
  */
-import { generate, setScriptRunner, toDrawing } from "@gridloom/core";
+import { generate, setScriptRunner, toDrawing } from "@tramaloom/core";
 import { compileScript, errorOf, scriptRunner } from "./compile.ts";
 import type { SandboxRequest, SandboxResponse } from "./sandboxProtocol.ts";
 

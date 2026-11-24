@@ -1,5 +1,5 @@
-import type { ArtDocument } from "@gridloom/core";
-import { generate, makeNoise2D, setScriptRunner, starterDocument, stream, toPlotterSVG } from "@gridloom/core";
+import type { ArtDocument } from "@tramaloom/core";
+import { generate, makeNoise2D, setScriptRunner, starterDocument, stream, toPlotterSVG } from "@tramaloom/core";
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 // Test-only: the studio page itself never imports the compiler.
 import { compileScript, scriptRunner } from "../../../packages/runtime/src/compile.ts";

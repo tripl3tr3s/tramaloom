@@ -1,7 +1,7 @@
 import { useLang } from "../i18n/i18n.tsx";
 
 export const AUTHOR = "tripl3tr3s";
-export const AUTHOR_URL = "https://github.com/tripl3tr3s";
+export const AUTHOR_URL = "https://tripl3.dev";
 export const SOURCE_URL = "https://github.com/tripl3tr3s/tramaloom";
 
 const link = "text-zinc-400 underline decoration-zinc-600 underline-offset-2 hover:text-zinc-200 hover:decoration-zinc-400";

@@ -2,6 +2,7 @@ import { useDialog } from "../hooks/useDialog.ts";
 import { useLang } from "../i18n/i18n.tsx";
 import type { MessageKey } from "../i18n/messages.ts";
 import { MESSAGES } from "../i18n/messages.ts";
+import { Credit } from "./Credit.tsx";
 import { LangSwitch } from "./LangSwitch.tsx";
 
 const KEY = "tramaloom.welcomed";
@@ -83,7 +84,8 @@ export function Welcome({ onClose, onPresets }: Props) {
             </li>
           ))}
         </ul>
-        <div className="mt-5 flex justify-end gap-2">
+        <div className="mt-5 flex flex-wrap items-center justify-end gap-2">
+          <Credit className="mr-auto" />
           <button
             type="button"
             className="rounded bg-zinc-800 px-3 py-1 text-xs text-zinc-200 hover:bg-zinc-700"

@@ -288,6 +288,8 @@ export const en = {
   "welcome.intro": "Generative grid art, made in the browser. Nothing leaves this device unless you share it.",
   "welcome.browse": "Browse presets",
   "welcome.start": "Start making",
+  "credit.madeBy": "Made by",
+  "credit.source": "Source on GitHub",
 
   // Favourites
   "fav.region": "Favourite seeds",
@@ -795,6 +797,8 @@ export const es: { readonly [K in MessageKey]: string } = {
   "welcome.intro": "Arte generativo en cuadrícula, hecho en el navegador. Nada sale de este dispositivo a menos que lo compartas.",
   "welcome.browse": "Ver presets",
   "welcome.start": "Empezar a crear",
+  "credit.madeBy": "Hecho por",
+  "credit.source": "Código en GitHub",
 
   "fav.region": "Semillas favoritas",
   "fav.title": "Favoritas",

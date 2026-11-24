@@ -2,6 +2,7 @@
   "name": "@tramaloom/core",
   "version": "0.1.0",
   "license": "MIT",
+  "author": "tripl3tr3s (https://github.com/tripl3tr3s)",
   "type": "module",
   "exports": {
     ".": "./src/index.ts"

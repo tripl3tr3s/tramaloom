@@ -2,6 +2,7 @@
   "name": "tramaloom",
   "private": true,
   "license": "MIT",
+  "author": "tripl3tr3s (https://github.com/tripl3tr3s)",
   "type": "module",
   "packageManager": "pnpm@12.21.0",
   "scripts": {

@@ -1,6 +1,7 @@
 import { useDialog } from "../hooks/useDialog.ts";
 import { SHORTCUT_GROUPS } from "./shortcuts.ts";
 import { useLang } from "../i18n/i18n.tsx";
+import { Credit } from "./Credit.tsx";
 import { LangSwitch } from "./LangSwitch.tsx";
 
 interface Props {
@@ -66,6 +67,7 @@ export function ShortcutsHelp({ onClose }: Props) {
             </section>
           ))}
         </div>
+        <Credit className="mt-4 border-t border-zinc-800 pt-3" />
       </div>
     </div>
   );

@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "license": "MIT",
+  "author": "tripl3tr3s (https://github.com/tripl3tr3s)",
   "type": "module",
   "description": "Self-contained player for exported Tramaloom pieces, plus the HTML assembler.",
   "exports": {

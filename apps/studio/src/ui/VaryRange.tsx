@@ -1,10 +1,13 @@
 import { useLang } from "../i18n/i18n.tsx";
 import type { MessageKey } from "../i18n/messages.ts";
 import type { Distribution, IntSpec, NumberSpec, Variation } from "@tramaloom/core";
+import type { KeyboardEvent as ReactKeyboardEvent } from "react";
 import { useMemo, useRef } from "react";
-import { densityCurve, SLIDER_KEYS } from "./vary.ts";
+import { useTrackDrag } from "../hooks/useTrackDrag.ts";
+import { densityCurve, keyStep, valueAt } from "./vary.ts";
 
 type RangeVariation = Extract<Variation, { kind: "range" }>;
+type End = "min" | "max";
 
 interface Props {
   readonly spec: NumberSpec | IntSpec;
@@ -20,7 +23,8 @@ const SAMPLES = 48;
 /**
  * The range a seed can pick from, drawn on one track: two thumbs set the ends,
  * the curve above shows how likely each value is, the tick marks this seed's pick.
- * Both thumbs are native range inputs, so keyboard and screen readers work as usual.
+ * The whole track takes the pointer (mouse, pen or finger): a press moves the nearest
+ * end there and dragging carries it on. Each thumb is a focusable slider for the keyboard.
  */
 export function VaryRange({ spec, vary, resolved, onChange, onCheckpoint }: Props) {
   const { t } = useLang();
@@ -38,69 +42,101 @@ export function VaryRange({ spec, vary, resolved, onChange, onCheckpoint }: Prop
     return `M${lo.toFixed(2)},20${top}L${hi.toFixed(2)},20Z`;
   }, [vary.dist, lo, hi]);
 
-  // Pointer drag state: `null` when no drag, "pending" until the drag picks an end.
-  const drag = useRef<"min" | "max" | "pending" | null>(null);
-  const setEnd = (end: "min" | "max", v: number, record: boolean) => {
-    // Stacked thumbs: only the top one takes the pointer. When the ends meet, the
-    // drag direction decides which end moves, and that choice holds for the rest
-    // of the drag, so both ends stay reachable. Keyboard arrows just clamp.
-    let target = end;
-    if (drag.current === "pending" && vary.min === vary.max) {
-      if (v === vary.min) return;
-      target = v < vary.min ? "min" : "max";
-      drag.current = target;
-    } else if (drag.current === "min" || drag.current === "max") {
-      target = drag.current;
-    } else if (drag.current === "pending") {
-      drag.current = end;
-    }
-    const next = target === "min" ? { ...vary, min: Math.min(v, vary.max) } : { ...vary, max: Math.max(v, vary.min) };
+  const thumbs = useRef<Record<End, HTMLDivElement | null>>({ min: null, max: null });
+
+  const setEnd = (end: End, v: number, record: boolean) => {
+    const next = end === "min" ? { ...vary, min: Math.min(v, vary.max) } : { ...vary, max: Math.max(v, vary.min) };
     if (next.min !== vary.min || next.max !== vary.max) onChange(next, record);
   };
 
-  // When both thumbs meet at the top end, the low one sits above (the drag latch covers the rest).
+  // The end this drag moves; null while the ends meet and the drag has not yet said which way.
+  const dragging = useRef<End | null>(null);
+  const valueOf = (f: number) => valueAt(f, spec.min, spec.max, step);
+  const drag = useTrackDrag({
+    onStart(f) {
+      onCheckpoint();
+      const v = valueOf(f);
+      if (vary.min === vary.max) {
+        // Ends together: wait for the direction, so both stay reachable.
+        dragging.current = v < vary.min ? "min" : v > vary.max ? "max" : null;
+      } else {
+        const toMin = Math.abs(v - vary.min);
+        const toMax = Math.abs(v - vary.max);
+        dragging.current = toMin < toMax || (toMin === toMax && v < vary.min) ? "min" : "max";
+      }
+      if (dragging.current) {
+        thumbs.current[dragging.current]?.focus({ preventScroll: true });
+        setEnd(dragging.current, v, false);
+      } else {
+        thumbs.current.max?.focus({ preventScroll: true });
+      }
+    },
+    onMove(f) {
+      const v = valueOf(f);
+      if (!dragging.current) {
+        if (v === vary.min) return;
+        dragging.current = v < vary.min ? "min" : "max";
+        thumbs.current[dragging.current]?.focus({ preventScroll: true });
+      }
+      setEnd(dragging.current, v, false);
+    },
+    onEnd() {
+      dragging.current = null;
+    },
+  });
+
+  const onKey = (end: End) => (e: ReactKeyboardEvent<HTMLDivElement>) => {
+    const current = end === "min" ? vary.min : vary.max;
+    const next = keyStep(e.key, current, spec.min, spec.max, step);
+    if (next === null) return;
+    // Handled here: the studio's own arrow shortcuts (seed trail) must not fire as well.
+    e.preventDefault();
+    e.stopPropagation();
+    if (!e.repeat) onCheckpoint();
+    setEnd(end, next, false);
+  };
+
+  // When both thumbs meet at the top end, the low one sits above, so it stays reachable.
   const loOnTop = lo > 50;
-  const thumb = (end: "min" | "max", z: string) => (
-    <input
-      type="range"
-      className={`dual-range absolute inset-0 w-full ${z}`}
-      min={spec.min}
-      max={spec.max}
-      step={step}
-      value={end === "min" ? vary.min : vary.max}
-      onPointerDown={() => {
-        drag.current = "pending";
-        onCheckpoint();
-      }}
-      onPointerUp={() => {
-        drag.current = null;
-      }}
-      onBlur={() => {
-        drag.current = null;
-      }}
-      onKeyDown={(e) => !e.repeat && SLIDER_KEYS.has(e.key) && onCheckpoint()}
-      onChange={(e) => setEnd(end, Number(e.target.value), false)}
-      aria-label={`${spec.label}, ${end === "min" ? "lowest" : "highest"} value`}
-    />
-  );
+  const thumb = (end: End) => {
+    const v = end === "min" ? vary.min : vary.max;
+    const onTop = (end === "min") === loOnTop;
+    return (
+      <div
+        ref={(el) => {
+          thumbs.current[end] = el;
+        }}
+        role="slider"
+        tabIndex={0}
+        aria-label={t(end === "min" ? "param.lowest" : "param.highest", { label: spec.label })}
+        aria-valuemin={spec.min}
+        aria-valuemax={spec.max}
+        aria-valuenow={v}
+        aria-orientation="horizontal"
+        className={`vary-thumb absolute top-1/2 -translate-x-1/2 -translate-y-1/2 ${onTop ? "z-20" : "z-10"}`}
+        style={{ left: `${pct(v)}%` }}
+        onKeyDown={onKey(end)}
+      />
+    );
+  };
 
   return (
     <div className="flex-1">
       <svg viewBox="0 0 100 20" preserveAspectRatio="none" className="block h-4 w-full" aria-hidden="true">
         <path d={curve} className="fill-sky-500/25 stroke-sky-400/70" strokeWidth={0.6} vectorEffect="non-scaling-stroke" />
       </svg>
-      <div className="relative h-4">
+      <div className="slider-track relative cursor-pointer" data-vary-track="" {...drag}>
         <div className="absolute inset-x-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-zinc-700" />
         <div className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full bg-sky-500" style={{ left: `${lo}%`, width: `${Math.max(0, hi - lo)}%` }} />
         {resolved !== undefined && (
           <div
-            className="pointer-events-none absolute top-0 h-4 w-0.5 -translate-x-1/2 rounded bg-white/90"
+            className="pointer-events-none absolute top-1/2 h-4 w-0.5 -translate-x-1/2 -translate-y-1/2 rounded bg-white/90"
             style={{ left: `${pct(resolved)}%` }}
             title={t("vary.seedValue")}
           />
         )}
-        {thumb("min", loOnTop ? "z-20" : "z-10")}
-        {thumb("max", loOnTop ? "z-10" : "z-20")}
+        {thumb("min")}
+        {thumb("max")}
       </div>
     </div>
   );

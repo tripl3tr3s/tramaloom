@@ -179,6 +179,7 @@ export const en = {
   "param.off": "off",
   "param.share": "{option}: {pct}% of seeds",
   "param.weightOf": "{label}, weight of {option}",
+  "param.chanceOf": "{label}, chance of {option}",
 
   // Settings panel
   "panel.helpHint": "Show what every setting does",
@@ -695,6 +696,7 @@ export const es: { readonly [K in MessageKey]: string } = {
   "param.off": "no",
   "param.share": "{option}: {pct}% de las semillas",
   "param.weightOf": "{label}, peso de {option}",
+  "param.chanceOf": "{label}, probabilidad de {option}",
 
   "panel.helpHint": "Muestra qué hace cada control",
   "panel.help": "Ayuda",

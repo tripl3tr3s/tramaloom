@@ -4,9 +4,9 @@ import type { ParamSpec } from "@tramaloom/core";
 import { MAX_FAVORITES, parseFavorites, toggleFavorite } from "../src/state/favorites.ts";
 import { insertIndex, needsGrid, zones } from "../src/state/layerOrder.ts";
 import { initialState, reducer } from "../src/state/store.ts";
-import { groupParams, isDefaultSetting, isRelevant, weightShares } from "../src/ui/params.ts";
+import { groupParams, isDefaultSetting, isRelevant, weightShares, weightsForShare } from "../src/ui/params.ts";
 import { SHORTCUT_GROUPS } from "../src/ui/shortcuts.ts";
-import { densityCurve } from "../src/ui/vary.ts";
+import { densityCurve, keyStep, snapToStep, valueAt } from "../src/ui/vary.ts";
 
 const H = "a".repeat(64);
 const ids = (s: ReturnType<typeof initialState>): string[] => s.doc.layers.map((l) => l.id);
@@ -273,5 +273,76 @@ describe("isRelevant", () => {
     const vary = { kind: "weights" as const, weights: { a: 1, b: 1 } };
     expect(isRelevant(spec("onlyB"), params, { mode: { value: "a", vary } })).toBe(true);
     expect(isRelevant(spec("onlyB"), params, { mode: { value: "a", vary, locked: true } })).toBe(false);
+  });
+});
+
+describe("touch sliders", () => {
+  it("snaps to the step grid from min, without float dust, inside the range", () => {
+    expect(snapToStep(0.30000000000000004, 0, 1, 0.1)).toBe(0.3);
+    expect(snapToStep(0.0123, 0, 0.02, 0.0005)).toBe(0.0125);
+    expect(snapToStep(7, 1, 64, 1)).toBe(7);
+    expect(snapToStep(99, 1, 64, 1)).toBe(64);
+    expect(snapToStep(-3, 1, 64, 1)).toBe(1);
+    expect(snapToStep(2.4, 1, 64, 2)).toBe(3);
+  });
+
+  it("maps a track fraction to a value, clamped at both ends", () => {
+    expect(valueAt(0, 1, 64, 1)).toBe(1);
+    expect(valueAt(1, 1, 64, 1)).toBe(64);
+    expect(valueAt(0.5, 0, 100, 1)).toBe(50);
+    expect(valueAt(1.5, 0, 1, 0.01)).toBe(1);
+    expect(valueAt(-1, 0, 1, 0.01)).toBe(0);
+  });
+
+  it("moves with the keys a native range input handles, and ignores the rest", () => {
+    expect(keyStep("ArrowRight", 5, 0, 10, 1)).toBe(6);
+    expect(keyStep("ArrowDown", 5, 0, 10, 1)).toBe(4);
+    expect(keyStep("PageUp", 0.5, 0, 1, 0.01)).toBe(0.6);
+    expect(keyStep("Home", 5, 0, 10, 1)).toBe(0);
+    expect(keyStep("End", 5, 0, 10, 1)).toBe(10);
+    expect(keyStep("ArrowRight", 10, 0, 10, 1)).toBe(10);
+    expect(keyStep("r", 5, 0, 10, 1)).toBeNull();
+  });
+});
+
+describe("weightsForShare (dragging a chance bar)", () => {
+  const opts = ["a", "b", "c"];
+  const shareOf = (w: Readonly<Record<string, number>>, o: string) => weightShares(opts, w)[opts.indexOf(o)] ?? 0;
+
+  it("gives the dragged option the share and keeps the others' proportions", () => {
+    const w = weightsForShare(opts, { a: 1, b: 1, c: 2 }, "a", 0.4);
+    expect(w).toEqual({ a: 40, b: 20, c: 40 });
+    expect(shareOf(w, "a")).toBeCloseTo(0.4);
+  });
+
+  it("writes whole numbers summing to about 100", () => {
+    const w = weightsForShare(opts, { a: 3, b: 7, c: 11 }, "b", 0.33);
+    for (const v of Object.values(w)) expect(Number.isInteger(v)).toBe(true);
+    const total = Object.values(w).reduce((x, y) => x + y, 0);
+    expect(Math.abs(total - 100)).toBeLessThanOrEqual(2);
+    expect(shareOf(w, "b")).toBeCloseTo(0.33, 1);
+  });
+
+  it("splits the rest evenly when every other option was zero", () => {
+    expect(weightsForShare(opts, { a: 5, b: 0, c: 0 }, "a", 0.5)).toEqual({ a: 50, b: 25, c: 25 });
+  });
+
+  it("dragging to 100% leaves the others at zero, and to 0% keeps them", () => {
+    expect(weightsForShare(opts, { a: 1, b: 1, c: 1 }, "a", 1)).toEqual({ a: 100, b: 0, c: 0 });
+    expect(weightsForShare(opts, { a: 1, b: 1, c: 2 }, "a", 0)).toEqual({ a: 0, b: 33, c: 67 });
+  });
+
+  it("never silently drops an option that still has a chance", () => {
+    const w = weightsForShare(opts, { a: 1, b: 1, c: 1000 }, "a", 0.5);
+    expect(w.b).toBeGreaterThanOrEqual(1);
+  });
+
+  it("leaves a single option, or an unknown one, alone", () => {
+    expect(weightsForShare(["a"], { a: 3 }, "a", 0.2)).toEqual({ a: 3 });
+    expect(weightsForShare(opts, { a: 1, b: 1, c: 1 }, "z", 0.2)).toEqual({ a: 1, b: 1, c: 1 });
+  });
+
+  it("keeps weights of options outside the list untouched", () => {
+    expect(weightsForShare(["a", "b"], { a: 1, b: 1, old: 4 }, "a", 0.75)).toEqual({ a: 75, b: 25, old: 4 });
   });
 });

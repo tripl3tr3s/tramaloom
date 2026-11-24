@@ -14,6 +14,8 @@ export default defineConfig({
     { name: "chromium", use: { ...devices["Desktop Chrome"] } },
     { name: "firefox", use: { ...devices["Desktop Firefox"] } },
     { name: "webkit", use: { ...devices["Desktop Safari"] } },
+    // A tablet: WebKit with touch, at iPad size. Only the specs about touch-sized controls.
+    { name: "ipad", use: { ...devices["iPad Pro 11"] }, testMatch: ["vary.spec.ts", "mobile.spec.ts"] },
   ],
   // Serves the production build; run `pnpm build` first (the e2e script does).
   webServer: {
